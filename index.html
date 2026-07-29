@@ -3,89 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>차량 운행 및 출퇴근 관리</title>
+    <title>차량 운행 및 출퇴근 달력 관리</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 <body class="bg-gray-50 min-h-screen p-4 md:p-8">
 
     <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6">
+        <!-- 상단 달력 컨트롤러 -->
         <header class="flex flex-col md:flex-row justify-between items-center mb-6 pb-4 border-b border-gray-200 gap-4">
-            <h1 class="text-2xl font-bold text-gray-800">🚗 운전원 운행 및 출퇴근 관리</h1>
+            <h1 id="calendarMonthTitle" class="text-2xl font-bold text-gray-800">2026년 8월 운행 달력</h1>
             <div class="flex items-center gap-2">
-                <label for="selectDate" class="font-medium text-gray-700">날짜 선택:</label>
-                <input type="date" id="selectDate" class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button onclick="changeMonth(-1)" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium">◀ 이전 달</button>
+                <button onclick="changeMonth(1)" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium">다음 달 ▶</button>
             </div>
         </header>
 
-        <!-- 입력 폼 -->
-        <form id="logForm" class="bg-blue-50 p-4 rounded-xl mb-8 space-y-4">
-            <h2 class="text-lg font-semibold text-blue-900" id="formTitle">선택일 운행 정보 입력</h2>
+        <!-- 달력 그리드 -->
+        <div class="grid grid-cols-7 gap-1 text-center font-semibold text-gray-600 mb-2">
+            <div class="text-red-500">일</div>
+            <div>월</div>
+            <div>화</div>
+            <div>수</div>
+            <div>목</div>
+            <div>금</div>
+            <div class="text-blue-500">토</div>
+        </div>
+        <div id="calendarGrid" class="grid grid-cols-7 gap-2">
+            <!-- 달력 날짜들이 자바스크립트로 동적 생성됩니다 -->
+        </div>
+    </div>
+
+    <!-- 팝업 모달창 -->
+    <div id="logModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl relative">
+            <h2 id="modalDateTitle" class="text-xl font-bold text-gray-800 mb-4">날짜 운행 정보</h2>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">운전원 1</label>
-                    <input type="text" id="driver1" placeholder="운전원 1 이름 입력" class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            <form id="logForm" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">운전원 1</label>
+                        <input type="text" id="driver1" placeholder="이름 입력" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">운전원 2</label>
+                        <input type="text" id="driver2" placeholder="이름 입력" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" required>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">운전원 2</label>
-                    <input type="text" id="driver2" placeholder="운전원 2 이름 입력" class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">출근 시간</label>
+                        <input type="time" id="startTime" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">퇴근 시간</label>
+                        <input type="time" id="endTime" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" required>
+                    </div>
                 </div>
-            </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">출근 시간</label>
-                    <input type="time" id="startTime" class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">비고 및 목적</label>
+                    <input type="text" id="memo" placeholder="예: 본사 ↔ 공장 왕복" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">퇴근 시간</label>
-                    <input type="time" id="endTime" class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium">취소</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">저장</button>
                 </div>
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">비고 및 운행 목적</label>
-                <input type="text" id="memo" placeholder="예: 본사 ↔ 공장 왕복" class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
-
-            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition duration-200">
-                저장하기
-            </button>
-        </form>
-
-        <!-- 최근 입력 내역 테이블 -->
-        <section>
-            <h2 class="text-xl font-bold text-gray-800 mb-4">📋 등록된 운행 기록</h2>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-100 text-gray-600 text-sm">
-                            <th class="p-3 border-b">날짜</th>
-                            <th class="p-3 border-b">운전원 1</th>
-                            <th class="p-3 border-b">운전원 2</th>
-                            <th class="p-3 border-b">출근시간</th>
-                            <th class="p-3 border-b">퇴근시간</th>
-                            <th class="p-3 border-b">비고</th>
-                        </tr>
-                    </thead>
-                    <tbody id="logTableBody" class="text-gray-700 text-sm">
-                        <!-- 데이터가 실시간으로 여기에 채워집니다 -->
-                        <tr>
-                            <td colspan="6" class="p-4 text-center text-gray-400">데이터를 불러오는 중...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
+            </form>
+        </div>
     </div>
 
     <!-- Firebase 설정 및 연동 스크립트 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, getDocs, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 🔥 본인의 파이어베이스 콘솔에서 발급받은 설정값으로 교체하세요
+        // 🔥 본인의 파이어베이스 설정값으로 교체하세요
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "YOUR_AUTH_DOMAIN",
@@ -95,24 +90,106 @@
             appId: "YOUR_APP_ID"
         };
 
-        // 파이어베이스 초기화
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // 오늘 날짜로 초기 세팅
-        const todayStr = new Date().toISOString().split('T')[0];
-        const dateInput = document.getElementById('selectDate');
-        dateInput.value = todayStr;
+        let currentYear = new Date().getFullYear();
+        let currentMonth = new Date().getMonth(); // 0~11
+        let selectedDateStr = "";
+        let logsData = {}; // Firestore 데이터 캐싱용
 
-        // 날짜 변경 시 해당 데이터 불러오기 기능 추가 가능
-        dateInput.addEventListener('change', (e) => {
-            loadDayData(e.target.value);
+        // 실시간으로 Firestore 데이터를 가져와 달력에 반영
+        onSnapshot(collection(db, "drivingLogs"), (snapshot) => {
+            logsData = {};
+            snapshot.forEach((doc) => {
+                logsData[doc.id] = doc.data();
+            });
+            renderCalendar();
         });
 
-        // 폼 제출 시 파이어베이스 Firestore에 저장 (문서 ID를 날짜로 지정하여 날짜별 덮어쓰기/수정 가능)
+        window.changeMonth = function(direction) {
+            currentMonth += direction;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            } else if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const titleEl = document.getElementById('calendarMonthTitle');
+            const gridEl = document.getElementById('calendarGrid');
+            
+            titleEl.textContent = `${currentYear}년 ${currentMonth + 1}월 운행 달력`;
+            gridEl.innerHTML = "";
+
+            const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
+            const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+            // 빈 칸 채우기 (월 시작 요일 맞추기)
+            for (let i = 0; i < firstDayIndex; i++) {
+                gridEl.innerHTML += `<div class="h-24 bg-gray-100 rounded-lg opacity-40"></div>`;
+            }
+
+            // 날짜 생성
+            for (let day = 1; day <= lastDay; day++) {
+                const monthStr = String(currentMonth + 1).padStart(2, '0');
+                const dayStr = String(day).padStart(2, '0');
+                const dateKey = `${currentYear}-${monthStr}-${dayStr}`;
+
+                const log = logsData[dateKey];
+                let contentHTML = `<div class="text-xs text-gray-500 mt-1 truncate">기록 없음</div>`;
+
+                if (log) {
+                    contentHTML = `
+                        <div class="text-[11px] text-blue-800 bg-blue-100 rounded px-1 mt-1 truncate">1: ${log.driver1 || '-'}</div>
+                        <div class="text-[11px] text-indigo-800 bg-indigo-100 rounded px-1 mt-1 truncate">2: ${log.driver2 || '-'}</div>
+                    `;
+                }
+
+                gridEl.innerHTML += `
+                    <div onclick="openModal('${dateKey}')" class="h-28 bg-white border border-gray-200 rounded-lg p-2 cursor-pointer hover:border-blue-500 hover:shadow-sm transition flex flex-col justify-between">
+                        <span class="text-sm font-semibold text-gray-800">${day}</span>
+                        <div>${contentHTML}</div>
+                    </div>
+                `;
+            }
+        }
+
+        window.openModal = async function(dateStr) {
+            selectedDateStr = dateStr;
+            document.getElementById('modalDateTitle').textContent = `📅 ${dateStr} 운행 정보`;
+            
+            // 입력창 초기화
+            document.getElementById('driver1').value = "";
+            document.getElementById('driver2').value = "";
+            document.getElementById('startTime').value = "";
+            document.getElementById('endTime').value = "";
+            document.getElementById('memo').value = "";
+
+            // 해당 날짜 데이터가 있으면 채워넣기
+            if (logsData[dateStr]) {
+                const data = logsData[dateStr];
+                document.getElementById('driver1').value = data.driver1 || "";
+                document.getElementById('driver2').value = data.driver2 || "";
+                document.getElementById('startTime').value = data.startTime || "";
+                document.getElementById('endTime').value = data.endTime || "";
+                document.getElementById('memo').value = data.memo || "";
+            }
+
+            document.getElementById('logModal').classList.remove('hidden');
+        }
+
+        window.closeModal = function() {
+            document.getElementById('logModal').classList.add('hidden');
+        }
+
+        // 폼 제출 시 파이어베이스 저장
         document.getElementById('logForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const selectedDate = dateInput.value;
             const driver1 = document.getElementById('driver1').value;
             const driver2 = document.getElementById('driver2').value;
             const startTime = document.getElementById('startTime').value;
@@ -120,8 +197,8 @@
             const memo = document.getElementById('memo').value;
 
             try {
-                await setDoc(doc(db, "drivingLogs", selectedDate), {
-                    date: selectedDate,
+                await setDoc(doc(db, "drivingLogs", selectedDateStr), {
+                    date: selectedDateStr,
                     driver1,
                     driver2,
                     startTime,
@@ -129,48 +206,11 @@
                     memo,
                     updatedAt: new Date()
                 });
-                alert("성공적으로 저장되었습니다!");
+                closeModal();
             } catch (error) {
                 console.error("저장 실패: ", error);
                 alert("저장 중 오류가 발생했습니다.");
             }
-        });
-
-        // 특정 날짜 데이터 불러오기 함수
-        async function loadDayData(dateStr) {
-            try {
-                const docRef = doc(db, "drivingLogs", dateStr);
-                const docSnap = await getDocs(query(collection(db, "drivingLogs"))); // 전체 목록 갱신용으로 아래 실시간 리스너 활용
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        // 실시간 목록(테이블) 업데이트
-        const q = query(collection(db, "drivingLogs"), orderBy("date", "desc"));
-        onSnapshot(q, (querySnapshot) => {
-            const tableBody = document.getElementById('logTableBody');
-            tableBody.innerHTML = "";
-
-            if (querySnapshot.empty) {
-                tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-400">등록된 기록이 없습니다.</td></tr>`;
-                return;
-            }
-
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                const row = `
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="p-3 font-medium">${data.date}</td>
-                        <td class="p-3">${data.driver1 || '-'}</td>
-                        <td class="p-3">${data.driver2 || '-'}</td>
-                        <td class="p-3">${data.startTime || '-'}</td>
-                        <td class="p-3">${data.endTime || '-'}</td>
-                        <td class="p-3 text-gray-500">${data.memo || '-'}</td>
-                    </tr>
-                `;
-                tableBody.innerHTML += row;
-            });
         });
     </script>
 </body>
