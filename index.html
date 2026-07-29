@@ -6,6 +6,21 @@
     <title>차량 운행 및 출퇴근 달력 관리</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        /* 시간 입력창(input type="time")의 기본 스크롤(화살표) 숨기기 */
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            background: transparent;
+            bottom: 0;
+            color: transparent;
+            cursor: pointer;
+            height: auto;
+            left: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: auto;
+        }
+    </style>
 </head>
 <body class="bg-gray-50 min-h-screen p-4 md:p-8">
 
@@ -30,7 +45,7 @@
             <div class="text-blue-500">토</div>
         </div>
         <div id="calendarGrid" class="grid grid-cols-7 gap-2">
-            <!-- 달력 날짜들이 자바스크립트로 동적 생성됩니다 -->
+            <!-- 달력 날짜들이 동적으로 생성됩니다 -->
         </div>
     </div>
 
@@ -53,12 +68,12 @@
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">출근 시간</label>
-                        <input type="time" id="startTime" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" required>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">출근 시간 (시:분)</label>
+                        <input type="time" id="startTime" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-center relative" required>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">퇴근 시간</label>
-                        <input type="time" id="endTime" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" required>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">퇴근 시간 (시:분)</label>
+                        <input type="time" id="endTime" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-center relative" required>
                     </div>
                 </div>
 
@@ -78,7 +93,7 @@
     <!-- Firebase 설정 및 연동 스크립트 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // 🔥 본인의 파이어베이스 설정값으로 교체하세요
         const firebaseConfig = {
@@ -129,9 +144,9 @@
             const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
             const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-            // 빈 칸 채우기 (월 시작 요일 맞추기)
+            // 빈 칸 채우기
             for (let i = 0; i < firstDayIndex; i++) {
-                gridEl.innerHTML += `<div class="h-24 bg-gray-100 rounded-lg opacity-40"></div>`;
+                gridEl.innerHTML += `<div class="h-28 bg-gray-100 rounded-lg opacity-40"></div>`;
             }
 
             // 날짜 생성
@@ -141,36 +156,35 @@
                 const dateKey = `${currentYear}-${monthStr}-${dayStr}`;
 
                 const log = logsData[dateKey];
-                let contentHTML = `<div class="text-xs text-gray-500 mt-1 truncate">기록 없음</div>`;
+                let contentHTML = `<div class="text-xs text-gray-400 mt-1">입력 대기</div>`;
 
                 if (log) {
                     contentHTML = `
                         <div class="text-[11px] text-blue-800 bg-blue-100 rounded px-1 mt-1 truncate">1: ${log.driver1 || '-'}</div>
                         <div class="text-[11px] text-indigo-800 bg-indigo-100 rounded px-1 mt-1 truncate">2: ${log.driver2 || '-'}</div>
+                        <div class="text-[10px] text-gray-500 mt-0.5">${log.startTime || ''}~${log.endTime || ''}</div>
                     `;
                 }
 
                 gridEl.innerHTML += `
                     <div onclick="openModal('${dateKey}')" class="h-28 bg-white border border-gray-200 rounded-lg p-2 cursor-pointer hover:border-blue-500 hover:shadow-sm transition flex flex-col justify-between">
                         <span class="text-sm font-semibold text-gray-800">${day}</span>
-                        <div>${contentHTML}</div>
+                        <div class="overflow-hidden">${contentHTML}</div>
                     </div>
                 `;
             }
         }
 
-        window.openModal = async function(dateStr) {
+        window.openModal = function(dateStr) {
             selectedDateStr = dateStr;
             document.getElementById('modalDateTitle').textContent = `📅 ${dateStr} 운행 정보`;
             
-            // 입력창 초기화
             document.getElementById('driver1').value = "";
             document.getElementById('driver2').value = "";
             document.getElementById('startTime').value = "";
             document.getElementById('endTime').value = "";
             document.getElementById('memo').value = "";
 
-            // 해당 날짜 데이터가 있으면 채워넣기
             if (logsData[dateStr]) {
                 const data = logsData[dateStr];
                 document.getElementById('driver1').value = data.driver1 || "";
@@ -187,7 +201,7 @@
             document.getElementById('logModal').classList.add('hidden');
         }
 
-        // 폼 제출 시 파이어베이스 저장
+        // 폼 제출 시 파이어베이스 저장 후 팝업 닫기
         document.getElementById('logForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const driver1 = document.getElementById('driver1').value;
@@ -206,6 +220,7 @@
                     memo,
                     updatedAt: new Date()
                 });
+                // 저장이 완료되면 즉시 모달 창 닫기 (실시간 데이터 연동으로 달력에 자동 반영됨)
                 closeModal();
             } catch (error) {
                 console.error("저장 실패: ", error);
