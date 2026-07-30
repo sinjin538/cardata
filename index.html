@@ -9,7 +9,6 @@
 <body class="bg-gray-50 min-h-screen p-2 md:p-8">
 
     <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-4 md:p-6">
-        <!-- 상단 달력 컨트롤러 -->
         <header class="flex flex-col md:flex-row justify-between items-center mb-6 pb-4 border-b border-gray-200 gap-4">
             <h1 id="calendarMonthTitle" class="text-2xl font-bold text-gray-800">2026년 8월 운행 달력</h1>
             <div class="flex items-center gap-2">
@@ -18,7 +17,6 @@
             </div>
         </header>
 
-        <!-- 달력 그리드 -->
         <div class="grid grid-cols-7 gap-1 text-center font-semibold text-gray-600 mb-2 text-sm md:text-base">
             <div class="text-red-500">일</div>
             <div>월</div>
@@ -46,13 +44,12 @@
                         <option value="none">일정 선택 안함</option>
                         <option value="seoul">서울당일 (정산 0원)</option>
                         <option value="day">당일 (일비 12,500원)</option>
-                        <option value="1night">1박 (일비+식비 37,500원)</option>
-                        <option value="2night">2박 (일비+식비 75,000원)</option>
+                        <option value="1night">1박 (하루당 37,500원)</option>
+                        <option value="2night">2박 (하루당 37,500원)</option>
                         <option value="linked" hidden>연계 일정 (이전 날짜에서 이어짐)</option>
                     </select>
                 </div>
 
-                <!-- 운전원 정보 -->
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-gray-700 mb-1">운전원 1</label>
@@ -158,14 +155,19 @@
             renderCalendar();
         }
 
-        // 날짜 더하기 헬퍼 함수
+        // ⭐ 확실한 로컬 날짜(한국시간) 더하기 헬퍼 함수 (버그 수정됨)
         function addDays(dateStr, days) {
-            const d = new Date(dateStr);
+            const parts = dateStr.split('-');
+            const d = new Date(parts[0], parts[1] - 1, parts[2]);
             d.setDate(d.getDate() + days);
-            return d.toISOString().split('T')[0];
+            
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
         }
 
-        // ⭐ 평일(1.5배) / 휴일(2.0배) 보상시간 계산기
+        // 평일(1.5배) / 휴일(2.0배) 보상시간 계산기
         function calculateOvertime(startStr, endStr, isHoliday) {
             if (!startStr || !endStr) return { totalPayTime: 0, label: "" };
             const startVal = parseFloat(startStr);
@@ -185,10 +187,11 @@
             }
         }
 
-        function calculateAllowance(type) {
-            if (type === 'day') return 12500;
-            if (type === '1night') return 12500 + 25000;
-            if (type === '2night') return (12500 + 25000) * 2;
+        // ⭐ 비용 정산 로직 변경: 1박, 2박 시 "매일매일 37,500원씩" 출력되도록 설계
+        function calculateAllowance(log) {
+            if (log.scheduleType === 'day') return 12500;
+            if (log.scheduleType === '1night' || log.scheduleType === '2night') return 37500;
+            if (log.scheduleType === 'linked' && (log.parentType === '1night' || log.parentType === '2night')) return 37500;
             return 0;
         }
 
@@ -212,7 +215,7 @@
 
                 const log = logsData[dateKey];
                 
-                // ⭐ 달력 묶음 바탕색 설정 (일정 종류에 따라 동일한 색으로 연결)
+                // 달력 묶음 바탕색 설정 (일정 종류에 따라 동일한 색으로 연결)
                 let cellBgClass = 'bg-white border-gray-200 hover:border-blue-400';
                 if (log) {
                     if (log.scheduleType === '1night' || (log.scheduleType === 'linked' && log.parentType === '1night')) {
@@ -226,16 +229,14 @@
 
                 if (log) {
                     const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday);
+                    const allowance = calculateAllowance(log);
                     
-                    // 정산 합계는 최초 시작일(부모 일정)에만 표시하여 공간 확보
+                    // 정산 합계를 매 칸마다(1일차, 2일차 모두) 표시하도록 변경!
                     let allowanceHTML = '';
-                    if (log.scheduleType !== 'linked') {
-                        const allowance = calculateAllowance(log.scheduleType);
-                        if (allowance > 0) {
-                            allowanceHTML = `<div class="text-[11px] font-bold text-green-800 bg-green-200 rounded px-1 mt-0.5 truncate text-center shadow-sm">💰 ${allowance.toLocaleString()}원</div>`;
-                        } else if (log.scheduleType === 'seoul') {
-                            allowanceHTML = `<div class="text-[11px] font-bold text-gray-600 bg-gray-200 rounded px-1 mt-0.5 truncate text-center shadow-sm">서울당일</div>`;
-                        }
+                    if (allowance > 0) {
+                        allowanceHTML = `<div class="text-[11px] font-bold text-green-800 bg-green-200 rounded px-1 mt-0.5 truncate text-center shadow-sm">💰 ${allowance.toLocaleString()}원</div>`;
+                    } else if (log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) {
+                        allowanceHTML = `<div class="text-[11px] font-bold text-gray-600 bg-gray-200 rounded px-1 mt-0.5 truncate text-center shadow-sm">서울당일</div>`;
                     }
 
                     // 운전원 2가 없을 경우 공간 낭비 방지
@@ -244,7 +245,7 @@
                     // 휴일/평일 연장시간 텍스트 색상 분리
                     const payColor = log.isHoliday ? 'text-red-700 bg-red-100 border-red-200' : 'text-gray-800 bg-gray-100 border-gray-300';
 
-                    // ⭐ 기존의 9 ~ 18 시간표시를 없애고 컴팩트하게 구성
+                    // 9 ~ 18 시간표시를 없애고 컴팩트하게 구성된 최종 디자인
                     contentHTML = `
                         <div class="text-[11px] font-semibold text-blue-900 bg-blue-200 rounded px-1 truncate shadow-sm">${log.driver1}</div>
                         ${driver2HTML}
@@ -318,12 +319,12 @@
                 document.getElementById('memo').value = data.memo || "";
                 document.getElementById('scheduleType').value = data.scheduleType || "none";
 
-                // 연계 일정 수정 시 타입 변경은 막음 (단일 시간수정용)
+                // 연계 일정 수정 시 타입 변경은 막음
                 if(data.scheduleType === 'linked') {
                     document.getElementById('scheduleType').disabled = true;
                 }
 
-                // 부모 일정일 경우 이어진 데이터 불러오기
+                // 부모 일정일 경우 이어진 데이터(2일차, 3일차) 불러오기
                 if (data.scheduleType === '1night' || data.scheduleType === '2night') {
                     document.getElementById('scheduleType').dispatchEvent(new Event('change'));
                     
@@ -370,11 +371,11 @@
             const driver2 = document.getElementById('driver2').value;
             const memo = document.getElementById('memo').value;
 
+            // ⭐ 날짜 더하기 기능이 완벽하게 작동하여 오늘, 내일, 모레를 정확히 찾아냅니다.
             const date1 = selectedDateStr;
             const date2 = addDays(date1, 1);
             const date3 = addDays(date1, 2);
             
-            // 기존 데이터가 '연계(linked)'일 경우 수정 시 parentType 유지용
             let currentParentType = "";
             if (logsData[date1] && logsData[date1].scheduleType === 'linked') {
                 currentParentType = logsData[date1].parentType;
@@ -383,7 +384,7 @@
             window.closeModal();
 
             try {
-                // 연계 일정(2,3일차) 단일 수정 시
+                // 연계 일정(2,3일차) 단일 칸만 눌러서 수정할 시
                 if (scheduleType === 'linked') {
                     await setDoc(doc(db, "drivingLogs", date1), {
                         date: date1,
