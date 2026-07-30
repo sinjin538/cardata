@@ -6,17 +6,19 @@
     <title>차량 운행 및 출퇴근 달력 관리</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
-<body class="bg-gray-50 min-h-screen p-2 md:p-8">
+<body class="bg-gray-50 min-h-screen p-2 md:p-8 flex flex-col items-center">
 
-    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-4 md:p-6">
+    <div class="max-w-5xl w-full mx-auto bg-white rounded-xl shadow-md overflow-hidden p-4 md:p-6">
+        <!-- 상단 달력 컨트롤러 -->
         <header class="flex flex-col md:flex-row justify-between items-center mb-6 pb-4 border-b border-gray-200 gap-4">
             <h1 id="calendarMonthTitle" class="text-2xl font-bold text-gray-800">2026년 8월 운행 달력</h1>
             <div class="flex items-center gap-2">
-                <button onclick="changeMonth(-1)" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium">◀ 이전 달</button>
-                <button onclick="changeMonth(1)" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium">다음 달 ▶</button>
+                <button onclick="changeMonth(-1)" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium transition">◀ 이전 달</button>
+                <button onclick="changeMonth(1)" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium transition">다음 달 ▶</button>
             </div>
         </header>
 
+        <!-- 달력 그리드 요일 헤더 -->
         <div class="grid grid-cols-7 gap-1 text-center font-semibold text-gray-600 mb-2 text-sm md:text-base">
             <div class="text-red-500">일</div>
             <div>월</div>
@@ -27,9 +29,26 @@
             <div class="text-blue-500">토</div>
         </div>
         
-        <!-- 칸이 유연하게 늘어나도록 auto-rows-fr 적용 -->
+        <!-- 달력 칸 영역 (유연하게 늘어남) -->
         <div id="calendarGrid" class="grid grid-cols-7 gap-1 md:gap-2 auto-rows-fr">
             <!-- 달력 날짜 동적 생성 -->
+        </div>
+
+        <!-- ⭐ 새로 추가된 월간 정산 요약 박스 -->
+        <div class="mt-6 bg-gray-100 p-4 md:p-5 rounded-xl shadow-inner border border-gray-200">
+            <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                📊 <span id="summaryMonthText">8월</span> 정산 합계
+            </h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col items-center justify-center">
+                    <span class="text-sm text-gray-500 font-medium">보상 시간 합계 (이번 달)</span>
+                    <span class="text-2xl font-bold text-blue-600 mt-1" id="totalHoursEl">0.0 h</span>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col items-center justify-center">
+                    <span class="text-sm text-gray-500 font-medium">비용 정산 합계 (이번 달)</span>
+                    <span class="text-2xl font-bold text-green-600 mt-1" id="totalAllowanceEl">0 원</span>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -112,30 +131,26 @@
 
                 <div class="flex justify-end gap-2 pt-2">
                     <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium text-sm">취소</button>
-                    <!-- 저장 중일 때 클릭 방지를 위해 id 부여 -->
-                    <button type="submit" id="saveBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm">저장</button>
+                    <button type="submit" id="saveBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm shadow">저장</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- 스크립트 -->
+    <!-- 기능 스크립트 -->
     <script>
-        // ⭐ 파이어베이스 연동 대신 일단 로컬(브라우저 캐시) 저장소 사용으로 변경
         let currentYear = new Date().getFullYear();
         let currentMonth = new Date().getMonth(); 
         let selectedDateStr = "";
         
-        // 브라우저 로컬 저장소에서 데이터 불러오기
+        // 브라우저 로컬 저장소에서 데이터 불러오기 (파이어베이스 연동 전 임시)
         let logsData = JSON.parse(localStorage.getItem('drivingLogs')) || {};
 
-        // 로컬 저장소에 데이터 저장 후 달력 새로고침
         function saveToLocal() {
             localStorage.setItem('drivingLogs', JSON.stringify(logsData));
             renderCalendar();
         }
 
-        // 최초 실행 시 달력 그리기
         window.onload = function() {
             renderCalendar();
         };
@@ -147,49 +162,46 @@
             renderCalendar();
         }
 
-        // 한국 날짜 기준 더하기 함수
         function addDays(dateStr, days) {
             const parts = dateStr.split('-');
-            const y = parseInt(parts[0], 10);
-            const m = parseInt(parts[1], 10) - 1;
-            const day = parseInt(parts[2], 10);
-            
-            const d = new Date(y, m, day);
+            const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
             d.setDate(d.getDate() + days);
-            
             const outY = d.getFullYear();
             const outM = String(d.getMonth() + 1).padStart(2, '0');
             const outD = String(d.getDate()).padStart(2, '0');
             return `${outY}-${outM}-${outD}`;
         }
 
-        // ⭐ 휴일 보상 계산 공식 완벽 적용
+        // ⭐ 휴일 보상 계산 공식 (휴게시간 1시간 차감 및 시간외 2배 완벽 적용)
         function calculateOvertime(startStr, endStr, isHoliday) {
             if (!startStr || !endStr) return { totalPayTime: 0, label: "" };
             const startVal = parseFloat(startStr);
             const endVal = parseFloat(endStr);
             if (isNaN(startVal) || isNaN(endVal) || endVal <= startVal) return { totalPayTime: 0, label: "" };
 
-            // 09시 ~ 18시 겹치는 시간 계산
+            // 09시 ~ 18시 겹치는 시간 추출 (최대 9시간)
             const overlapStart = Math.max(startVal, 9.0);
             const overlapEnd = Math.min(endVal, 18.0);
-            let normalHours = (overlapEnd > overlapStart) ? overlapEnd - overlapStart : 0;
+            let rawNormalHours = (overlapEnd > overlapStart) ? overlapEnd - overlapStart : 0;
             
-            // 그 외 시간 (시간외) 계산
-            let overtimeHours = Math.max(0, (endVal - startVal) - normalHours);
+            // 휴게시간 차감 로직: 09~18시 사이에 4시간 이상 겹치면 휴게시간 1시간을 뺌
+            let restTime = (rawNormalHours >= 4) ? 1.0 : 0;
+            let normalHours = Math.max(0, rawNormalHours - restTime); // 예: 9~18시 전체(9h) - 1h = 8시간
+            
+            // 그 외 시간 (09시 이전, 18시 이후) 계산
+            let overtimeHours = Math.max(0, (endVal - startVal) - rawNormalHours);
 
             if (isHoliday) {
-                // 휴일: 09~18시는 1.5배, 그 외(시간외)는 2배 적용
+                // 휴일: 정규시간(휴게제외 8시간)은 1.5배, 그 외 초과시간은 2.0배
                 const holidayPay = (normalHours * 1.5) + (overtimeHours * 2.0);
                 return { totalPayTime: holidayPay.toFixed(1), label: "휴일보상" };
             } else {
-                // 평일: 09~18시는 0배(기본급), 그 외(시간외)는 1.5배 적용
+                // 평일: 정규시간(09~18)은 연장수당 없음(0), 초과시간만 1.5배
                 const weekdayPay = (overtimeHours * 1.5);
                 return { totalPayTime: weekdayPay.toFixed(1), label: "평일연장" };
             }
         }
 
-        // 매일 37,500원 표시
         function calculateAllowance(log) {
             if (log.scheduleType === 'day') return 12500;
             if (log.scheduleType === '1night' || log.scheduleType === '2night') return 37500;
@@ -200,15 +212,21 @@
         function renderCalendar() {
             const titleEl = document.getElementById('calendarMonthTitle');
             const gridEl = document.getElementById('calendarGrid');
+            const summaryText = document.getElementById('summaryMonthText');
+            
             titleEl.textContent = `${currentYear}년 ${currentMonth + 1}월 운행 달력`;
+            summaryText.textContent = `${currentMonth + 1}월`;
             gridEl.innerHTML = "";
+
+            // 월간 합계용 변수
+            let monthlyTotalHours = 0;
+            let monthlyTotalAllowance = 0;
 
             const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
             const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-            // 최소 높이 지정
             for (let i = 0; i < firstDayIndex; i++) {
-                gridEl.innerHTML += `<div class="min-h-[6rem] bg-gray-50 rounded-lg opacity-40"></div>`;
+                gridEl.innerHTML += `<div class="min-h-[6rem] bg-gray-50 rounded-lg opacity-40 border border-gray-100"></div>`;
             }
 
             for (let day = 1; day <= lastDay; day++) {
@@ -233,6 +251,10 @@
                     const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday);
                     const allowance = calculateAllowance(log);
                     
+                    // 합계 누적 (해당 월의 데이터만)
+                    monthlyTotalHours += parseFloat(calc.totalPayTime || 0);
+                    monthlyTotalAllowance += allowance;
+                    
                     let allowanceHTML = '';
                     if (allowance > 0) {
                         allowanceHTML = `<div class="text-[11px] font-bold text-green-800 bg-green-200 rounded px-1 mt-0.5 text-center shadow-sm whitespace-nowrap">💰 ${allowance.toLocaleString()}원</div>`;
@@ -243,22 +265,27 @@
                     const driver2HTML = log.driver2 ? `<div class="text-[11px] font-semibold text-indigo-900 bg-indigo-200 rounded px-1 mt-0.5 shadow-sm whitespace-nowrap">${log.driver2}</div>` : '';
                     const payColor = log.isHoliday ? 'text-red-700 bg-red-100 border-red-200' : 'text-gray-800 bg-gray-100 border-gray-300';
 
+                    // ⭐ 입력한 시간을 보여주는 태그 다시 추가됨 (ex: 8 ~ 18)
                     contentHTML = `
                         <div class="text-[11px] font-semibold text-blue-900 bg-blue-200 rounded px-1 shadow-sm whitespace-nowrap">${log.driver1}</div>
                         ${driver2HTML}
-                        <div class="text-[10px] font-bold border rounded px-1 mt-1 ${payColor} shadow-sm whitespace-nowrap">${calc.label}: ${calc.totalPayTime}h</div>
+                        <div class="text-[10px] text-gray-700 bg-white/60 border border-gray-200 rounded px-1 mt-1 text-center font-bold shadow-sm whitespace-nowrap tracking-tighter">⏰ ${log.startTime} ~ ${log.endTime}</div>
+                        <div class="text-[10px] font-bold border rounded px-1 mt-0.5 ${payColor} shadow-sm whitespace-nowrap text-center">${calc.label}: ${calc.totalPayTime}h</div>
                         ${allowanceHTML}
                     `;
                 }
 
-                // h-full과 min-h 적용으로 글씨가 많아지면 알아서 아래로 늘어납니다
                 gridEl.innerHTML += `
-                    <div onclick="openModal('${dateKey}')" class="h-full min-h-[6rem] ${cellBgClass} border rounded-lg p-1 md:p-1.5 cursor-pointer transition shadow-sm flex flex-col">
+                    <div onclick="openModal('${dateKey}')" class="h-full min-h-[7rem] ${cellBgClass} border rounded-lg p-1 md:p-1.5 cursor-pointer transition shadow-sm flex flex-col">
                         <span class="text-xs font-bold text-gray-800 ml-1">${day}</span>
                         <div class="flex flex-col gap-0.5 mt-1">${contentHTML}</div>
                     </div>
                 `;
             }
+
+            // 하단 요약 패널 데이터 갱신
+            document.getElementById('totalHoursEl').innerText = monthlyTotalHours.toFixed(1) + " h";
+            document.getElementById('totalAllowanceEl').innerText = monthlyTotalAllowance.toLocaleString() + " 원";
         }
 
         document.getElementById('scheduleType').addEventListener('change', function(e) {
@@ -287,12 +314,10 @@
             }
         });
 
-        // 모달창 열릴 때
         window.openModal = function(dateStr) {
             selectedDateStr = dateStr;
             document.getElementById('modalDateTitle').textContent = `📅 ${dateStr} 운행 정보`;
             
-            // 모든 폼 데이터 완전 초기화 (휴일 잔상 버그 원천 차단)
             document.getElementById('logForm').reset();
             document.getElementById('scheduleType').value = "none";
             ['1', '2', '3'].forEach(num => {
@@ -305,7 +330,6 @@
             document.getElementById('day3Box').classList.add('hidden');
             document.getElementById('scheduleType').disabled = false;
 
-            // 똑똑한 주말 자동 체크 (토,일 이면 자동으로 휴일 체크해줌)
             const checkIsWeekend = (dStr) => {
                 const parts = dStr.split('-');
                 const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
@@ -316,7 +340,6 @@
             document.getElementById('isHoliday2').checked = checkIsWeekend(addDays(dateStr, 1));
             document.getElementById('isHoliday3').checked = checkIsWeekend(addDays(dateStr, 2));
 
-            // 데이터 불러오기
             if (logsData[dateStr]) {
                 const data = logsData[dateStr];
                 document.getElementById('driver1').value = data.driver1 || "";
@@ -355,7 +378,6 @@
             document.getElementById('logModal').classList.remove('hidden');
         }
 
-        // 모달창 닫힐 때 완전 초기화
         window.closeModal = function() {
             document.getElementById('logModal').classList.add('hidden');
             document.getElementById('logForm').reset();
@@ -374,7 +396,6 @@
 
         document.getElementById('logModal').addEventListener('click', function() { window.closeModal(); });
 
-        // ⭐ 로컬 스토리지에 데이터 저장 (파이어베이스 없이 즉시 저장 및 화면 갱신)
         document.getElementById('logForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -445,20 +466,16 @@
                     };
                 }
 
-                // 일정 축소 시 안 쓰게 된 내일/모레 데이터 삭제 (정리)
+                // 일정 축소 시 쓰지 않는 데이터 정리
                 if (scheduleType !== '2night') {
-                    if (logsData[date3] && logsData[date3].parentDate === date1) {
-                        delete logsData[date3];
-                    }
+                    if (logsData[date3] && logsData[date3].parentDate === date1) { delete logsData[date3]; }
                 }
                 if (scheduleType !== '1night' && scheduleType !== '2night') {
-                    if (logsData[date2] && logsData[date2].parentDate === date1) {
-                        delete logsData[date2];
-                    }
+                    if (logsData[date2] && logsData[date2].parentDate === date1) { delete logsData[date2]; }
                 }
             }
 
-            // 달력 다시 그리고 창 닫기 (딜레이 없이 1초만에 싹 바뀜)
+            // 즉시 저장하고 달력 새로고침
             saveToLocal();
             window.closeModal();
         });
