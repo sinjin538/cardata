@@ -26,7 +26,9 @@
             <div>금</div>
             <div class="text-blue-500">토</div>
         </div>
-        <div id="calendarGrid" class="grid grid-cols-7 gap-1 md:gap-2">
+        
+        <!-- ⭐ 변경 포인트: auto-rows-fr 을 추가하여 내용이 길어지면 줄 전체가 늘어나게 함 -->
+        <div id="calendarGrid" class="grid grid-cols-7 gap-1 md:gap-2 auto-rows-fr">
             <!-- 달력 날짜들이 동적으로 생성됩니다 -->
         </div>
     </div>
@@ -119,7 +121,6 @@
     <!-- Firebase 스크립트 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        // ⭐ 삭제 기능(deleteDoc)이 추가되었습니다.
         import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // 🔥 본인의 파이어베이스 설정값으로 교체
@@ -156,7 +157,7 @@
             renderCalendar();
         }
 
-        // ⭐ 확실한 로컬 날짜(한국시간) 더하기 헬퍼 함수
+        // 날짜 더하기 헬퍼 함수
         function addDays(dateStr, days) {
             const parts = dateStr.split('-');
             const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
@@ -187,7 +188,6 @@
             }
         }
 
-        // 매일매일 37,500원씩 뿌려주기
         function calculateAllowance(log) {
             if (log.scheduleType === 'day') return 12500;
             if (log.scheduleType === '1night' || log.scheduleType === '2night') return 37500;
@@ -204,8 +204,9 @@
             const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
             const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
 
+            // ⭐ 변경: 빈 칸도 꽉 차지 않게 기본 최소 높이만 지정
             for (let i = 0; i < firstDayIndex; i++) {
-                gridEl.innerHTML += `<div class="h-32 bg-gray-50 rounded-lg opacity-40"></div>`;
+                gridEl.innerHTML += `<div class="min-h-[6rem] bg-gray-50 rounded-lg opacity-40"></div>`;
             }
 
             for (let day = 1; day <= lastDay; day++) {
@@ -232,26 +233,27 @@
                     
                     let allowanceHTML = '';
                     if (allowance > 0) {
-                        allowanceHTML = `<div class="text-[11px] font-bold text-green-800 bg-green-200 rounded px-1 mt-0.5 truncate text-center shadow-sm">💰 ${allowance.toLocaleString()}원</div>`;
+                        allowanceHTML = `<div class="text-[11px] font-bold text-green-800 bg-green-200 rounded px-1 mt-0.5 text-center shadow-sm whitespace-nowrap">💰 ${allowance.toLocaleString()}원</div>`;
                     } else if (log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) {
-                        allowanceHTML = `<div class="text-[11px] font-bold text-gray-600 bg-gray-200 rounded px-1 mt-0.5 truncate text-center shadow-sm">서울당일</div>`;
+                        allowanceHTML = `<div class="text-[11px] font-bold text-gray-600 bg-gray-200 rounded px-1 mt-0.5 text-center shadow-sm whitespace-nowrap">서울당일</div>`;
                     }
 
-                    const driver2HTML = log.driver2 ? `<div class="text-[11px] font-semibold text-indigo-900 bg-indigo-200 rounded px-1 truncate mt-0.5 shadow-sm">${log.driver2}</div>` : '';
+                    const driver2HTML = log.driver2 ? `<div class="text-[11px] font-semibold text-indigo-900 bg-indigo-200 rounded px-1 mt-0.5 shadow-sm whitespace-nowrap">${log.driver2}</div>` : '';
                     const payColor = log.isHoliday ? 'text-red-700 bg-red-100 border-red-200' : 'text-gray-800 bg-gray-100 border-gray-300';
 
                     contentHTML = `
-                        <div class="text-[11px] font-semibold text-blue-900 bg-blue-200 rounded px-1 truncate shadow-sm">${log.driver1}</div>
+                        <div class="text-[11px] font-semibold text-blue-900 bg-blue-200 rounded px-1 shadow-sm whitespace-nowrap">${log.driver1}</div>
                         ${driver2HTML}
-                        <div class="text-[10px] font-bold border rounded px-1 mt-1 ${payColor} truncate shadow-sm">${calc.label}: ${calc.totalPayTime}h</div>
+                        <div class="text-[10px] font-bold border rounded px-1 mt-1 ${payColor} shadow-sm whitespace-nowrap">${calc.label}: ${calc.totalPayTime}h</div>
                         ${allowanceHTML}
                     `;
                 }
 
+                // ⭐ 변경: h-32를 제거하고 h-full min-h-[6rem]로 변경하여 동적으로 늘어나게 함. overflow-hidden 제거.
                 gridEl.innerHTML += `
-                    <div onclick="openModal('${dateKey}')" class="h-32 ${cellBgClass} border rounded-lg p-1 md:p-1.5 cursor-pointer transition shadow-sm flex flex-col overflow-hidden">
+                    <div onclick="openModal('${dateKey}')" class="h-full min-h-[6rem] ${cellBgClass} border rounded-lg p-1 md:p-1.5 cursor-pointer transition shadow-sm flex flex-col">
                         <span class="text-xs font-bold text-gray-800 ml-1">${day}</span>
-                        <div class="overflow-hidden flex flex-col gap-0.5 mt-1">${contentHTML}</div>
+                        <div class="flex flex-col gap-0.5 mt-1">${contentHTML}</div>
                     </div>
                 `;
             }
@@ -287,21 +289,22 @@
             selectedDateStr = dateStr;
             document.getElementById('modalDateTitle').textContent = `📅 ${dateStr} 운행 정보`;
             
-            // ⭐ 문제 해결 2: 모달을 열 때마다 모든 체크박스와 입력값을 강제로 초기화(디폴트)
+            // ⭐ 확실한 리셋: 폼을 완벽하게 초기화
             document.getElementById('logForm').reset();
             document.getElementById('scheduleType').value = "none";
             
+            // 모든 체크박스 강제 해제 (캐시 방지)
             ['1', '2', '3'].forEach(num => {
                 document.getElementById(`startTime${num}`).value = "";
                 document.getElementById(`endTime${num}`).value = "";
-                document.getElementById(`isHoliday${num}`).checked = false; // 확실히 체크 해제
+                document.getElementById(`isHoliday${num}`).checked = false; 
             });
 
             document.getElementById('day2Box').classList.add('hidden');
             document.getElementById('day3Box').classList.add('hidden');
             document.getElementById('scheduleType').disabled = false;
 
-            // 해당 날짜가 토, 일요일이면 편의를 위해 자동으로 휴일 체크해주기
+            // 주말이면 자동 체크 켜주기
             const checkIsWeekend = (dStr) => {
                 const parts = dStr.split('-');
                 const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
@@ -312,6 +315,7 @@
             document.getElementById('isHoliday2').checked = checkIsWeekend(addDays(dateStr, 1));
             document.getElementById('isHoliday3').checked = checkIsWeekend(addDays(dateStr, 2));
 
+            // 데이터가 있으면 덮어쓰기
             if (logsData[dateStr]) {
                 const data = logsData[dateStr];
                 document.getElementById('driver1').value = data.driver1 || "";
@@ -398,7 +402,6 @@
                         updatedAt: new Date()
                     });
                 } else {
-                    // 메인 1일차 등록/수정 시
                     await setDoc(doc(db, "drivingLogs", date1), {
                         date: date1,
                         scheduleType: scheduleType,
@@ -411,13 +414,12 @@
                         updatedAt: new Date()
                     });
 
-                    // 1박/2박일 경우 내일, 모레 데이터 저장
                     if (scheduleType === '1night' || scheduleType === '2night') {
                         await setDoc(doc(db, "drivingLogs", date2), {
                             date: date2,
                             scheduleType: 'linked',
                             parentType: scheduleType,
-                            parentDate: date1,  // 삭제를 위한 부모 추적용
+                            parentDate: date1, 
                             driver1: driver1,
                             driver2: driver2,
                             startTime: document.getElementById('startTime2').value,
@@ -443,7 +445,7 @@
                         });
                     }
 
-                    // ⭐ 추가 기능: 2박에서 당일로 일정 축소 시 필요 없어진 내일/모레 데이터 자동 삭제
+                    // 필요 없어진 과거의 연계 데이터 정리
                     if (scheduleType !== '2night') {
                         const d3 = logsData[date3];
                         if (d3 && d3.scheduleType === 'linked' && d3.parentDate === date1) {
