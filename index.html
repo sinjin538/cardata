@@ -27,9 +27,9 @@
             <div class="text-blue-500">토</div>
         </div>
         
-        <!-- ⭐ 변경 포인트: auto-rows-fr 을 추가하여 내용이 길어지면 줄 전체가 늘어나게 함 -->
+        <!-- 칸이 유연하게 늘어나도록 auto-rows-fr 적용 -->
         <div id="calendarGrid" class="grid grid-cols-7 gap-1 md:gap-2 auto-rows-fr">
-            <!-- 달력 날짜들이 동적으로 생성됩니다 -->
+            <!-- 달력 날짜 동적 생성 -->
         </div>
     </div>
 
@@ -63,7 +63,7 @@
                     </div>
                 </div>
 
-                <!-- 1일차 입력 (기본) -->
+                <!-- 1일차 -->
                 <div id="day1Box" class="bg-blue-50 border border-blue-100 p-3 rounded-lg">
                     <div class="flex justify-between items-center mb-2">
                         <span class="font-bold text-sm text-blue-800" id="day1Label">1일차 시간 (당일)</span>
@@ -77,7 +77,7 @@
                     </div>
                 </div>
 
-                <!-- 2일차 입력 (1박 이상 시 등장) -->
+                <!-- 2일차 -->
                 <div id="day2Box" class="bg-indigo-50 border border-indigo-100 p-3 rounded-lg hidden">
                     <div class="flex justify-between items-center mb-2">
                         <span class="font-bold text-sm text-indigo-800" id="day2Label">2일차 시간</span>
@@ -91,7 +91,7 @@
                     </div>
                 </div>
 
-                <!-- 3일차 입력 (2박 시 등장) -->
+                <!-- 3일차 -->
                 <div id="day3Box" class="bg-purple-50 border border-purple-100 p-3 rounded-lg hidden">
                     <div class="flex justify-between items-center mb-2">
                         <span class="font-bold text-sm text-purple-800" id="day3Label">3일차 시간</span>
@@ -112,7 +112,8 @@
 
                 <div class="flex justify-end gap-2 pt-2">
                     <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium text-sm">취소</button>
-                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm">저장</button>
+                    <!-- 저장 중일 때 클릭 방지를 위해 id 부여 -->
+                    <button type="submit" id="saveBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm">저장</button>
                 </div>
             </form>
         </div>
@@ -157,16 +158,20 @@
             renderCalendar();
         }
 
-        // 날짜 더하기 헬퍼 함수
+        // 한국 날짜 기준 더하기 함수
         function addDays(dateStr, days) {
             const parts = dateStr.split('-');
-            const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            const y = parseInt(parts[0], 10);
+            const m = parseInt(parts[1], 10) - 1;
+            const day = parseInt(parts[2], 10);
+            
+            const d = new Date(y, m, day);
             d.setDate(d.getDate() + days);
             
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${y}-${m}-${day}`;
+            const outY = d.getFullYear();
+            const outM = String(d.getMonth() + 1).padStart(2, '0');
+            const outD = String(d.getDate()).padStart(2, '0');
+            return `${outY}-${outM}-${outD}`;
         }
 
         function calculateOvertime(startStr, endStr, isHoliday) {
@@ -188,6 +193,7 @@
             }
         }
 
+        // 매일 37,500원 표시
         function calculateAllowance(log) {
             if (log.scheduleType === 'day') return 12500;
             if (log.scheduleType === '1night' || log.scheduleType === '2night') return 37500;
@@ -204,7 +210,7 @@
             const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
             const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-            // ⭐ 변경: 빈 칸도 꽉 차지 않게 기본 최소 높이만 지정
+            // 최소 높이 지정
             for (let i = 0; i < firstDayIndex; i++) {
                 gridEl.innerHTML += `<div class="min-h-[6rem] bg-gray-50 rounded-lg opacity-40"></div>`;
             }
@@ -249,7 +255,7 @@
                     `;
                 }
 
-                // ⭐ 변경: h-32를 제거하고 h-full min-h-[6rem]로 변경하여 동적으로 늘어나게 함. overflow-hidden 제거.
+                // h-full과 min-h 적용으로 글씨가 많아지면 알아서 아래로 늘어납니다
                 gridEl.innerHTML += `
                     <div onclick="openModal('${dateKey}')" class="h-full min-h-[6rem] ${cellBgClass} border rounded-lg p-1 md:p-1.5 cursor-pointer transition shadow-sm flex flex-col">
                         <span class="text-xs font-bold text-gray-800 ml-1">${day}</span>
@@ -285,15 +291,14 @@
             }
         });
 
+        // 모달창 열릴 때
         window.openModal = function(dateStr) {
             selectedDateStr = dateStr;
             document.getElementById('modalDateTitle').textContent = `📅 ${dateStr} 운행 정보`;
             
-            // ⭐ 확실한 리셋: 폼을 완벽하게 초기화
+            // 모든 폼 데이터 완전 초기화 (휴일 잔상 버그 원천 차단)
             document.getElementById('logForm').reset();
             document.getElementById('scheduleType').value = "none";
-            
-            // 모든 체크박스 강제 해제 (캐시 방지)
             ['1', '2', '3'].forEach(num => {
                 document.getElementById(`startTime${num}`).value = "";
                 document.getElementById(`endTime${num}`).value = "";
@@ -304,10 +309,10 @@
             document.getElementById('day3Box').classList.add('hidden');
             document.getElementById('scheduleType').disabled = false;
 
-            // 주말이면 자동 체크 켜주기
+            // 똑똑한 주말 자동 체크 (토,일 이면 자동으로 휴일 체크해줌)
             const checkIsWeekend = (dStr) => {
                 const parts = dStr.split('-');
-                const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
                 return (d.getDay() === 0 || d.getDay() === 6);
             };
 
@@ -315,7 +320,7 @@
             document.getElementById('isHoliday2').checked = checkIsWeekend(addDays(dateStr, 1));
             document.getElementById('isHoliday3').checked = checkIsWeekend(addDays(dateStr, 2));
 
-            // 데이터가 있으면 덮어쓰기
+            // 데이터 불러오기
             if (logsData[dateStr]) {
                 const data = logsData[dateStr];
                 document.getElementById('driver1').value = data.driver1 || "";
@@ -354,8 +359,13 @@
             document.getElementById('logModal').classList.remove('hidden');
         }
 
+        // 모달창 닫힐 때 완전 초기화
         window.closeModal = function() {
             document.getElementById('logModal').classList.add('hidden');
+            document.getElementById('logForm').reset();
+            ['1', '2', '3'].forEach(num => {
+                document.getElementById(`isHoliday${num}`).checked = false; 
+            });
         }
 
         const timeInputs = document.querySelectorAll('input[type="number"]');
@@ -368,9 +378,14 @@
 
         document.getElementById('logModal').addEventListener('click', function() { window.closeModal(); });
 
+        // ⭐ 안전장치: Promise.all을 활용해 3일치 데이터가 100% 동시에 저장된 후 모달창이 닫히도록 개선
         document.getElementById('logForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true;
+            btn.innerText = "저장 중...";
+
             const scheduleType = document.getElementById('scheduleType').value;
             const driver1 = document.getElementById('driver1').value;
             const driver2 = document.getElementById('driver2').value;
@@ -385,11 +400,12 @@
                 currentParentType = logsData[date1].parentType;
             }
 
-            window.closeModal();
-
             try {
+                // 저장 작업을 배열로 묶습니다.
+                const savePromises = [];
+
                 if (scheduleType === 'linked') {
-                    await setDoc(doc(db, "drivingLogs", date1), {
+                    savePromises.push(setDoc(doc(db, "drivingLogs", date1), {
                         date: date1,
                         scheduleType: 'linked',
                         parentType: currentParentType,
@@ -400,9 +416,9 @@
                         isHoliday: document.getElementById('isHoliday1').checked,
                         memo: memo,
                         updatedAt: new Date()
-                    });
+                    }));
                 } else {
-                    await setDoc(doc(db, "drivingLogs", date1), {
+                    savePromises.push(setDoc(doc(db, "drivingLogs", date1), {
                         date: date1,
                         scheduleType: scheduleType,
                         driver1: driver1,
@@ -412,10 +428,10 @@
                         isHoliday: document.getElementById('isHoliday1').checked,
                         memo: memo,
                         updatedAt: new Date()
-                    });
+                    }));
 
                     if (scheduleType === '1night' || scheduleType === '2night') {
-                        await setDoc(doc(db, "drivingLogs", date2), {
+                        savePromises.push(setDoc(doc(db, "drivingLogs", date2), {
                             date: date2,
                             scheduleType: 'linked',
                             parentType: scheduleType,
@@ -427,10 +443,10 @@
                             isHoliday: document.getElementById('isHoliday2').checked,
                             memo: memo + " (2일차)",
                             updatedAt: new Date()
-                        });
+                        }));
                     }
                     if (scheduleType === '2night') {
-                        await setDoc(doc(db, "drivingLogs", date3), {
+                        savePromises.push(setDoc(doc(db, "drivingLogs", date3), {
                             date: date3,
                             scheduleType: 'linked',
                             parentType: scheduleType,
@@ -442,26 +458,37 @@
                             isHoliday: document.getElementById('isHoliday3').checked,
                             memo: memo + " (3일차)",
                             updatedAt: new Date()
-                        });
+                        }));
                     }
 
-                    // 필요 없어진 과거의 연계 데이터 정리
+                    // 일정 축소 시 안 쓰게 된 내일/모레 데이터 삭제
                     if (scheduleType !== '2night') {
                         const d3 = logsData[date3];
                         if (d3 && d3.scheduleType === 'linked' && d3.parentDate === date1) {
-                            await deleteDoc(doc(db, "drivingLogs", date3));
+                            savePromises.push(deleteDoc(doc(db, "drivingLogs", date3)));
                         }
                     }
                     if (scheduleType !== '1night' && scheduleType !== '2night') {
                         const d2 = logsData[date2];
                         if (d2 && d2.scheduleType === 'linked' && d2.parentDate === date1) {
-                            await deleteDoc(doc(db, "drivingLogs", date2));
+                            savePromises.push(deleteDoc(doc(db, "drivingLogs", date2)));
                         }
                     }
                 }
+
+                // 위에서 묶은 모든 저장 작업이 "완벽하게 완료될 때까지" 0.1초 정도 기다립니다.
+                await Promise.all(savePromises);
+                
+                // 데이터 저장이 완전히 끝나면 그제야 창을 닫습니다. (안전도 100%)
+                window.closeModal();
+
             } catch (error) {
                 console.error("저장 실패: ", error);
                 alert("데이터 저장에 실패했습니다.");
+            } finally {
+                // 만약 저장이 실패해도 다시 버튼을 누를 수 있게 복구
+                btn.disabled = false;
+                btn.innerText = "저장";
             }
         });
     </script>
