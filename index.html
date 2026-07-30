@@ -6,6 +6,21 @@
     <title>차량 운행 및 출퇴근 달력 관리</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        /* 모바일 브라우저에서 시간 선택 기본 아이콘 숨김 처리 */
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            background: transparent;
+            bottom: 0;
+            color: transparent;
+            cursor: pointer;
+            height: auto;
+            left: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: auto;
+        }
+    </style>
 </head>
 <body class="bg-gray-50 min-h-screen p-4 md:p-8">
 
@@ -54,11 +69,11 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">출근 시간 (시:분)</label>
-                        <input type="time" id="startTime" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-center" required>
+                        <input type="time" id="startTime" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-center relative" required>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">퇴근 시간 (시:분)</label>
-                        <input type="time" id="endTime" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-center" required>
+                        <input type="time" id="endTime" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-center relative" required>
                     </div>
                 </div>
 
@@ -98,6 +113,7 @@
         let selectedDateStr = "";
         let logsData = {}; 
 
+        // 실시간으로 데이터 가져와서 달력에 그리기
         onSnapshot(collection(db, "drivingLogs"), (snapshot) => {
             logsData = {};
             snapshot.forEach((doc) => {
@@ -223,11 +239,12 @@
             document.getElementById('logModal').classList.remove('hidden');
         }
 
+        // 모달창을 닫는 함수
         window.closeModal = function() {
             document.getElementById('logModal').classList.add('hidden');
         }
 
-        // ⭐ 핵심 수정 사항: 시간 입력 완료 시 포커스를 해제하여 브라우저 자체 '시간 달력/스피너 창'만 닫히게 함
+        // ⭐ 1. 시간 입력 완료 시 스피너/키보드 창 강제 닫힘 처리
         document.getElementById('startTime').addEventListener('change', function() {
             this.blur(); 
         });
@@ -235,21 +252,26 @@
             this.blur();
         });
 
-        // 팝업 외부 배경 클릭 시 팝업 닫기
+        // 팝업 외부 배경 클릭 시 팝업 닫힘
         document.getElementById('logModal').addEventListener('click', function() {
-            closeModal();
+            window.closeModal();
         });
 
-        // ⭐ 저장 버튼 클릭 시에만 파이어베이스 저장 및 전체 팝업창 닫힘
+        // ⭐ 2. 폼 제출 (저장 버튼 클릭) 시 동작 수정
         document.getElementById('logForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
             const driver1 = document.getElementById('driver1').value;
             const driver2 = document.getElementById('driver2').value;
             const startTime = document.getElementById('startTime').value;
             const endTime = document.getElementById('endTime').value;
             const memo = document.getElementById('memo').value;
 
+            // 핵심 변경: 데이터를 서버에 보내기 전에 먼저 팝업창부터 숨겨서 반응성을 높입니다!
+            window.closeModal();
+
             try {
+                // 뒤에서 파이어베이스 저장 실행
                 await setDoc(doc(db, "drivingLogs", selectedDateStr), {
                     date: selectedDateStr,
                     driver1,
@@ -259,10 +281,9 @@
                     memo,
                     updatedAt: new Date()
                 });
-                closeModal(); // 저장 완료 후 모달창(전체 팝업) 닫기
             } catch (error) {
                 console.error("저장 실패: ", error);
-                alert("저장 중 오류가 발생했습니다.");
+                alert("데이터 저장에 실패했습니다. 파이어베이스 설정을 확인하세요.");
             }
         });
     </script>
