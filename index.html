@@ -5,88 +5,137 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>차량 운행 및 출퇴근 달력 관리</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        /* 커스텀 스크롤바 디자인 */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
 </head>
-<body class="bg-gray-50 min-h-screen p-2 md:p-8 flex flex-col items-center">
+<body class="bg-slate-50 min-h-screen p-2 md:p-6 flex flex-col items-center font-sans text-slate-800">
 
-    <div class="max-w-5xl w-full mx-auto bg-white rounded-xl shadow-md overflow-hidden p-4 md:p-6">
+    <div class="max-w-6xl w-full mx-auto bg-white rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden p-4 md:p-8 border border-slate-100">
         <!-- 상단 달력 컨트롤러 -->
-        <header class="flex flex-col md:flex-row justify-between items-center mb-6 pb-4 border-b border-gray-200 gap-4">
-            <h1 id="calendarMonthTitle" class="text-2xl font-bold text-gray-800">2026년 8월 운행 달력</h1>
+        <header class="flex flex-col md:flex-row justify-between items-center mb-6 pb-4 border-b border-slate-100 gap-4">
+            <h1 id="calendarMonthTitle" class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">2026년 8월 운행 달력</h1>
             
-            <!-- ⭐ 정산 버튼 및 달력 이동 버튼 -->
-            <div class="flex items-center gap-2">
-                <button onclick="openSummaryModal()" class="px-4 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-bold shadow-sm transition">💰 정산보기</button>
-                <div class="h-5 border-l border-gray-300 mx-1"></div>
-                <button onclick="changeMonth(-1)" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium transition">◀ 이전 달</button>
-                <button onclick="changeMonth(1)" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium transition">다음 달 ▶</button>
+            <div class="flex items-center gap-3">
+                <!-- ⭐ 세련된 디자인의 정산 버튼 -->
+                <button onclick="openSummaryModal()" class="px-5 py-2 bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white rounded-full text-sm font-bold shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                    정산보기
+                </button>
+                <div class="h-6 border-l border-slate-200 mx-1"></div>
+                <div class="flex bg-slate-100 rounded-full p-1 shadow-inner">
+                    <button onclick="changeMonth(-1)" class="px-4 py-1.5 hover:bg-white rounded-full text-sm font-semibold text-slate-600 hover:text-indigo-600 hover:shadow-sm transition-all">◀ 이전</button>
+                    <button onclick="changeMonth(1)" class="px-4 py-1.5 hover:bg-white rounded-full text-sm font-semibold text-slate-600 hover:text-indigo-600 hover:shadow-sm transition-all">다음 ▶</button>
+                </div>
             </div>
         </header>
 
         <!-- 달력 요일 헤더 -->
-        <div class="grid grid-cols-7 gap-1 text-center font-semibold mb-2 text-sm md:text-base">
-            <div class="text-red-500">일</div>
-            <div class="text-gray-600">월</div>
-            <div class="text-gray-600">화</div>
-            <div class="text-gray-600">수</div>
-            <div class="text-gray-600">목</div>
-            <div class="text-gray-600">금</div>
+        <div class="grid grid-cols-7 gap-1 text-center font-bold mb-3 text-sm md:text-base">
+            <div class="text-rose-500">일</div>
+            <div class="text-slate-500">월</div>
+            <div class="text-slate-500">화</div>
+            <div class="text-slate-500">수</div>
+            <div class="text-slate-500">목</div>
+            <div class="text-slate-500">금</div>
             <div class="text-blue-500">토</div>
         </div>
         
         <!-- 달력 그리드 -->
-        <div id="calendarGrid" class="grid grid-cols-7 gap-1 md:gap-2 auto-rows-fr">
+        <div id="calendarGrid" class="grid grid-cols-7 gap-1.5 md:gap-2.5 auto-rows-fr">
             <!-- 달력 날짜 동적 생성 -->
         </div>
     </div>
 
-    <!-- ⭐ 1. 월간 정산 내역 팝업 모달창 -->
-    <div id="summaryModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50 overflow-y-auto">
-        <div class="bg-white rounded-xl max-w-3xl w-full p-5 shadow-xl relative my-auto" onclick="event.stopPropagation()">
-            <h2 id="summaryModalTitle" class="text-xl font-bold text-gray-800 mb-4 border-b pb-3">📊 8월 정산 내역</h2>
+    <!-- ⭐ 1. 정산 내역 팝업 모달창 (월별 총합계 탭 추가 및 디자인 개선) -->
+    <div id="summaryModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50 overflow-y-auto">
+        <div class="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl relative my-auto border border-slate-100" onclick="event.stopPropagation()">
             
-            <div class="overflow-x-auto max-h-80 md:max-h-96 overflow-y-auto mb-4 border border-gray-200 rounded-lg">
-                <table class="w-full text-left border-collapse min-w-[500px]">
-                    <thead class="bg-gray-100 sticky top-0 z-10 shadow-sm">
-                        <tr class="text-sm text-gray-700">
-                            <th class="p-3 border-b whitespace-nowrap">날짜</th>
-                            <th class="p-3 border-b whitespace-nowrap">운전원</th>
-                            <th class="p-3 border-b text-center whitespace-nowrap">시간</th>
-                            <th class="p-3 border-b text-center whitespace-nowrap">보상시간</th>
-                            <th class="p-3 border-b text-right whitespace-nowrap">정산금액</th>
-                        </tr>
-                    </thead>
-                    <tbody id="summaryTableBody" class="text-sm">
-                        <!-- JS로 정산 내역 리스트 삽입 -->
-                    </tbody>
-                </table>
+            <div class="flex justify-between items-center mb-5">
+                <h2 id="summaryModalTitle" class="text-2xl font-extrabold text-slate-800 tracking-tight">📊 정산 내역</h2>
+                <button onclick="closeSummaryModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <!-- 탭 메뉴 -->
+            <div class="flex gap-2 mb-4 bg-slate-100 p-1 rounded-xl">
+                <button id="tabDetailBtn" onclick="switchSummaryTab('detail')" class="flex-1 py-2 text-sm font-bold rounded-lg bg-white shadow-sm text-indigo-600 transition-all">이번 달 상세 내역</button>
+                <button id="tabMonthBtn" onclick="switchSummaryTab('month')" class="flex-1 py-2 text-sm font-bold rounded-lg text-slate-500 hover:text-slate-700 transition-all">월별 총합계</button>
             </div>
 
-            <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 flex flex-col md:flex-row justify-between items-center gap-3">
-                <div class="flex items-center gap-2">
-                    <span class="font-semibold text-gray-600 text-sm">보상 시간 합계:</span>
-                    <span id="summaryTotalHours" class="text-blue-700 font-bold text-xl">0.0 h</span>
+            <!-- 탭 1: 상세 내역 보기 -->
+            <div id="summaryDetailView" class="block">
+                <div class="overflow-x-auto max-h-[50vh] overflow-y-auto mb-4 border border-slate-200 rounded-xl">
+                    <table class="w-full text-left border-collapse min-w-[500px]">
+                        <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm">
+                            <tr class="text-sm text-slate-600 font-semibold">
+                                <th class="p-3 pl-4 border-b border-slate-200 whitespace-nowrap">날짜</th>
+                                <th class="p-3 border-b border-slate-200 whitespace-nowrap">운전원</th>
+                                <th class="p-3 border-b border-slate-200 text-center whitespace-nowrap">시간</th>
+                                <th class="p-3 border-b border-slate-200 text-center whitespace-nowrap">보상시간</th>
+                                <th class="p-3 pr-4 border-b border-slate-200 text-right whitespace-nowrap">정산금액</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summaryTableBody" class="text-sm">
+                            <!-- JS로 삽입 -->
+                        </tbody>
+                    </table>
                 </div>
-                <div class="flex items-center gap-2">
-                    <span class="font-semibold text-gray-600 text-sm">비용 정산 합계:</span>
-                    <span id="summaryTotalAllowance" class="text-green-700 font-bold text-xl">0 원</span>
+                
+                <!-- 상세 내역 하단 이번 달 요약 -->
+                <div class="bg-gradient-to-r from-slate-50 to-indigo-50/30 p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-3">
+                    <div class="flex flex-col items-center md:items-start">
+                        <span class="font-medium text-slate-500 text-xs mb-1">이번 달 보상 시간 합계</span>
+                        <span id="summaryTotalHours" class="text-indigo-600 font-extrabold text-xl">0.0 h</span>
+                    </div>
+                    <div class="h-8 border-l border-slate-300 hidden md:block"></div>
+                    <div class="flex flex-col items-center md:items-end">
+                        <span class="font-medium text-slate-500 text-xs mb-1">이번 달 비용 정산 합계</span>
+                        <span id="summaryTotalAllowance" class="text-emerald-600 font-extrabold text-xl">0 원</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="flex justify-end pt-4 mt-2">
-                <button type="button" onclick="closeSummaryModal()" class="px-5 py-2.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-bold text-sm shadow">닫기</button>
+            <!-- 탭 2: 월별 총합계 보기 -->
+            <div id="summaryMonthView" class="hidden">
+                <div class="overflow-x-auto max-h-[50vh] overflow-y-auto border border-slate-200 rounded-xl">
+                    <table class="w-full text-left border-collapse min-w-[400px]">
+                        <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm">
+                            <tr class="text-sm text-slate-600 font-semibold">
+                                <th class="p-4 border-b border-slate-200 whitespace-nowrap text-center">월(Month)</th>
+                                <th class="p-4 border-b border-slate-200 text-center whitespace-nowrap">총 보상 시간</th>
+                                <th class="p-4 border-b border-slate-200 text-center whitespace-nowrap">총 정산 금액</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summaryMonthTableBody" class="text-sm">
+                            <!-- JS로 삽입 -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
+
         </div>
     </div>
 
-    <!-- 2. 일정 입력 팝업 모달창 -->
-    <div id="logModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50 overflow-y-auto">
-        <div class="bg-white rounded-xl max-w-lg w-full p-5 shadow-xl relative my-auto" onclick="event.stopPropagation()">
-            <h2 id="modalDateTitle" class="text-xl font-bold text-gray-800 mb-3 border-b pb-2">📅 날짜 운행 정보</h2>
+    <!-- 2. 일정 입력 팝업 모달창 (디자인 개선) -->
+    <div id="logModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50 overflow-y-auto">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative my-auto border border-slate-100" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                <h2 id="modalDateTitle" class="text-xl font-extrabold text-slate-800">📅 날짜 운행 정보</h2>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
             
-            <form id="logForm" class="space-y-3">
+            <form id="logForm" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">운행 일정 (비용 정산)</label>
-                    <select id="scheduleType" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium">
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">운행 일정 (비용 정산)</label>
+                    <select id="scheduleType" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 font-medium transition-all">
                         <option value="none">일정 선택 안함</option>
                         <option value="seoul">서울당일 (정산 0원)</option>
                         <option value="day">당일 (일비 12,500원)</option>
@@ -98,65 +147,65 @@
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">운전원 1</label>
-                        <input type="text" id="driver1" placeholder="이름" class="w-full border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-blue-500 outline-none" required>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">운전원 1</label>
+                        <input type="text" id="driver1" placeholder="이름" class="w-full border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 transition-all" required>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">운전원 2 (선택)</label>
-                        <input type="text" id="driver2" placeholder="이름" class="w-full border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-blue-500 outline-none">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">운전원 2 (선택)</label>
+                        <input type="text" id="driver2" placeholder="이름" class="w-full border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 transition-all">
                     </div>
                 </div>
 
                 <!-- 1일차 -->
-                <div id="day1Box" class="bg-blue-50 border border-blue-100 p-3 rounded-lg">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="font-bold text-sm text-blue-800" id="day1Label">1일차 시간 (당일)</span>
-                        <label class="flex items-center gap-1 text-xs font-medium text-red-600 bg-white px-2 py-1 rounded border border-gray-200 cursor-pointer shadow-sm">
-                            <input type="checkbox" id="isHoliday1" class="accent-red-500 w-3 h-3"> 휴일적용
+                <div id="day1Box" class="bg-indigo-50/50 border border-indigo-100 p-4 rounded-xl">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="font-bold text-sm text-indigo-900" id="day1Label">1일차 시간 (당일)</span>
+                        <label class="flex items-center gap-1.5 text-xs font-bold text-rose-600 bg-white px-2.5 py-1.5 rounded-lg border border-rose-100 cursor-pointer shadow-sm hover:bg-rose-50 transition-colors">
+                            <input type="checkbox" id="isHoliday1" class="accent-rose-500 w-3.5 h-3.5"> 휴일적용
                         </label>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
-                        <input type="number" step="0.5" inputmode="decimal" id="startTime1" placeholder="출근 (예: 9)" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 outline-none text-center text-sm" required>
-                        <input type="number" step="0.5" inputmode="decimal" id="endTime1" placeholder="퇴근 (예: 1, 18.5)" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 outline-none text-center text-sm" required>
+                        <input type="number" step="0.5" inputmode="decimal" id="startTime1" placeholder="출근 (예: 9)" class="w-full border border-white rounded-lg px-3 py-2 outline-none text-center text-sm shadow-sm focus:ring-2 focus:ring-indigo-400" required>
+                        <input type="number" step="0.5" inputmode="decimal" id="endTime1" placeholder="퇴근 (예: 1, 18.5)" class="w-full border border-white rounded-lg px-3 py-2 outline-none text-center text-sm shadow-sm focus:ring-2 focus:ring-indigo-400" required>
                     </div>
                 </div>
 
                 <!-- 2일차 -->
-                <div id="day2Box" class="bg-indigo-50 border border-indigo-100 p-3 rounded-lg hidden">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="font-bold text-sm text-indigo-800" id="day2Label">2일차 시간</span>
-                        <label class="flex items-center gap-1 text-xs font-medium text-red-600 bg-white px-2 py-1 rounded border border-gray-200 cursor-pointer shadow-sm">
-                            <input type="checkbox" id="isHoliday2" class="accent-red-500 w-3 h-3"> 휴일적용
+                <div id="day2Box" class="bg-sky-50/50 border border-sky-100 p-4 rounded-xl hidden">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="font-bold text-sm text-sky-900" id="day2Label">2일차 시간</span>
+                        <label class="flex items-center gap-1.5 text-xs font-bold text-rose-600 bg-white px-2.5 py-1.5 rounded-lg border border-rose-100 cursor-pointer shadow-sm hover:bg-rose-50 transition-colors">
+                            <input type="checkbox" id="isHoliday2" class="accent-rose-500 w-3.5 h-3.5"> 휴일적용
                         </label>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
-                        <input type="number" step="0.5" inputmode="decimal" id="startTime2" placeholder="출근 (예: 9)" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 outline-none text-center text-sm">
-                        <input type="number" step="0.5" inputmode="decimal" id="endTime2" placeholder="퇴근 (예: 18.5)" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 outline-none text-center text-sm">
+                        <input type="number" step="0.5" inputmode="decimal" id="startTime2" placeholder="출근 (예: 9)" class="w-full border border-white rounded-lg px-3 py-2 outline-none text-center text-sm shadow-sm focus:ring-2 focus:ring-sky-400">
+                        <input type="number" step="0.5" inputmode="decimal" id="endTime2" placeholder="퇴근 (예: 18.5)" class="w-full border border-white rounded-lg px-3 py-2 outline-none text-center text-sm shadow-sm focus:ring-2 focus:ring-sky-400">
                     </div>
                 </div>
 
                 <!-- 3일차 -->
-                <div id="day3Box" class="bg-purple-50 border border-purple-100 p-3 rounded-lg hidden">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="font-bold text-sm text-purple-800" id="day3Label">3일차 시간</span>
-                        <label class="flex items-center gap-1 text-xs font-medium text-red-600 bg-white px-2 py-1 rounded border border-gray-200 cursor-pointer shadow-sm">
-                            <input type="checkbox" id="isHoliday3" class="accent-red-500 w-3 h-3"> 휴일적용
+                <div id="day3Box" class="bg-violet-50/50 border border-violet-100 p-4 rounded-xl hidden">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="font-bold text-sm text-violet-900" id="day3Label">3일차 시간</span>
+                        <label class="flex items-center gap-1.5 text-xs font-bold text-rose-600 bg-white px-2.5 py-1.5 rounded-lg border border-rose-100 cursor-pointer shadow-sm hover:bg-rose-50 transition-colors">
+                            <input type="checkbox" id="isHoliday3" class="accent-rose-500 w-3.5 h-3.5"> 휴일적용
                         </label>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
-                        <input type="number" step="0.5" inputmode="decimal" id="startTime3" placeholder="출근 (예: 9)" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 outline-none text-center text-sm">
-                        <input type="number" step="0.5" inputmode="decimal" id="endTime3" placeholder="퇴근 (예: 18.5)" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 outline-none text-center text-sm">
+                        <input type="number" step="0.5" inputmode="decimal" id="startTime3" placeholder="출근 (예: 9)" class="w-full border border-white rounded-lg px-3 py-2 outline-none text-center text-sm shadow-sm focus:ring-2 focus:ring-violet-400">
+                        <input type="number" step="0.5" inputmode="decimal" id="endTime3" placeholder="퇴근 (예: 18.5)" class="w-full border border-white rounded-lg px-3 py-2 outline-none text-center text-sm shadow-sm focus:ring-2 focus:ring-violet-400">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">비고 및 목적</label>
-                    <input type="text" id="memo" placeholder="예: 본사 ↔ 공장" class="w-full border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">비고 및 목적</label>
+                    <input type="text" id="memo" placeholder="예: 본사 ↔ 공장" class="w-full border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 transition-all text-sm">
                 </div>
 
-                <div class="flex justify-end gap-2 pt-2">
-                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium text-sm">취소</button>
-                    <button type="submit" id="saveBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm shadow">저장</button>
+                <div class="flex justify-end gap-2 pt-3 mt-1 border-t border-slate-100">
+                    <button type="button" onclick="closeModal()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-sm transition-colors">취소</button>
+                    <button type="submit" id="saveBtn" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition-all">저장</button>
                 </div>
             </form>
         </div>
@@ -198,11 +247,11 @@
         const holidaysMap = {
             "01-01": "신정", "03-01": "삼일절", "05-05": "어린이날", "06-06": "현충일",
             "08-15": "광복절", "10-03": "개천절", "10-09": "한글날", "12-25": "성탄절",
-            "2026-02-16": "설날연휴", "2026-02-17": "설날", "2026-02-18": "설날연휴",
-            "2026-03-02": "대체공휴일", "2026-05-24": "부처님오신날", "2026-05-25": "대체공휴일",
-            "2026-09-24": "추석연휴", "2026-09-25": "추석", "2026-09-26": "추석연휴",
-            "2027-02-06": "설날연휴", "2027-02-07": "설날", "2027-02-08": "설날연휴", "2027-02-09": "대체공휴일",
-            "2027-05-13": "부처님오신날", "2027-09-14": "추석연휴", "2027-09-15": "추석", "2027-09-16": "추석연휴"
+            "2026-02-16": "설날", "2026-02-17": "설날", "2026-02-18": "설날", "2026-03-02": "대체휴일", 
+            "2026-05-24": "부처님오신날", "2026-05-25": "대체휴일",
+            "2026-09-24": "추석", "2026-09-25": "추석", "2026-09-26": "추석",
+            "2027-02-06": "설날", "2027-02-07": "설날", "2027-02-08": "설날", "2027-02-09": "대체휴일",
+            "2027-05-13": "부처님오신날", "2027-09-14": "추석", "2027-09-15": "추석", "2027-09-16": "추석"
         };
 
         function getHolidayName(dateStr) {
@@ -218,9 +267,7 @@
             let endVal = parseFloat(endStr);
             if (isNaN(startVal) || isNaN(endVal)) return { totalPayTime: 0, label: "" };
 
-            if (endVal <= startVal) {
-                endVal += 24.0; // 새벽퇴근 반영
-            }
+            if (endVal <= startVal) endVal += 24.0;
 
             const overlapStart = Math.max(startVal, 9.0);
             const overlapEnd = Math.min(endVal, 18.0);
@@ -228,7 +275,6 @@
             
             let restTime = (rawNormalHours >= 4) ? 1.0 : 0;
             let normalHours = Math.max(0, rawNormalHours - restTime); 
-            
             let overtimeHours = Math.max(0, (endVal - startVal) - rawNormalHours);
 
             if (isHoliday) {
@@ -257,7 +303,7 @@
             const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
 
             for (let i = 0; i < firstDayIndex; i++) {
-                gridEl.innerHTML += `<div class="min-h-[6rem] bg-gray-50 rounded-lg opacity-40 border border-gray-100"></div>`;
+                gridEl.innerHTML += `<div class="min-h-[6rem] bg-slate-50/50 rounded-2xl opacity-40 border border-slate-100"></div>`;
             }
 
             for (let day = 1; day <= lastDay; day++) {
@@ -270,26 +316,27 @@
                 const isSaturday = (dayOfWeek === 6);
                 const holidayName = getHolidayName(dateKey);
 
-                let dateColorClass = "text-gray-800";
+                let dateColorClass = "text-slate-700";
                 let dateBadgeHTML = "";
                 
                 if (holidayName) {
-                    dateColorClass = "text-red-500";
-                    dateBadgeHTML = `<span class="text-[10px] text-red-500 ml-1 font-normal tracking-tighter">(${holidayName})</span>`;
+                    dateColorClass = "text-rose-500";
+                    dateBadgeHTML = `<span class="text-[10px] text-rose-500 ml-1 font-semibold tracking-tighter bg-rose-50 px-1 rounded">(${holidayName})</span>`;
                 } else if (isSunday) {
-                    dateColorClass = "text-red-500";
+                    dateColorClass = "text-rose-500";
                 } else if (isSaturday) {
                     dateColorClass = "text-blue-500";
                 }
 
                 const log = logsData[dateKey];
                 
-                let cellBgClass = 'bg-white border-gray-200 hover:border-blue-400';
+                // ⭐ 모던한 달력 묶음 배경색
+                let cellBgClass = 'bg-white border-slate-200 hover:border-indigo-400 hover:shadow-md';
                 if (log) {
                     if (log.scheduleType === '1night' || (log.scheduleType === 'linked' && log.parentType === '1night')) {
-                        cellBgClass = 'bg-indigo-100 border-indigo-300 hover:border-indigo-500';
+                        cellBgClass = 'bg-sky-50 border-sky-200 hover:border-sky-400 hover:shadow-md';
                     } else if (log.scheduleType === '2night' || (log.scheduleType === 'linked' && log.parentType === '2night')) {
-                        cellBgClass = 'bg-purple-100 border-purple-300 hover:border-purple-500';
+                        cellBgClass = 'bg-indigo-50 border-indigo-200 hover:border-indigo-400 hover:shadow-md';
                     }
                 }
 
@@ -301,55 +348,85 @@
                     
                     let allowanceHTML = '';
                     if (allowance > 0) {
-                        allowanceHTML = `<div class="text-[11px] font-bold text-green-800 bg-green-200 rounded px-1 mt-0.5 text-center shadow-sm whitespace-nowrap">💰 ${allowance.toLocaleString()}원</div>`;
+                        allowanceHTML = `<div class="text-[11px] font-bold text-emerald-700 bg-emerald-100/70 border border-emerald-200 rounded-md px-1.5 mt-1 text-center shadow-sm">💰 ${allowance.toLocaleString()}원</div>`;
                     } else if (log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) {
-                        allowanceHTML = `<div class="text-[11px] font-bold text-gray-600 bg-gray-200 rounded px-1 mt-0.5 text-center shadow-sm whitespace-nowrap">서울당일</div>`;
+                        allowanceHTML = `<div class="text-[11px] font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded-md px-1.5 mt-1 text-center shadow-sm">서울당일</div>`;
                     }
 
-                    const driver2HTML = log.driver2 ? `<div class="text-[11px] font-semibold text-indigo-900 bg-indigo-200 rounded px-1 mt-0.5 shadow-sm whitespace-nowrap">${log.driver2}</div>` : '';
-                    const payColor = log.isHoliday ? 'text-red-700 bg-red-100 border-red-200' : 'text-gray-800 bg-gray-100 border-gray-300';
+                    // 이름 뱃지 디자인 개선
+                    const driver2HTML = log.driver2 ? `<div class="text-[11px] font-bold text-indigo-700 bg-indigo-100/70 border border-indigo-200 rounded-md px-1.5 mt-0.5 shadow-sm truncate">${log.driver2}</div>` : '';
+                    const payColor = log.isHoliday ? 'text-rose-600 bg-rose-50 border-rose-100' : 'text-slate-600 bg-slate-50 border-slate-200';
 
                     contentHTML = `
-                        <div class="text-[11px] font-semibold text-blue-900 bg-blue-200 rounded px-1 shadow-sm whitespace-nowrap">${log.driver1}</div>
+                        <div class="text-[11px] font-bold text-blue-700 bg-blue-100/70 border border-blue-200 rounded-md px-1.5 shadow-sm truncate">${log.driver1}</div>
                         ${driver2HTML}
-                        <div class="text-[10px] text-gray-700 bg-white/60 border border-gray-200 rounded px-1 mt-1 text-center font-bold shadow-sm whitespace-nowrap tracking-tighter">⏰ ${log.startTime} ~ ${log.endTime}</div>
-                        <div class="text-[10px] font-bold border rounded px-1 mt-0.5 ${payColor} shadow-sm whitespace-nowrap text-center">${calc.label}: ${calc.totalPayTime}h</div>
+                        <div class="text-[10px] text-slate-600 bg-white/80 border border-slate-200 rounded-md px-1 mt-1.5 text-center font-bold shadow-sm tracking-tighter">⏰ ${log.startTime} ~ ${log.endTime}</div>
+                        <div class="text-[10px] font-bold border rounded-md px-1 mt-0.5 ${payColor} shadow-sm text-center">${calc.label}: ${calc.totalPayTime}h</div>
                         ${allowanceHTML}
                     `;
                 }
 
                 gridEl.innerHTML += `
-                    <div onclick="openModal('${dateKey}')" class="h-full min-h-[6rem] ${cellBgClass} border rounded-lg p-1 md:p-1.5 cursor-pointer transition shadow-sm flex flex-col">
-                        <div class="flex items-center ml-1">
-                            <span class="text-xs font-bold ${dateColorClass}">${day}</span>
+                    <div onclick="openModal('${dateKey}')" class="h-full min-h-[6.5rem] ${cellBgClass} border rounded-2xl p-1.5 md:p-2 cursor-pointer transition-all duration-200 flex flex-col">
+                        <div class="flex items-center ml-0.5">
+                            <span class="text-[13px] md:text-sm font-extrabold ${dateColorClass}">${day}</span>
                             ${dateBadgeHTML}
                         </div>
-                        <div class="flex flex-col gap-0.5 mt-1">${contentHTML}</div>
+                        <div class="flex flex-col gap-0.5 mt-1.5">${contentHTML}</div>
                     </div>
                 `;
             }
         }
 
-        // ⭐ 정산내역 모달 열기 기능
+        // ⭐ 정산내역 모달 및 탭 기능
         window.openSummaryModal = function() {
-            const tbody = document.getElementById('summaryTableBody');
-            const title = document.getElementById('summaryModalTitle');
-            tbody.innerHTML = "";
-            title.textContent = `📊 ${currentYear}년 ${currentMonth + 1}월 정산 내역`;
+            document.getElementById('summaryModal').classList.remove('hidden');
+            switchSummaryTab('detail'); // 열 때 기본으로 '상세내역' 탭 표시
+        }
 
+        window.closeSummaryModal = function() {
+            document.getElementById('summaryModal').classList.add('hidden');
+        }
+
+        window.switchSummaryTab = function(tab) {
+            const detailBtn = document.getElementById('tabDetailBtn');
+            const monthBtn = document.getElementById('tabMonthBtn');
+            const detailView = document.getElementById('summaryDetailView');
+            const monthView = document.getElementById('summaryMonthView');
+
+            if (tab === 'detail') {
+                // 탭 스타일 변경
+                detailBtn.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-white shadow-sm text-indigo-600 transition-all";
+                monthBtn.className = "flex-1 py-2 text-sm font-bold rounded-lg text-slate-500 hover:text-slate-700 transition-all";
+                
+                // 화면 전환
+                detailView.classList.remove('hidden');
+                monthView.classList.add('hidden');
+                
+                renderSummaryDetail();
+            } else {
+                monthBtn.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-white shadow-sm text-indigo-600 transition-all";
+                detailBtn.className = "flex-1 py-2 text-sm font-bold rounded-lg text-slate-500 hover:text-slate-700 transition-all";
+                
+                detailView.classList.add('hidden');
+                monthView.classList.remove('hidden');
+                
+                renderSummaryMonthly();
+            }
+        }
+
+        // 1. 이번 달 상세 내역 렌더링
+        function renderSummaryDetail() {
+            const tbody = document.getElementById('summaryTableBody');
+            tbody.innerHTML = "";
             let totalHours = 0;
             let totalAllowance = 0;
             
-            // 현재 보고있는 달의 데이터만 필터링 (ex: "2026-08")
             const targetPrefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
-            
-            // 날짜순으로 정렬
-            const sortedKeys = Object.keys(logsData)
-                .filter(key => key.startsWith(targetPrefix))
-                .sort();
+            const sortedKeys = Object.keys(logsData).filter(key => key.startsWith(targetPrefix)).sort();
 
             if (sortedKeys.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-5 text-center text-gray-500 font-medium">이번 달 운행 내역이 없습니다.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 font-medium bg-slate-50">이번 달 운행 내역이 없습니다.</td></tr>`;
             } else {
                 sortedKeys.forEach(key => {
                     const log = logsData[key];
@@ -367,33 +444,69 @@
                     if(allowance > 0) allowanceStr = `💰 ${allowance.toLocaleString()}원`;
                     else if(log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) allowanceStr = '서울당일';
 
-                    const payColor = log.isHoliday ? 'text-red-500' : 'text-blue-600';
+                    const payColor = log.isHoliday ? 'text-rose-500' : 'text-blue-600';
 
                     tbody.innerHTML += `
-                        <tr class="border-b hover:bg-gray-50 transition">
-                            <td class="p-3 font-medium text-gray-700">${key.split('-')[2]}일 (${dayStr})</td>
-                            <td class="p-3 text-gray-800">${drivers}</td>
-                            <td class="p-3 text-center text-xs text-gray-500 bg-gray-50">⏰ ${log.startTime}~${log.endTime}</td>
+                        <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                            <td class="p-3 pl-4 font-bold text-slate-700">${key.split('-')[2]}일 <span class="text-xs font-normal text-slate-400">(${dayStr})</span></td>
+                            <td class="p-3 text-slate-700 font-medium">${drivers}</td>
+                            <td class="p-3 text-center text-xs text-slate-500 font-semibold tracking-tighter bg-slate-50/50">⏰ ${log.startTime}~${log.endTime}</td>
                             <td class="p-3 text-center font-bold ${payColor}">${calc.totalPayTime}h</td>
-                            <td class="p-3 text-right font-bold text-green-700">${allowanceStr}</td>
+                            <td class="p-3 pr-4 text-right font-bold text-emerald-600">${allowanceStr}</td>
                         </tr>
                     `;
                 });
             }
 
-            // 총합 업데이트
             document.getElementById('summaryTotalHours').textContent = totalHours.toFixed(1) + " h";
             document.getElementById('summaryTotalAllowance').textContent = totalAllowance.toLocaleString() + " 원";
-
-            document.getElementById('summaryModal').classList.remove('hidden');
         }
 
-        // 정산내역 모달 닫기
-        window.closeSummaryModal = function() {
-            document.getElementById('summaryModal').classList.add('hidden');
-        }
-        document.getElementById('summaryModal').addEventListener('click', function() { window.closeSummaryModal(); });
+        // 2. 월별 총합계 렌더링
+        function renderSummaryMonthly() {
+            const tbody = document.getElementById('summaryMonthTableBody');
+            tbody.innerHTML = "";
+            
+            const monthlyStats = {};
+            
+            // 모든 데이터를 순회하며 월별로 그룹화
+            Object.keys(logsData).forEach(key => {
+                const monthKey = key.substring(0, 7); // 예: "2026-08"
+                if(!monthlyStats[monthKey]) {
+                    monthlyStats[monthKey] = { hours: 0, allowance: 0 };
+                }
+                
+                const log = logsData[key];
+                const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday);
+                const allowance = calculateAllowance(log);
+                
+                monthlyStats[monthKey].hours += parseFloat(calc.totalPayTime || 0);
+                monthlyStats[monthKey].allowance += allowance;
+            });
 
+            // 내림차순 정렬 (최신 월이 위로)
+            const sortedMonths = Object.keys(monthlyStats).sort((a,b) => b.localeCompare(a));
+
+            if (sortedMonths.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-slate-400 font-medium bg-slate-50">저장된 운행 내역이 없습니다.</td></tr>`;
+            } else {
+                sortedMonths.forEach(monthKey => {
+                    const stats = monthlyStats[monthKey];
+                    const [yyyy, mm] = monthKey.split('-');
+                    
+                    tbody.innerHTML += `
+                        <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                            <td class="p-4 text-center font-extrabold text-slate-700 text-lg">${yyyy}년 ${parseInt(mm)}월</td>
+                            <td class="p-4 text-center font-bold text-indigo-600 text-lg">${stats.hours.toFixed(1)} h</td>
+                            <td class="p-4 text-center font-bold text-emerald-600 text-lg">${stats.allowance.toLocaleString()} 원</td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+
+        // 입력 모달창 스크립트 부분
         document.getElementById('scheduleType').addEventListener('change', function(e) {
             const val = e.target.value;
             const day2 = document.getElementById('day2Box');
@@ -483,23 +596,18 @@
                     }
                 }
             }
-
             document.getElementById('logModal').classList.remove('hidden');
         }
 
         window.closeModal = function() {
             document.getElementById('logModal').classList.add('hidden');
             document.getElementById('logForm').reset();
-            ['1', '2', '3'].forEach(num => {
-                document.getElementById(`isHoliday${num}`).checked = false; 
-            });
+            ['1', '2', '3'].forEach(num => { document.getElementById(`isHoliday${num}`).checked = false; });
         }
 
         const timeInputs = document.querySelectorAll('input[type="number"]');
         timeInputs.forEach(input => {
-            input.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
-            });
+            input.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); this.blur(); } });
             input.addEventListener('change', function() { this.blur(); });
         });
 
@@ -524,54 +632,33 @@
 
             if (scheduleType === 'linked') {
                 logsData[date1] = {
-                    date: date1,
-                    scheduleType: 'linked',
-                    parentType: currentParentType,
-                    driver1: driver1,
-                    driver2: driver2,
-                    startTime: document.getElementById('startTime1').value,
+                    date: date1, scheduleType: 'linked', parentType: currentParentType,
+                    driver1, driver2, startTime: document.getElementById('startTime1').value,
                     endTime: document.getElementById('endTime1').value,
-                    isHoliday: document.getElementById('isHoliday1').checked,
-                    memo: memo
+                    isHoliday: document.getElementById('isHoliday1').checked, memo
                 };
             } else {
                 logsData[date1] = {
-                    date: date1,
-                    scheduleType: scheduleType,
-                    driver1: driver1,
-                    driver2: driver2,
+                    date: date1, scheduleType: scheduleType, driver1, driver2,
                     startTime: document.getElementById('startTime1').value,
                     endTime: document.getElementById('endTime1').value,
-                    isHoliday: document.getElementById('isHoliday1').checked,
-                    memo: memo
+                    isHoliday: document.getElementById('isHoliday1').checked, memo
                 };
 
                 if (scheduleType === '1night' || scheduleType === '2night') {
                     logsData[date2] = {
-                        date: date2,
-                        scheduleType: 'linked',
-                        parentType: scheduleType,
-                        parentDate: date1, 
-                        driver1: driver1,
-                        driver2: driver2,
-                        startTime: document.getElementById('startTime2').value,
+                        date: date2, scheduleType: 'linked', parentType: scheduleType, parentDate: date1, 
+                        driver1, driver2, startTime: document.getElementById('startTime2').value,
                         endTime: document.getElementById('endTime2').value,
-                        isHoliday: document.getElementById('isHoliday2').checked,
-                        memo: memo + " (2일차)"
+                        isHoliday: document.getElementById('isHoliday2').checked, memo: memo + " (2일차)"
                     };
                 }
                 if (scheduleType === '2night') {
                     logsData[date3] = {
-                        date: date3,
-                        scheduleType: 'linked',
-                        parentType: scheduleType,
-                        parentDate: date1,
-                        driver1: driver1,
-                        driver2: driver2,
-                        startTime: document.getElementById('startTime3').value,
+                        date: date3, scheduleType: 'linked', parentType: scheduleType, parentDate: date1,
+                        driver1, driver2, startTime: document.getElementById('startTime3').value,
                         endTime: document.getElementById('endTime3').value,
-                        isHoliday: document.getElementById('isHoliday3').checked,
-                        memo: memo + " (3일차)"
+                        isHoliday: document.getElementById('isHoliday3').checked, memo: memo + " (3일차)"
                     };
                 }
 
@@ -582,7 +669,6 @@
                     if (logsData[date2] && logsData[date2].parentDate === date1) { delete logsData[date2]; }
                 }
             }
-
             saveToLocal();
             window.closeModal();
         });
