@@ -12,7 +12,11 @@
         <!-- 상단 달력 컨트롤러 -->
         <header class="flex flex-col md:flex-row justify-between items-center mb-6 pb-4 border-b border-gray-200 gap-4">
             <h1 id="calendarMonthTitle" class="text-2xl font-bold text-gray-800">2026년 8월 운행 달력</h1>
+            
+            <!-- ⭐ 정산 버튼 및 달력 이동 버튼 -->
             <div class="flex items-center gap-2">
+                <button onclick="openSummaryModal()" class="px-4 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-bold shadow-sm transition">💰 정산보기</button>
+                <div class="h-5 border-l border-gray-300 mx-1"></div>
                 <button onclick="changeMonth(-1)" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium transition">◀ 이전 달</button>
                 <button onclick="changeMonth(1)" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium transition">다음 달 ▶</button>
             </div>
@@ -33,26 +37,48 @@
         <div id="calendarGrid" class="grid grid-cols-7 gap-1 md:gap-2 auto-rows-fr">
             <!-- 달력 날짜 동적 생성 -->
         </div>
+    </div>
 
-        <!-- 월간 정산 요약 박스 -->
-        <div class="mt-6 bg-gray-100 p-4 md:p-5 rounded-xl shadow-inner border border-gray-200">
-            <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
-                📊 <span id="summaryMonthText">8월</span> 정산 합계
-            </h3>
-            <div class="grid grid-cols-2 gap-4">
-                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col items-center justify-center">
-                    <span class="text-sm text-gray-500 font-medium">보상 시간 합계 (이번 달)</span>
-                    <span class="text-2xl font-bold text-blue-600 mt-1" id="totalHoursEl">0.0 h</span>
+    <!-- ⭐ 1. 월간 정산 내역 팝업 모달창 -->
+    <div id="summaryModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50 overflow-y-auto">
+        <div class="bg-white rounded-xl max-w-3xl w-full p-5 shadow-xl relative my-auto" onclick="event.stopPropagation()">
+            <h2 id="summaryModalTitle" class="text-xl font-bold text-gray-800 mb-4 border-b pb-3">📊 8월 정산 내역</h2>
+            
+            <div class="overflow-x-auto max-h-80 md:max-h-96 overflow-y-auto mb-4 border border-gray-200 rounded-lg">
+                <table class="w-full text-left border-collapse min-w-[500px]">
+                    <thead class="bg-gray-100 sticky top-0 z-10 shadow-sm">
+                        <tr class="text-sm text-gray-700">
+                            <th class="p-3 border-b whitespace-nowrap">날짜</th>
+                            <th class="p-3 border-b whitespace-nowrap">운전원</th>
+                            <th class="p-3 border-b text-center whitespace-nowrap">시간</th>
+                            <th class="p-3 border-b text-center whitespace-nowrap">보상시간</th>
+                            <th class="p-3 border-b text-right whitespace-nowrap">정산금액</th>
+                        </tr>
+                    </thead>
+                    <tbody id="summaryTableBody" class="text-sm">
+                        <!-- JS로 정산 내역 리스트 삽입 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 flex flex-col md:flex-row justify-between items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="font-semibold text-gray-600 text-sm">보상 시간 합계:</span>
+                    <span id="summaryTotalHours" class="text-blue-700 font-bold text-xl">0.0 h</span>
                 </div>
-                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col items-center justify-center">
-                    <span class="text-sm text-gray-500 font-medium">비용 정산 합계 (이번 달)</span>
-                    <span class="text-2xl font-bold text-green-600 mt-1" id="totalAllowanceEl">0 원</span>
+                <div class="flex items-center gap-2">
+                    <span class="font-semibold text-gray-600 text-sm">비용 정산 합계:</span>
+                    <span id="summaryTotalAllowance" class="text-green-700 font-bold text-xl">0 원</span>
                 </div>
+            </div>
+
+            <div class="flex justify-end pt-4 mt-2">
+                <button type="button" onclick="closeSummaryModal()" class="px-5 py-2.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-bold text-sm shadow">닫기</button>
             </div>
         </div>
     </div>
 
-    <!-- 팝업 모달창 -->
+    <!-- 2. 일정 입력 팝업 모달창 -->
     <div id="logModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50 overflow-y-auto">
         <div class="bg-white rounded-xl max-w-lg w-full p-5 shadow-xl relative my-auto" onclick="event.stopPropagation()">
             <h2 id="modalDateTitle" class="text-xl font-bold text-gray-800 mb-3 border-b pb-2">📅 날짜 운행 정보</h2>
@@ -169,28 +195,16 @@
             return `${outY}-${outM}-${outD}`;
         }
 
-        // ⭐ 국가 공휴일 목록 (매년 고정 + 2026, 2027년 특수 공휴일 추가)
         const holidaysMap = {
-            "01-01": "신정",
-            "03-01": "삼일절",
-            "05-05": "어린이날",
-            "06-06": "현충일",
-            "08-15": "광복절",
-            "10-03": "개천절",
-            "10-09": "한글날",
-            "12-25": "성탄절",
-            // 2026년
+            "01-01": "신정", "03-01": "삼일절", "05-05": "어린이날", "06-06": "현충일",
+            "08-15": "광복절", "10-03": "개천절", "10-09": "한글날", "12-25": "성탄절",
             "2026-02-16": "설날연휴", "2026-02-17": "설날", "2026-02-18": "설날연휴",
-            "2026-03-02": "대체공휴일", // 3.1절 일요일
-            "2026-05-24": "부처님오신날", "2026-05-25": "대체공휴일", // 부처님 일요일
+            "2026-03-02": "대체공휴일", "2026-05-24": "부처님오신날", "2026-05-25": "대체공휴일",
             "2026-09-24": "추석연휴", "2026-09-25": "추석", "2026-09-26": "추석연휴",
-            // 2027년
             "2027-02-06": "설날연휴", "2027-02-07": "설날", "2027-02-08": "설날연휴", "2027-02-09": "대체공휴일",
-            "2027-05-13": "부처님오신날",
-            "2027-09-14": "추석연휴", "2027-09-15": "추석", "2027-09-16": "추석연휴"
+            "2027-05-13": "부처님오신날", "2027-09-14": "추석연휴", "2027-09-15": "추석", "2027-09-16": "추석연휴"
         };
 
-        // 날짜(YYYY-MM-DD)가 공휴일인지 확인하고 이름을 반환하는 함수
         function getHolidayName(dateStr) {
             if (holidaysMap[dateStr]) return holidaysMap[dateStr];
             const mmdd = dateStr.substring(5);
@@ -198,16 +212,14 @@
             return null;
         }
 
-        // ⭐ 새벽(다음날) 퇴근 및 휴일 보상 계산 공식
         function calculateOvertime(startStr, endStr, isHoliday) {
             if (!startStr || !endStr) return { totalPayTime: 0, label: "" };
             let startVal = parseFloat(startStr);
             let endVal = parseFloat(endStr);
             if (isNaN(startVal) || isNaN(endVal)) return { totalPayTime: 0, label: "" };
 
-            // 퇴근시간이 출근시간보다 작거나 같으면 다음날(새벽)로 자동 인식 (예: 9 ~ 1 -> 9 ~ 25)
             if (endVal <= startVal) {
-                endVal += 24.0;
+                endVal += 24.0; // 새벽퇴근 반영
             }
 
             const overlapStart = Math.max(startVal, 9.0);
@@ -238,14 +250,8 @@
         function renderCalendar() {
             const titleEl = document.getElementById('calendarMonthTitle');
             const gridEl = document.getElementById('calendarGrid');
-            const summaryText = document.getElementById('summaryMonthText');
-            
             titleEl.textContent = `${currentYear}년 ${currentMonth + 1}월 운행 달력`;
-            summaryText.textContent = `${currentMonth + 1}월`;
             gridEl.innerHTML = "";
-
-            let monthlyTotalHours = 0;
-            let monthlyTotalAllowance = 0;
 
             const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
             const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -259,7 +265,6 @@
                 const dayStr = String(day).padStart(2, '0');
                 const dateKey = `${currentYear}-${monthStr}-${dayStr}`;
 
-                // ⭐ 요일(토/일) 및 공휴일에 따른 색상 및 문구 적용
                 const dayOfWeek = new Date(currentYear, currentMonth, day).getDay();
                 const isSunday = (dayOfWeek === 0);
                 const isSaturday = (dayOfWeek === 6);
@@ -288,15 +293,11 @@
                     }
                 }
 
-                // 입력대기 문구 삭제 -> 빈 값 처리
                 let contentHTML = ``;
 
                 if (log) {
                     const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday);
                     const allowance = calculateAllowance(log);
-                    
-                    monthlyTotalHours += parseFloat(calc.totalPayTime || 0);
-                    monthlyTotalAllowance += allowance;
                     
                     let allowanceHTML = '';
                     if (allowance > 0) {
@@ -327,10 +328,71 @@
                     </div>
                 `;
             }
-
-            document.getElementById('totalHoursEl').innerText = monthlyTotalHours.toFixed(1) + " h";
-            document.getElementById('totalAllowanceEl').innerText = monthlyTotalAllowance.toLocaleString() + " 원";
         }
+
+        // ⭐ 정산내역 모달 열기 기능
+        window.openSummaryModal = function() {
+            const tbody = document.getElementById('summaryTableBody');
+            const title = document.getElementById('summaryModalTitle');
+            tbody.innerHTML = "";
+            title.textContent = `📊 ${currentYear}년 ${currentMonth + 1}월 정산 내역`;
+
+            let totalHours = 0;
+            let totalAllowance = 0;
+            
+            // 현재 보고있는 달의 데이터만 필터링 (ex: "2026-08")
+            const targetPrefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+            
+            // 날짜순으로 정렬
+            const sortedKeys = Object.keys(logsData)
+                .filter(key => key.startsWith(targetPrefix))
+                .sort();
+
+            if (sortedKeys.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-5 text-center text-gray-500 font-medium">이번 달 운행 내역이 없습니다.</td></tr>`;
+            } else {
+                sortedKeys.forEach(key => {
+                    const log = logsData[key];
+                    const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday);
+                    const allowance = calculateAllowance(log);
+
+                    totalHours += parseFloat(calc.totalPayTime || 0);
+                    totalAllowance += allowance;
+
+                    const drivers = log.driver2 ? `${log.driver1}, ${log.driver2}` : log.driver1;
+                    const dateObj = new Date(key);
+                    const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
+                    
+                    let allowanceStr = "-";
+                    if(allowance > 0) allowanceStr = `💰 ${allowance.toLocaleString()}원`;
+                    else if(log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) allowanceStr = '서울당일';
+
+                    const payColor = log.isHoliday ? 'text-red-500' : 'text-blue-600';
+
+                    tbody.innerHTML += `
+                        <tr class="border-b hover:bg-gray-50 transition">
+                            <td class="p-3 font-medium text-gray-700">${key.split('-')[2]}일 (${dayStr})</td>
+                            <td class="p-3 text-gray-800">${drivers}</td>
+                            <td class="p-3 text-center text-xs text-gray-500 bg-gray-50">⏰ ${log.startTime}~${log.endTime}</td>
+                            <td class="p-3 text-center font-bold ${payColor}">${calc.totalPayTime}h</td>
+                            <td class="p-3 text-right font-bold text-green-700">${allowanceStr}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            // 총합 업데이트
+            document.getElementById('summaryTotalHours').textContent = totalHours.toFixed(1) + " h";
+            document.getElementById('summaryTotalAllowance').textContent = totalAllowance.toLocaleString() + " 원";
+
+            document.getElementById('summaryModal').classList.remove('hidden');
+        }
+
+        // 정산내역 모달 닫기
+        window.closeSummaryModal = function() {
+            document.getElementById('summaryModal').classList.add('hidden');
+        }
+        document.getElementById('summaryModal').addEventListener('click', function() { window.closeSummaryModal(); });
 
         document.getElementById('scheduleType').addEventListener('change', function(e) {
             const val = e.target.value;
@@ -374,13 +436,12 @@
             document.getElementById('day3Box').classList.add('hidden');
             document.getElementById('scheduleType').disabled = false;
 
-            // ⭐ 주말뿐만 아니라 '공휴일'이여도 자동으로 휴일 체크를 켜줌
             const checkIsHolidayByDefault = (dStr) => {
                 const parts = dStr.split('-');
                 const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
                 const dayOfWeek = d.getDay();
-                if (dayOfWeek === 0 || dayOfWeek === 6) return true; // 토/일
-                if (getHolidayName(dStr)) return true; // 국가 공휴일
+                if (dayOfWeek === 0 || dayOfWeek === 6) return true; 
+                if (getHolidayName(dStr)) return true; 
                 return false;
             };
 
