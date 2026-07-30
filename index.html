@@ -94,11 +94,10 @@
         const db = getFirestore(app);
 
         let currentYear = new Date().getFullYear();
-        let currentMonth = new Date().getMonth(); // 0~11
+        let currentMonth = new Date().getMonth(); 
         let selectedDateStr = "";
-        let logsData = {}; // Firestore 데이터 캐싱용
+        let logsData = {}; 
 
-        // 실시간으로 Firestore 데이터를 가져와 달력에 반영
         onSnapshot(collection(db, "drivingLogs"), (snapshot) => {
             logsData = {};
             snapshot.forEach((doc) => {
@@ -119,12 +118,11 @@
             renderCalendar();
         }
 
-        // 평일 기준 09:00 ~ 18:00 외 시간(연장근로) 보상시간(1.5배) 계산 함수
         function calculateOvertime(dateStr, startStr, endStr) {
             if (!startStr || !endStr) return { totalOvertimePayTime: 0 };
 
             const dateObj = new Date(dateStr);
-            const dayOfWeek = dateObj.getDay(); // 0: 일요일, 6: 토요일
+            const dayOfWeek = dateObj.getDay(); 
             const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
 
             const [sHour, sMin] = startStr.split(':').map(Number);
@@ -135,8 +133,8 @@
 
             if (endMinutes <= startMinutes) return { totalOvertimePayTime: 0 };
 
-            const standardStart = 9 * 60;  // 09:00
-            const standardEnd = 18 * 60; // 18:00
+            const standardStart = 9 * 60;  
+            const standardEnd = 18 * 60; 
 
             let normalMins = 0;
             let overtimeMins = 0;
@@ -172,12 +170,10 @@
             const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
             const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-            // 빈 칸 채우기
             for (let i = 0; i < firstDayIndex; i++) {
                 gridEl.innerHTML += `<div class="h-32 bg-gray-100 rounded-lg opacity-40"></div>`;
             }
 
-            // 날짜 생성
             for (let day = 1; day <= lastDay; day++) {
                 const monthStr = String(currentMonth + 1).padStart(2, '0');
                 const dayStr = String(day).padStart(2, '0');
@@ -231,37 +227,20 @@
             document.getElementById('logModal').classList.add('hidden');
         }
 
-        // 출근/퇴근 시간 선택을 완료(값이 모두 채워졌거나 변경)하는 순간 자동 저장 및 창 닫기 처리
-        async function autoSaveAndClose() {
-            const driver1 = document.getElementById('driver1').value;
-            const driver2 = document.getElementById('driver2').value;
-            const startTime = document.getElementById('startTime').value;
-            const endTime = document.getElementById('endTime').value;
-            const memo = document.getElementById('memo').value;
+        // ⭐ 핵심 수정 사항: 시간 입력 완료 시 포커스를 해제하여 브라우저 자체 '시간 달력/스피너 창'만 닫히게 함
+        document.getElementById('startTime').addEventListener('change', function() {
+            this.blur(); 
+        });
+        document.getElementById('endTime').addEventListener('change', function() {
+            this.blur();
+        });
 
-            // 모든 필수 항목이 채워져 있을 때만 자동 저장 및 닫기 수행
-            if (driver1 && driver2 && startTime && endTime) {
-                try {
-                    await setDoc(doc(db, "drivingLogs", selectedDateStr), {
-                        date: selectedDateStr,
-                        driver1,
-                        driver2,
-                        startTime,
-                        endTime,
-                        memo,
-                        updatedAt: new Date()
-                    });
-                    closeModal();
-                } catch (error) {
-                    console.error("저장 실패: ", error);
-                }
-            }
-        }
+        // 팝업 외부 배경 클릭 시 팝업 닫기
+        document.getElementById('logModal').addEventListener('click', function() {
+            closeModal();
+        });
 
-        document.getElementById('startTime').addEventListener('change', autoSaveAndClose);
-        document.getElementById('endTime').addEventListener('change', autoSaveAndClose);
-
-        // 폼 제출(저장 버튼 클릭) 시 파이어베이스 저장 후 팝업 닫기
+        // ⭐ 저장 버튼 클릭 시에만 파이어베이스 저장 및 전체 팝업창 닫힘
         document.getElementById('logForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const driver1 = document.getElementById('driver1').value;
@@ -280,7 +259,7 @@
                     memo,
                     updatedAt: new Date()
                 });
-                closeModal();
+                closeModal(); // 저장 완료 후 모달창(전체 팝업) 닫기
             } catch (error) {
                 console.error("저장 실패: ", error);
                 alert("저장 중 오류가 발생했습니다.");
