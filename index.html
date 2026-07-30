@@ -119,7 +119,8 @@
     <!-- Firebase 스크립트 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        // ⭐ 삭제 기능(deleteDoc)이 추가되었습니다.
+        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // 🔥 본인의 파이어베이스 설정값으로 교체
         const firebaseConfig = {
@@ -155,10 +156,10 @@
             renderCalendar();
         }
 
-        // ⭐ 확실한 로컬 날짜(한국시간) 더하기 헬퍼 함수 (버그 수정됨)
+        // ⭐ 확실한 로컬 날짜(한국시간) 더하기 헬퍼 함수
         function addDays(dateStr, days) {
             const parts = dateStr.split('-');
-            const d = new Date(parts[0], parts[1] - 1, parts[2]);
+            const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
             d.setDate(d.getDate() + days);
             
             const y = d.getFullYear();
@@ -167,7 +168,6 @@
             return `${y}-${m}-${day}`;
         }
 
-        // 평일(1.5배) / 휴일(2.0배) 보상시간 계산기
         function calculateOvertime(startStr, endStr, isHoliday) {
             if (!startStr || !endStr) return { totalPayTime: 0, label: "" };
             const startVal = parseFloat(startStr);
@@ -187,7 +187,7 @@
             }
         }
 
-        // ⭐ 비용 정산 로직 변경: 1박, 2박 시 "매일매일 37,500원씩" 출력되도록 설계
+        // 매일매일 37,500원씩 뿌려주기
         function calculateAllowance(log) {
             if (log.scheduleType === 'day') return 12500;
             if (log.scheduleType === '1night' || log.scheduleType === '2night') return 37500;
@@ -215,7 +215,6 @@
 
                 const log = logsData[dateKey];
                 
-                // 달력 묶음 바탕색 설정 (일정 종류에 따라 동일한 색으로 연결)
                 let cellBgClass = 'bg-white border-gray-200 hover:border-blue-400';
                 if (log) {
                     if (log.scheduleType === '1night' || (log.scheduleType === 'linked' && log.parentType === '1night')) {
@@ -231,7 +230,6 @@
                     const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday);
                     const allowance = calculateAllowance(log);
                     
-                    // 정산 합계를 매 칸마다(1일차, 2일차 모두) 표시하도록 변경!
                     let allowanceHTML = '';
                     if (allowance > 0) {
                         allowanceHTML = `<div class="text-[11px] font-bold text-green-800 bg-green-200 rounded px-1 mt-0.5 truncate text-center shadow-sm">💰 ${allowance.toLocaleString()}원</div>`;
@@ -239,13 +237,9 @@
                         allowanceHTML = `<div class="text-[11px] font-bold text-gray-600 bg-gray-200 rounded px-1 mt-0.5 truncate text-center shadow-sm">서울당일</div>`;
                     }
 
-                    // 운전원 2가 없을 경우 공간 낭비 방지
                     const driver2HTML = log.driver2 ? `<div class="text-[11px] font-semibold text-indigo-900 bg-indigo-200 rounded px-1 truncate mt-0.5 shadow-sm">${log.driver2}</div>` : '';
-
-                    // 휴일/평일 연장시간 텍스트 색상 분리
                     const payColor = log.isHoliday ? 'text-red-700 bg-red-100 border-red-200' : 'text-gray-800 bg-gray-100 border-gray-300';
 
-                    // 9 ~ 18 시간표시를 없애고 컴팩트하게 구성된 최종 디자인
                     contentHTML = `
                         <div class="text-[11px] font-semibold text-blue-900 bg-blue-200 rounded px-1 truncate shadow-sm">${log.driver1}</div>
                         ${driver2HTML}
@@ -263,7 +257,6 @@
             }
         }
 
-        // 일정 선택 시 하단 박스 토글
         document.getElementById('scheduleType').addEventListener('change', function(e) {
             const val = e.target.value;
             const day2 = document.getElementById('day2Box');
@@ -294,17 +287,27 @@
             selectedDateStr = dateStr;
             document.getElementById('modalDateTitle').textContent = `📅 ${dateStr} 운행 정보`;
             
+            // ⭐ 문제 해결 2: 모달을 열 때마다 모든 체크박스와 입력값을 강제로 초기화(디폴트)
             document.getElementById('logForm').reset();
+            document.getElementById('scheduleType').value = "none";
+            
+            ['1', '2', '3'].forEach(num => {
+                document.getElementById(`startTime${num}`).value = "";
+                document.getElementById(`endTime${num}`).value = "";
+                document.getElementById(`isHoliday${num}`).checked = false; // 확실히 체크 해제
+            });
+
             document.getElementById('day2Box').classList.add('hidden');
             document.getElementById('day3Box').classList.add('hidden');
             document.getElementById('scheduleType').disabled = false;
 
+            // 해당 날짜가 토, 일요일이면 편의를 위해 자동으로 휴일 체크해주기
             const checkIsWeekend = (dStr) => {
-                const day = new Date(dStr).getDay();
-                return (day === 0 || day === 6);
+                const parts = dStr.split('-');
+                const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                return (d.getDay() === 0 || d.getDay() === 6);
             };
 
-            // 기본 주말 자동체크
             document.getElementById('isHoliday1').checked = checkIsWeekend(dateStr);
             document.getElementById('isHoliday2').checked = checkIsWeekend(addDays(dateStr, 1));
             document.getElementById('isHoliday3').checked = checkIsWeekend(addDays(dateStr, 2));
@@ -319,12 +322,10 @@
                 document.getElementById('memo').value = data.memo || "";
                 document.getElementById('scheduleType').value = data.scheduleType || "none";
 
-                // 연계 일정 수정 시 타입 변경은 막음
                 if(data.scheduleType === 'linked') {
                     document.getElementById('scheduleType').disabled = true;
                 }
 
-                // 부모 일정일 경우 이어진 데이터(2일차, 3일차) 불러오기
                 if (data.scheduleType === '1night' || data.scheduleType === '2night') {
                     document.getElementById('scheduleType').dispatchEvent(new Event('change'));
                     
@@ -371,7 +372,6 @@
             const driver2 = document.getElementById('driver2').value;
             const memo = document.getElementById('memo').value;
 
-            // ⭐ 날짜 더하기 기능이 완벽하게 작동하여 오늘, 내일, 모레를 정확히 찾아냅니다.
             const date1 = selectedDateStr;
             const date2 = addDays(date1, 1);
             const date3 = addDays(date1, 2);
@@ -384,7 +384,6 @@
             window.closeModal();
 
             try {
-                // 연계 일정(2,3일차) 단일 칸만 눌러서 수정할 시
                 if (scheduleType === 'linked') {
                     await setDoc(doc(db, "drivingLogs", date1), {
                         date: date1,
@@ -412,12 +411,13 @@
                         updatedAt: new Date()
                     });
 
-                    // 1박/2박일 경우 다음 날짜(내일, 모레)에 데이터 쪼개서 넣기
+                    // 1박/2박일 경우 내일, 모레 데이터 저장
                     if (scheduleType === '1night' || scheduleType === '2night') {
                         await setDoc(doc(db, "drivingLogs", date2), {
                             date: date2,
                             scheduleType: 'linked',
                             parentType: scheduleType,
+                            parentDate: date1,  // 삭제를 위한 부모 추적용
                             driver1: driver1,
                             driver2: driver2,
                             startTime: document.getElementById('startTime2').value,
@@ -432,6 +432,7 @@
                             date: date3,
                             scheduleType: 'linked',
                             parentType: scheduleType,
+                            parentDate: date1,
                             driver1: driver1,
                             driver2: driver2,
                             startTime: document.getElementById('startTime3').value,
@@ -440,6 +441,20 @@
                             memo: memo + " (3일차)",
                             updatedAt: new Date()
                         });
+                    }
+
+                    // ⭐ 추가 기능: 2박에서 당일로 일정 축소 시 필요 없어진 내일/모레 데이터 자동 삭제
+                    if (scheduleType !== '2night') {
+                        const d3 = logsData[date3];
+                        if (d3 && d3.scheduleType === 'linked' && d3.parentDate === date1) {
+                            await deleteDoc(doc(db, "drivingLogs", date3));
+                        }
+                    }
+                    if (scheduleType !== '1night' && scheduleType !== '2night') {
+                        const d2 = logsData[date2];
+                        if (d2 && d2.scheduleType === 'linked' && d2.parentDate === date1) {
+                            await deleteDoc(doc(db, "drivingLogs", date2));
+                        }
                     }
                 }
             } catch (error) {
