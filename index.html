@@ -6,9 +6,9 @@
     <title>차량 운행 및 출퇴근 달력 관리</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
-<body class="bg-gray-50 min-h-screen p-4 md:p-8">
+<body class="bg-gray-50 min-h-screen p-2 md:p-8">
 
-    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6">
+    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-4 md:p-6">
         <!-- 상단 달력 컨트롤러 -->
         <header class="flex flex-col md:flex-row justify-between items-center mb-6 pb-4 border-b border-gray-200 gap-4">
             <h1 id="calendarMonthTitle" class="text-2xl font-bold text-gray-800">2026년 8월 운행 달력</h1>
@@ -19,7 +19,7 @@
         </header>
 
         <!-- 달력 그리드 -->
-        <div class="grid grid-cols-7 gap-1 text-center font-semibold text-gray-600 mb-2">
+        <div class="grid grid-cols-7 gap-1 text-center font-semibold text-gray-600 mb-2 text-sm md:text-base">
             <div class="text-red-500">일</div>
             <div>월</div>
             <div>화</div>
@@ -28,71 +28,103 @@
             <div>금</div>
             <div class="text-blue-500">토</div>
         </div>
-        <div id="calendarGrid" class="grid grid-cols-7 gap-2">
+        <div id="calendarGrid" class="grid grid-cols-7 gap-1 md:gap-2">
             <!-- 달력 날짜들이 동적으로 생성됩니다 -->
         </div>
     </div>
 
     <!-- 팝업 모달창 -->
-    <div id="logModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl relative" onclick="event.stopPropagation()">
-            <h2 id="modalDateTitle" class="text-xl font-bold text-gray-800 mb-4">날짜 운행 정보</h2>
+    <div id="logModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50 overflow-y-auto">
+        <div class="bg-white rounded-xl max-w-lg w-full p-5 shadow-xl relative my-auto" onclick="event.stopPropagation()">
+            <h2 id="modalDateTitle" class="text-xl font-bold text-gray-800 mb-3 border-b pb-2">📅 날짜 운행 정보</h2>
             
-            <form id="logForm" class="space-y-4">
-                
-                <!-- ⭐ 추가 포인트: 일정 선택 -->
+            <form id="logForm" class="space-y-3">
+                <!-- 일정 선택 -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">운행 일정 (비용 정산)</label>
-                    <select id="scheduleType" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                    <select id="scheduleType" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium">
                         <option value="none">일정 선택 안함</option>
-                        <option value="seoul">서울당일 (정산 없음)</option>
+                        <option value="seoul">서울당일 (정산 0원)</option>
                         <option value="day">당일 (일비 12,500원)</option>
                         <option value="1night">1박 (일비+식비 37,500원)</option>
                         <option value="2night">2박 (일비+식비 75,000원)</option>
+                        <option value="linked" hidden>연계 일정 (이전 날짜에서 이어짐)</option>
                     </select>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
+                <!-- 운전원 정보 -->
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">운전원 1</label>
-                        <input type="text" id="driver1" placeholder="이름 입력" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" required>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">운전원 1</label>
+                        <input type="text" id="driver1" placeholder="이름" class="w-full border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-blue-500 outline-none" required>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">운전원 2 (선택)</label>
-                        <input type="text" id="driver2" placeholder="없을 시 비워둠" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">운전원 2 (선택)</label>
+                        <input type="text" id="driver2" placeholder="이름" class="w-full border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">출근 시간 (예: 6, 6.5)</label>
-                        <input type="number" step="0.5" inputmode="decimal" id="startTime" placeholder="예: 6" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-center relative" required>
+                <!-- 1일차 입력 (기본) -->
+                <div id="day1Box" class="bg-blue-50 border border-blue-100 p-3 rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-bold text-sm text-blue-800" id="day1Label">1일차 시간 (당일)</span>
+                        <label class="flex items-center gap-1 text-xs font-medium text-red-600 bg-white px-2 py-1 rounded border border-gray-200 cursor-pointer shadow-sm">
+                            <input type="checkbox" id="isHoliday1" class="accent-red-500 w-3 h-3"> 휴일적용 (2.0배)
+                        </label>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">퇴근 시간 (예: 18, 18.5)</label>
-                        <input type="number" step="0.5" inputmode="decimal" id="endTime" placeholder="예: 18.5" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-center relative" required>
+                    <div class="grid grid-cols-2 gap-3">
+                        <input type="number" step="0.5" inputmode="decimal" id="startTime1" placeholder="출근 (예: 6)" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 outline-none text-center text-sm" required>
+                        <input type="number" step="0.5" inputmode="decimal" id="endTime1" placeholder="퇴근 (예: 18.5)" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 outline-none text-center text-sm" required>
+                    </div>
+                </div>
+
+                <!-- 2일차 입력 (1박 이상 시 등장) -->
+                <div id="day2Box" class="bg-indigo-50 border border-indigo-100 p-3 rounded-lg hidden">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-bold text-sm text-indigo-800" id="day2Label">2일차 시간</span>
+                        <label class="flex items-center gap-1 text-xs font-medium text-red-600 bg-white px-2 py-1 rounded border border-gray-200 cursor-pointer shadow-sm">
+                            <input type="checkbox" id="isHoliday2" class="accent-red-500 w-3 h-3"> 휴일적용 (2.0배)
+                        </label>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <input type="number" step="0.5" inputmode="decimal" id="startTime2" placeholder="출근 (예: 6)" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 outline-none text-center text-sm">
+                        <input type="number" step="0.5" inputmode="decimal" id="endTime2" placeholder="퇴근 (예: 18.5)" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 outline-none text-center text-sm">
+                    </div>
+                </div>
+
+                <!-- 3일차 입력 (2박 시 등장) -->
+                <div id="day3Box" class="bg-purple-50 border border-purple-100 p-3 rounded-lg hidden">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-bold text-sm text-purple-800" id="day3Label">3일차 시간</span>
+                        <label class="flex items-center gap-1 text-xs font-medium text-red-600 bg-white px-2 py-1 rounded border border-gray-200 cursor-pointer shadow-sm">
+                            <input type="checkbox" id="isHoliday3" class="accent-red-500 w-3 h-3"> 휴일적용 (2.0배)
+                        </label>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <input type="number" step="0.5" inputmode="decimal" id="startTime3" placeholder="출근 (예: 6)" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 outline-none text-center text-sm">
+                        <input type="number" step="0.5" inputmode="decimal" id="endTime3" placeholder="퇴근 (예: 18.5)" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 outline-none text-center text-sm">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">비고 및 목적</label>
-                    <input type="text" id="memo" placeholder="예: 본사 ↔ 공장 왕복" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">비고 및 목적</label>
+                    <input type="text" id="memo" placeholder="예: 본사 ↔ 공장" class="w-full border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                 </div>
 
                 <div class="flex justify-end gap-2 pt-2">
-                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium">취소</button>
-                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">저장</button>
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium text-sm">취소</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm">저장</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Firebase 설정 및 연동 스크립트 -->
+    <!-- Firebase 스크립트 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 🔥 본인의 파이어베이스 설정값으로 교체하세요
+        // 🔥 본인의 파이어베이스 설정값으로 교체
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "YOUR_AUTH_DOMAIN",
@@ -110,6 +142,7 @@
         let selectedDateStr = "";
         let logsData = {}; 
 
+        // 데이터 실시간 감지
         onSnapshot(collection(db, "drivingLogs"), (snapshot) => {
             logsData = {};
             snapshot.forEach((doc) => {
@@ -120,55 +153,59 @@
 
         window.changeMonth = function(direction) {
             currentMonth += direction;
-            if (currentMonth > 11) {
-                currentMonth = 0;
-                currentYear++;
-            } else if (currentMonth < 0) {
-                currentMonth = 11;
-                currentYear--;
-            }
+            if (currentMonth > 11) { currentMonth = 0; currentYear++; } 
+            else if (currentMonth < 0) { currentMonth = 11; currentYear--; }
             renderCalendar();
         }
 
-        // 연장 근로 보상 시간 계산
-        function calculateOvertime(dateStr, startStr, endStr) {
-            if (!startStr || !endStr) return { totalOvertimePayTime: 0 };
-            const dateObj = new Date(dateStr);
-            const isWeekend = (dateObj.getDay() === 0 || dateObj.getDay() === 6);
+        // 날짜 더하기 헬퍼 함수
+        function addDays(dateStr, days) {
+            const d = new Date(dateStr);
+            d.setDate(d.getDate() + days);
+            return d.toISOString().split('T')[0];
+        }
+
+        // ⭐ 평일(1.5배) / 휴일(2.0배) 보상시간 계산기
+        function calculateOvertime(startStr, endStr, isHoliday) {
+            if (!startStr || !endStr) return { totalPayTime: 0, label: "" };
             const startVal = parseFloat(startStr);
             const endVal = parseFloat(endStr);
-            if (isNaN(startVal) || isNaN(endVal) || endVal <= startVal) return { totalOvertimePayTime: 0 };
+            if (isNaN(startVal) || isNaN(endVal) || endVal <= startVal) return { totalPayTime: 0, label: "" };
 
-            const standardStart = 9.0;
-            const standardEnd = 18.0;
-            let normalHours = 0;
             let overtimeHours = 0;
+            let totalPayTime = 0;
 
-            if (isWeekend) {
+            if (isHoliday) {
+                // 휴일은 시작~종료 전체가 연장시간이며 2.0배 적용
                 overtimeHours = endVal - startVal;
+                totalPayTime = overtimeHours * 2.0;
+                return { totalPayTime: totalPayTime.toFixed(1), label: "휴일(+2.0배)" };
             } else {
+                // 평일은 09:00~18:00 일반근무 제외 후 1.5배 적용
+                const standardStart = 9.0;
+                const standardEnd = 18.0;
                 const overlapStart = Math.max(startVal, standardStart);
                 const overlapEnd = Math.min(endVal, standardEnd);
+                let normalHours = 0;
                 if (overlapEnd > overlapStart) {
                     normalHours = overlapEnd - overlapStart;
                 }
                 overtimeHours = Math.max(0, (endVal - startVal) - normalHours);
+                totalPayTime = overtimeHours * 1.5;
+                return { totalPayTime: totalPayTime.toFixed(1), label: "평일(+1.5배)" };
             }
-            return { totalOvertimePayTime: (overtimeHours * 1.5).toFixed(1) };
         }
 
-        // ⭐ 비용 정산 계산 (일정 타입 기준)
         function calculateAllowance(type) {
-            if (type === 'day') return 12500; // 당일: 일비
-            if (type === '1night') return 12500 + 25000; // 1박: 일비 + 식비 (37,500)
-            if (type === '2night') return (12500 + 25000) * 2; // 2박: (일비 + 식비) x 2 (75,000)
-            return 0; // seoul 또는 none
+            if (type === 'day') return 12500;
+            if (type === '1night') return 12500 + 25000;
+            if (type === '2night') return (12500 + 25000) * 2;
+            return 0;
         }
 
         function renderCalendar() {
             const titleEl = document.getElementById('calendarMonthTitle');
             const gridEl = document.getElementById('calendarGrid');
-            
             titleEl.textContent = `${currentYear}년 ${currentMonth + 1}월 운행 달력`;
             gridEl.innerHTML = "";
 
@@ -176,12 +213,8 @@
             const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
 
             for (let i = 0; i < firstDayIndex; i++) {
-                gridEl.innerHTML += `<div class="h-32 bg-gray-100 rounded-lg opacity-40"></div>`;
+                gridEl.innerHTML += `<div class="h-32 bg-gray-50 rounded-lg opacity-40"></div>`;
             }
-
-            // ⭐ 1박/2박 달력 배경색 유지를 위한 변수
-            let tripDaysRemaining = 0;
-            let activeTripColorClass = '';
 
             for (let day = 1; day <= lastDay; day++) {
                 const monthStr = String(currentMonth + 1).padStart(2, '0');
@@ -189,75 +222,137 @@
                 const dateKey = `${currentYear}-${monthStr}-${dayStr}`;
 
                 const log = logsData[dateKey];
-
-                // 일정(scheduleType)이 있으면 연속 박(Night)수 계산하여 색상 칠할 일수 세팅
-                if (log && log.scheduleType === '1night') {
-                    tripDaysRemaining = 2; // 오늘 + 내일
-                    activeTripColorClass = 'bg-blue-50 border-blue-300';
-                } else if (log && log.scheduleType === '2night') {
-                    tripDaysRemaining = 3; // 오늘 + 내일 + 모레
-                    activeTripColorClass = 'bg-purple-50 border-purple-300';
-                }
-
-                // 기본 배경색 vs 출장(1박, 2박) 배경색 적용
-                let cellBgClass = 'bg-white border-gray-200 hover:border-blue-500 hover:shadow-sm';
-                if (tripDaysRemaining > 0) {
-                    cellBgClass = `${activeTripColorClass} hover:brightness-95`;
-                    tripDaysRemaining--; // 하루 그렸으므로 차감
+                let cellBgClass = 'bg-white border-gray-200 hover:border-blue-500';
+                
+                // 1박, 2박, 연계일정일 경우 달력 칸 바탕색 변경
+                if (log) {
+                    if (log.scheduleType === '1night' || (log.scheduleType === 'linked' && log.parentType === '1night')) {
+                        cellBgClass = 'bg-indigo-50 border-indigo-200 hover:border-indigo-500';
+                    } else if (log.scheduleType === '2night' || (log.scheduleType === 'linked' && log.parentType === '2night')) {
+                        cellBgClass = 'bg-purple-50 border-purple-200 hover:border-purple-500';
+                    }
                 }
 
                 let contentHTML = `<div class="text-xs text-gray-400 mt-1">입력 대기</div>`;
 
                 if (log) {
-                    const calc = calculateOvertime(dateKey, log.startTime, log.endTime);
+                    const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday);
                     const allowance = calculateAllowance(log.scheduleType);
                     
-                    // 정산 금액 태그 생성
                     let allowanceHTML = '';
                     if (allowance > 0) {
                         allowanceHTML = `<div class="text-[10px] font-bold text-green-700 bg-green-100 border border-green-300 rounded px-1 mt-1 truncate">💰 정산: ${allowance.toLocaleString()}원</div>`;
                     } else if (log.scheduleType === 'seoul') {
-                        allowanceHTML = `<div class="text-[10px] font-bold text-gray-600 bg-gray-200 border border-gray-300 rounded px-1 mt-1 truncate">서울당일 (정산 0원)</div>`;
+                        allowanceHTML = `<div class="text-[10px] font-bold text-gray-600 bg-gray-200 border border-gray-300 rounded px-1 mt-1 truncate">서울당일 (0원)</div>`;
+                    } else if (log.scheduleType === 'linked') {
+                        allowanceHTML = `<div class="text-[10px] text-gray-500 bg-gray-100 rounded px-1 mt-1 truncate">숙박 연계일정</div>`;
                     }
+
+                    // 휴일일 경우 빨간색, 평일은 회색으로 텍스트 표시
+                    const payColor = log.isHoliday ? 'text-red-600 bg-red-50 border-red-200' : 'text-gray-700 bg-gray-100 border-gray-300';
 
                     contentHTML = `
                         <div class="text-[10px] text-blue-800 bg-blue-100 rounded px-1 truncate">1: ${log.driver1 || '-'}</div>
-                        <div class="text-[10px] text-indigo-800 bg-indigo-100 rounded px-1 truncate">2: ${log.driver2 || '-'}</div>
-                        <div class="text-[10px] text-gray-600 mt-0.5">${log.startTime || ''} ~ ${log.endTime || ''}</div>
-                        <div class="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 rounded px-1 mt-1">연장: +${calc.totalOvertimePayTime}시간</div>
+                        <div class="text-[10px] text-indigo-800 bg-indigo-100 rounded px-1 truncate mt-0.5">2: ${log.driver2 || '-'}</div>
+                        <div class="text-[10px] text-gray-600 mt-1 font-medium">${log.startTime || ''} ~ ${log.endTime || ''}</div>
+                        <div class="text-[10px] font-bold border rounded px-1 mt-0.5 ${payColor}">${calc.label}: +${calc.totalPayTime}h</div>
                         ${allowanceHTML}
                     `;
                 }
 
                 gridEl.innerHTML += `
-                    <div onclick="openModal('${dateKey}')" class="h-32 ${cellBgClass} border rounded-lg p-2 cursor-pointer transition flex flex-col justify-between overflow-hidden">
-                        <span class="text-sm font-semibold text-gray-800">${day}</span>
-                        <div class="overflow-hidden flex flex-col gap-0.5">${contentHTML}</div>
+                    <div onclick="openModal('${dateKey}')" class="h-32 ${cellBgClass} border rounded-lg p-1.5 md:p-2 cursor-pointer transition shadow-sm flex flex-col overflow-hidden">
+                        <span class="text-xs md:text-sm font-semibold text-gray-800">${day}</span>
+                        <div class="overflow-hidden flex flex-col gap-0.5 mt-0.5">${contentHTML}</div>
                     </div>
                 `;
             }
         }
 
+        // 일정 선택 시 하단 박스 토글
+        document.getElementById('scheduleType').addEventListener('change', function(e) {
+            const val = e.target.value;
+            const day2 = document.getElementById('day2Box');
+            const day3 = document.getElementById('day3Box');
+
+            if (val === '1night') {
+                day2.classList.remove('hidden'); day3.classList.add('hidden');
+                document.getElementById('startTime2').required = true;
+                document.getElementById('endTime2').required = true;
+                document.getElementById('startTime3').required = false;
+                document.getElementById('endTime3').required = false;
+            } else if (val === '2night') {
+                day2.classList.remove('hidden'); day3.classList.remove('hidden');
+                document.getElementById('startTime2').required = true;
+                document.getElementById('endTime2').required = true;
+                document.getElementById('startTime3').required = true;
+                document.getElementById('endTime3').required = true;
+            } else {
+                day2.classList.add('hidden'); day3.classList.add('hidden');
+                document.getElementById('startTime2').required = false;
+                document.getElementById('endTime2').required = false;
+                document.getElementById('startTime3').required = false;
+                document.getElementById('endTime3').required = false;
+            }
+        });
+
         window.openModal = function(dateStr) {
             selectedDateStr = dateStr;
             document.getElementById('modalDateTitle').textContent = `📅 ${dateStr} 운행 정보`;
             
-            // 초기화
-            document.getElementById('scheduleType').value = "none";
-            document.getElementById('driver1').value = "";
-            document.getElementById('driver2').value = "";
-            document.getElementById('startTime').value = "";
-            document.getElementById('endTime').value = "";
-            document.getElementById('memo').value = "";
+            // 폼 완전 초기화
+            document.getElementById('logForm').reset();
+            document.getElementById('day2Box').classList.add('hidden');
+            document.getElementById('day3Box').classList.add('hidden');
+            document.getElementById('scheduleType').disabled = false;
 
+            // 주말 자동 체크 헬퍼
+            const checkIsWeekend = (dStr) => {
+                const day = new Date(dStr).getDay();
+                return (day === 0 || day === 6);
+            };
+
+            // 기본값 세팅 (주말이면 자동으로 휴일 체크박스 On)
+            document.getElementById('isHoliday1').checked = checkIsWeekend(dateStr);
+            document.getElementById('isHoliday2').checked = checkIsWeekend(addDays(dateStr, 1));
+            document.getElementById('isHoliday3').checked = checkIsWeekend(addDays(dateStr, 2));
+
+            // 해당 날짜에 데이터가 있다면 불러오기
             if (logsData[dateStr]) {
                 const data = logsData[dateStr];
-                document.getElementById('scheduleType').value = data.scheduleType || "none";
                 document.getElementById('driver1').value = data.driver1 || "";
                 document.getElementById('driver2').value = data.driver2 || "";
-                document.getElementById('startTime').value = data.startTime || "";
-                document.getElementById('endTime').value = data.endTime || "";
+                document.getElementById('startTime1').value = data.startTime || "";
+                document.getElementById('endTime1').value = data.endTime || "";
+                document.getElementById('isHoliday1').checked = data.isHoliday || false;
                 document.getElementById('memo').value = data.memo || "";
+                document.getElementById('scheduleType').value = data.scheduleType || "none";
+
+                // 연계 일정(2일차/3일차) 칸을 클릭해서 열었을 때는 일정타입 변경 금지
+                if(data.scheduleType === 'linked') {
+                    document.getElementById('scheduleType').disabled = true;
+                }
+
+                // 1박 또는 2박이라면 다음날 데이터도 땡겨와서 입력창에 채워줌
+                if (data.scheduleType === '1night' || data.scheduleType === '2night') {
+                    document.getElementById('scheduleType').dispatchEvent(new Event('change'));
+                    
+                    const day2Data = logsData[addDays(dateStr, 1)];
+                    if (day2Data) {
+                        document.getElementById('startTime2').value = day2Data.startTime || "";
+                        document.getElementById('endTime2').value = day2Data.endTime || "";
+                        document.getElementById('isHoliday2').checked = day2Data.isHoliday || false;
+                    }
+                    
+                    if (data.scheduleType === '2night') {
+                        const day3Data = logsData[addDays(dateStr, 2)];
+                        if (day3Data) {
+                            document.getElementById('startTime3').value = day3Data.startTime || "";
+                            document.getElementById('endTime3').value = day3Data.endTime || "";
+                            document.getElementById('isHoliday3').checked = day3Data.isHoliday || false;
+                        }
+                    }
+                }
             }
 
             document.getElementById('logModal').classList.remove('hidden');
@@ -267,47 +362,77 @@
             document.getElementById('logModal').classList.add('hidden');
         }
 
+        // 숫자 입력 시 키보드 숨김 제어
         const timeInputs = document.querySelectorAll('input[type="number"]');
         timeInputs.forEach(input => {
             input.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault(); 
-                    this.blur(); 
-                }
+                if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
             });
-            input.addEventListener('change', function() {
-                this.blur();
-            });
+            input.addEventListener('change', function() { this.blur(); });
         });
 
-        document.getElementById('logModal').addEventListener('click', function() {
-            window.closeModal();
-        });
+        document.getElementById('logModal').addEventListener('click', function() { window.closeModal(); });
 
+        // ⭐ 저장 기능 (1박/2박 시 여러 날짜 동시 저장)
         document.getElementById('logForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const scheduleType = document.getElementById('scheduleType').value;
             const driver1 = document.getElementById('driver1').value;
             const driver2 = document.getElementById('driver2').value;
-            const startTime = document.getElementById('startTime').value;
-            const endTime = document.getElementById('endTime').value;
             const memo = document.getElementById('memo').value;
+
+            const date1 = selectedDateStr;
+            const date2 = addDays(date1, 1);
+            const date3 = addDays(date1, 2);
 
             window.closeModal();
 
             try {
-                // 저장 시 일정 타입(scheduleType)도 함께 저장
-                await setDoc(doc(db, "drivingLogs", selectedDateStr), {
-                    date: selectedDateStr,
-                    scheduleType,
-                    driver1,
-                    driver2,
-                    startTime,
-                    endTime,
-                    memo,
+                // 1일차 저장 (기본)
+                await setDoc(doc(db, "drivingLogs", date1), {
+                    date: date1,
+                    scheduleType: scheduleType,
+                    driver1: driver1,
+                    driver2: driver2,
+                    startTime: document.getElementById('startTime1').value,
+                    endTime: document.getElementById('endTime1').value,
+                    isHoliday: document.getElementById('isHoliday1').checked,
+                    memo: memo,
                     updatedAt: new Date()
                 });
+
+                // 2일차 저장 (1박 or 2박)
+                if (scheduleType === '1night' || scheduleType === '2night') {
+                    await setDoc(doc(db, "drivingLogs", date2), {
+                        date: date2,
+                        scheduleType: 'linked',
+                        parentType: scheduleType,
+                        driver1: driver1,
+                        driver2: driver2,
+                        startTime: document.getElementById('startTime2').value,
+                        endTime: document.getElementById('endTime2').value,
+                        isHoliday: document.getElementById('isHoliday2').checked,
+                        memo: memo + " (2일차)",
+                        updatedAt: new Date()
+                    });
+                }
+
+                // 3일차 저장 (2박)
+                if (scheduleType === '2night') {
+                    await setDoc(doc(db, "drivingLogs", date3), {
+                        date: date3,
+                        scheduleType: 'linked',
+                        parentType: scheduleType,
+                        driver1: driver1,
+                        driver2: driver2,
+                        startTime: document.getElementById('startTime3').value,
+                        endTime: document.getElementById('endTime3').value,
+                        isHoliday: document.getElementById('isHoliday3').checked,
+                        memo: memo + " (3일차)",
+                        updatedAt: new Date()
+                    });
+                }
             } catch (error) {
                 console.error("저장 실패: ", error);
                 alert("데이터 저장에 실패했습니다.");
