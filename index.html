@@ -68,7 +68,7 @@
                     <div class="flex justify-between items-center mb-2">
                         <span class="font-bold text-sm text-blue-800" id="day1Label">1일차 시간 (당일)</span>
                         <label class="flex items-center gap-1 text-xs font-medium text-red-600 bg-white px-2 py-1 rounded border border-gray-200 cursor-pointer shadow-sm">
-                            <input type="checkbox" id="isHoliday1" class="accent-red-500 w-3 h-3"> 휴일 (2.0배)
+                            <input type="checkbox" id="isHoliday1" class="accent-red-500 w-3 h-3"> 휴일적용
                         </label>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
@@ -82,7 +82,7 @@
                     <div class="flex justify-between items-center mb-2">
                         <span class="font-bold text-sm text-indigo-800" id="day2Label">2일차 시간</span>
                         <label class="flex items-center gap-1 text-xs font-medium text-red-600 bg-white px-2 py-1 rounded border border-gray-200 cursor-pointer shadow-sm">
-                            <input type="checkbox" id="isHoliday2" class="accent-red-500 w-3 h-3"> 휴일 (2.0배)
+                            <input type="checkbox" id="isHoliday2" class="accent-red-500 w-3 h-3"> 휴일적용
                         </label>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
@@ -96,7 +96,7 @@
                     <div class="flex justify-between items-center mb-2">
                         <span class="font-bold text-sm text-purple-800" id="day3Label">3일차 시간</span>
                         <label class="flex items-center gap-1 text-xs font-medium text-red-600 bg-white px-2 py-1 rounded border border-gray-200 cursor-pointer shadow-sm">
-                            <input type="checkbox" id="isHoliday3" class="accent-red-500 w-3 h-3"> 휴일 (2.0배)
+                            <input type="checkbox" id="isHoliday3" class="accent-red-500 w-3 h-3"> 휴일적용
                         </label>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
@@ -119,37 +119,26 @@
         </div>
     </div>
 
-    <!-- Firebase 스크립트 -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        // 🔥 본인의 파이어베이스 설정값으로 교체
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
+    <!-- 스크립트 -->
+    <script>
+        // ⭐ 파이어베이스 연동 대신 일단 로컬(브라우저 캐시) 저장소 사용으로 변경
         let currentYear = new Date().getFullYear();
         let currentMonth = new Date().getMonth(); 
         let selectedDateStr = "";
-        let logsData = {}; 
+        
+        // 브라우저 로컬 저장소에서 데이터 불러오기
+        let logsData = JSON.parse(localStorage.getItem('drivingLogs')) || {};
 
-        // 데이터 실시간 감지
-        onSnapshot(collection(db, "drivingLogs"), (snapshot) => {
-            logsData = {};
-            snapshot.forEach((doc) => {
-                logsData[doc.id] = doc.data();
-            });
+        // 로컬 저장소에 데이터 저장 후 달력 새로고침
+        function saveToLocal() {
+            localStorage.setItem('drivingLogs', JSON.stringify(logsData));
             renderCalendar();
-        });
+        }
+
+        // 최초 실행 시 달력 그리기
+        window.onload = function() {
+            renderCalendar();
+        };
 
         window.changeMonth = function(direction) {
             currentMonth += direction;
@@ -174,22 +163,29 @@
             return `${outY}-${outM}-${outD}`;
         }
 
+        // ⭐ 휴일 보상 계산 공식 완벽 적용
         function calculateOvertime(startStr, endStr, isHoliday) {
             if (!startStr || !endStr) return { totalPayTime: 0, label: "" };
             const startVal = parseFloat(startStr);
             const endVal = parseFloat(endStr);
             if (isNaN(startVal) || isNaN(endVal) || endVal <= startVal) return { totalPayTime: 0, label: "" };
 
-            let overtimeHours = 0;
+            // 09시 ~ 18시 겹치는 시간 계산
+            const overlapStart = Math.max(startVal, 9.0);
+            const overlapEnd = Math.min(endVal, 18.0);
+            let normalHours = (overlapEnd > overlapStart) ? overlapEnd - overlapStart : 0;
+            
+            // 그 외 시간 (시간외) 계산
+            let overtimeHours = Math.max(0, (endVal - startVal) - normalHours);
+
             if (isHoliday) {
-                overtimeHours = endVal - startVal;
-                return { totalPayTime: (overtimeHours * 2.0).toFixed(1), label: "휴일보상" };
+                // 휴일: 09~18시는 1.5배, 그 외(시간외)는 2배 적용
+                const holidayPay = (normalHours * 1.5) + (overtimeHours * 2.0);
+                return { totalPayTime: holidayPay.toFixed(1), label: "휴일보상" };
             } else {
-                const overlapStart = Math.max(startVal, 9.0);
-                const overlapEnd = Math.min(endVal, 18.0);
-                let normalHours = (overlapEnd > overlapStart) ? overlapEnd - overlapStart : 0;
-                overtimeHours = Math.max(0, (endVal - startVal) - normalHours);
-                return { totalPayTime: (overtimeHours * 1.5).toFixed(1), label: "평일연장" };
+                // 평일: 09~18시는 0배(기본급), 그 외(시간외)는 1.5배 적용
+                const weekdayPay = (overtimeHours * 1.5);
+                return { totalPayTime: weekdayPay.toFixed(1), label: "평일연장" };
             }
         }
 
@@ -378,14 +374,10 @@
 
         document.getElementById('logModal').addEventListener('click', function() { window.closeModal(); });
 
-        // ⭐ 안전장치: Promise.all을 활용해 3일치 데이터가 100% 동시에 저장된 후 모달창이 닫히도록 개선
-        document.getElementById('logForm').addEventListener('submit', async (e) => {
+        // ⭐ 로컬 스토리지에 데이터 저장 (파이어베이스 없이 즉시 저장 및 화면 갱신)
+        document.getElementById('logForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const btn = document.getElementById('saveBtn');
-            btn.disabled = true;
-            btn.innerText = "저장 중...";
-
             const scheduleType = document.getElementById('scheduleType').value;
             const driver1 = document.getElementById('driver1').value;
             const driver2 = document.getElementById('driver2').value;
@@ -400,96 +392,75 @@
                 currentParentType = logsData[date1].parentType;
             }
 
-            try {
-                // 저장 작업을 배열로 묶습니다.
-                const savePromises = [];
+            if (scheduleType === 'linked') {
+                logsData[date1] = {
+                    date: date1,
+                    scheduleType: 'linked',
+                    parentType: currentParentType,
+                    driver1: driver1,
+                    driver2: driver2,
+                    startTime: document.getElementById('startTime1').value,
+                    endTime: document.getElementById('endTime1').value,
+                    isHoliday: document.getElementById('isHoliday1').checked,
+                    memo: memo
+                };
+            } else {
+                logsData[date1] = {
+                    date: date1,
+                    scheduleType: scheduleType,
+                    driver1: driver1,
+                    driver2: driver2,
+                    startTime: document.getElementById('startTime1').value,
+                    endTime: document.getElementById('endTime1').value,
+                    isHoliday: document.getElementById('isHoliday1').checked,
+                    memo: memo
+                };
 
-                if (scheduleType === 'linked') {
-                    savePromises.push(setDoc(doc(db, "drivingLogs", date1), {
-                        date: date1,
+                if (scheduleType === '1night' || scheduleType === '2night') {
+                    logsData[date2] = {
+                        date: date2,
                         scheduleType: 'linked',
-                        parentType: currentParentType,
+                        parentType: scheduleType,
+                        parentDate: date1, 
                         driver1: driver1,
                         driver2: driver2,
-                        startTime: document.getElementById('startTime1').value,
-                        endTime: document.getElementById('endTime1').value,
-                        isHoliday: document.getElementById('isHoliday1').checked,
-                        memo: memo,
-                        updatedAt: new Date()
-                    }));
-                } else {
-                    savePromises.push(setDoc(doc(db, "drivingLogs", date1), {
-                        date: date1,
-                        scheduleType: scheduleType,
+                        startTime: document.getElementById('startTime2').value,
+                        endTime: document.getElementById('endTime2').value,
+                        isHoliday: document.getElementById('isHoliday2').checked,
+                        memo: memo + " (2일차)"
+                    };
+                }
+                if (scheduleType === '2night') {
+                    logsData[date3] = {
+                        date: date3,
+                        scheduleType: 'linked',
+                        parentType: scheduleType,
+                        parentDate: date1,
                         driver1: driver1,
                         driver2: driver2,
-                        startTime: document.getElementById('startTime1').value,
-                        endTime: document.getElementById('endTime1').value,
-                        isHoliday: document.getElementById('isHoliday1').checked,
-                        memo: memo,
-                        updatedAt: new Date()
-                    }));
-
-                    if (scheduleType === '1night' || scheduleType === '2night') {
-                        savePromises.push(setDoc(doc(db, "drivingLogs", date2), {
-                            date: date2,
-                            scheduleType: 'linked',
-                            parentType: scheduleType,
-                            parentDate: date1, 
-                            driver1: driver1,
-                            driver2: driver2,
-                            startTime: document.getElementById('startTime2').value,
-                            endTime: document.getElementById('endTime2').value,
-                            isHoliday: document.getElementById('isHoliday2').checked,
-                            memo: memo + " (2일차)",
-                            updatedAt: new Date()
-                        }));
-                    }
-                    if (scheduleType === '2night') {
-                        savePromises.push(setDoc(doc(db, "drivingLogs", date3), {
-                            date: date3,
-                            scheduleType: 'linked',
-                            parentType: scheduleType,
-                            parentDate: date1,
-                            driver1: driver1,
-                            driver2: driver2,
-                            startTime: document.getElementById('startTime3').value,
-                            endTime: document.getElementById('endTime3').value,
-                            isHoliday: document.getElementById('isHoliday3').checked,
-                            memo: memo + " (3일차)",
-                            updatedAt: new Date()
-                        }));
-                    }
-
-                    // 일정 축소 시 안 쓰게 된 내일/모레 데이터 삭제
-                    if (scheduleType !== '2night') {
-                        const d3 = logsData[date3];
-                        if (d3 && d3.scheduleType === 'linked' && d3.parentDate === date1) {
-                            savePromises.push(deleteDoc(doc(db, "drivingLogs", date3)));
-                        }
-                    }
-                    if (scheduleType !== '1night' && scheduleType !== '2night') {
-                        const d2 = logsData[date2];
-                        if (d2 && d2.scheduleType === 'linked' && d2.parentDate === date1) {
-                            savePromises.push(deleteDoc(doc(db, "drivingLogs", date2)));
-                        }
-                    }
+                        startTime: document.getElementById('startTime3').value,
+                        endTime: document.getElementById('endTime3').value,
+                        isHoliday: document.getElementById('isHoliday3').checked,
+                        memo: memo + " (3일차)"
+                    };
                 }
 
-                // 위에서 묶은 모든 저장 작업이 "완벽하게 완료될 때까지" 0.1초 정도 기다립니다.
-                await Promise.all(savePromises);
-                
-                // 데이터 저장이 완전히 끝나면 그제야 창을 닫습니다. (안전도 100%)
-                window.closeModal();
-
-            } catch (error) {
-                console.error("저장 실패: ", error);
-                alert("데이터 저장에 실패했습니다.");
-            } finally {
-                // 만약 저장이 실패해도 다시 버튼을 누를 수 있게 복구
-                btn.disabled = false;
-                btn.innerText = "저장";
+                // 일정 축소 시 안 쓰게 된 내일/모레 데이터 삭제 (정리)
+                if (scheduleType !== '2night') {
+                    if (logsData[date3] && logsData[date3].parentDate === date1) {
+                        delete logsData[date3];
+                    }
+                }
+                if (scheduleType !== '1night' && scheduleType !== '2night') {
+                    if (logsData[date2] && logsData[date2].parentDate === date1) {
+                        delete logsData[date2];
+                    }
+                }
             }
+
+            // 달력 다시 그리고 창 닫기 (딜레이 없이 1초만에 싹 바뀜)
+            saveToLocal();
+            window.closeModal();
         });
     </script>
 </body>
