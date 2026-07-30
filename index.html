@@ -6,21 +6,6 @@
     <title>차량 운행 및 출퇴근 달력 관리</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <style>
-        /* 시간 입력창 기본 화살표 숨기기 */
-        input[type="time"]::-webkit-calendar-picker-indicator {
-            background: transparent;
-            bottom: 0;
-            color: transparent;
-            cursor: pointer;
-            height: auto;
-            left: 0;
-            position: absolute;
-            right: 0;
-            top: 0;
-            width: auto;
-        }
-    </style>
 </head>
 <body class="bg-gray-50 min-h-screen p-4 md:p-8">
 
@@ -51,7 +36,6 @@
 
     <!-- 팝업 모달창 -->
     <div id="logModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
-        <!-- 이벤트 버블링 방지를 위해 모달 박스 클릭 시 전파 차단 -->
         <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl relative" onclick="event.stopPropagation()">
             <h2 id="modalDateTitle" class="text-xl font-bold text-gray-800 mb-4">날짜 운행 정보</h2>
             
@@ -70,11 +54,11 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">출근 시간 (시:분)</label>
-                        <input type="time" id="startTime" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-center relative" required>
+                        <input type="time" id="startTime" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-center" required>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">퇴근 시간 (시:분)</label>
-                        <input type="time" id="endTime" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-center relative" required>
+                        <input type="time" id="endTime" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none text-center" required>
                     </div>
                 </div>
 
@@ -247,12 +231,37 @@
             document.getElementById('logModal').classList.add('hidden');
         }
 
-        // 배경 클릭 시 모달이 닫히도록 설정 (모달 박스 내부 클릭은 위에서 차단함)
-        document.getElementById('logModal').addEventListener('click', function() {
-            closeModal();
-        });
+        // 출근/퇴근 시간 선택을 완료(값이 모두 채워졌거나 변경)하는 순간 자동 저장 및 창 닫기 처리
+        async function autoSaveAndClose() {
+            const driver1 = document.getElementById('driver1').value;
+            const driver2 = document.getElementById('driver2').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            const memo = document.getElementById('memo').value;
 
-        // 폼 제출 시 파이어베이스 저장 후 팝업 닫기
+            // 모든 필수 항목이 채워져 있을 때만 자동 저장 및 닫기 수행
+            if (driver1 && driver2 && startTime && endTime) {
+                try {
+                    await setDoc(doc(db, "drivingLogs", selectedDateStr), {
+                        date: selectedDateStr,
+                        driver1,
+                        driver2,
+                        startTime,
+                        endTime,
+                        memo,
+                        updatedAt: new Date()
+                    });
+                    closeModal();
+                } catch (error) {
+                    console.error("저장 실패: ", error);
+                }
+            }
+        }
+
+        document.getElementById('startTime').addEventListener('change', autoSaveAndClose);
+        document.getElementById('endTime').addEventListener('change', autoSaveAndClose);
+
+        // 폼 제출(저장 버튼 클릭) 시 파이어베이스 저장 후 팝업 닫기
         document.getElementById('logForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const driver1 = document.getElementById('driver1').value;
