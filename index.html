@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>차량 운행 및 출퇴근 달력 관리 (연장근로 계산 포함)</title>
+    <title>차량 운행 및 출퇴근 달력 관리</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
-        /* 시간 입력창(input type="time")의 기본 스크롤(화살표) 숨기기 */
+        /* 시간 입력창 기본 화살표 숨기기 */
         input[type="time"]::-webkit-calendar-picker-indicator {
             background: transparent;
             bottom: 0;
@@ -51,7 +51,8 @@
 
     <!-- 팝업 모달창 -->
     <div id="logModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl relative">
+        <!-- 이벤트 버블링 방지를 위해 모달 박스 클릭 시 전파 차단 -->
+        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl relative" onclick="event.stopPropagation()">
             <h2 id="modalDateTitle" class="text-xl font-bold text-gray-800 mb-4">날짜 운행 정보</h2>
             
             <form id="logForm" class="space-y-4">
@@ -134,9 +135,9 @@
             renderCalendar();
         }
 
-        // 평일 기준 09:00 ~ 18:00 외 시간(연장근로)에 대한 보상시간(1.5배) 계산 함수
+        // 평일 기준 09:00 ~ 18:00 외 시간(연장근로) 보상시간(1.5배) 계산 함수
         function calculateOvertime(dateStr, startStr, endStr) {
-            if (!startStr || !endStr) return { normal: 0, overtime: 0, totalOvertimePayTime: 0 };
+            if (!startStr || !endStr) return { totalOvertimePayTime: 0 };
 
             const dateObj = new Date(dateStr);
             const dayOfWeek = dateObj.getDay(); // 0: 일요일, 6: 토요일
@@ -148,7 +149,7 @@
             const startMinutes = sHour * 60 + sMin;
             const endMinutes = eHour * 60 + eMin;
 
-            if (endMinutes <= startMinutes) return { normal: 0, overtime: 0, totalOvertimePayTime: 0 };
+            if (endMinutes <= startMinutes) return { totalOvertimePayTime: 0 };
 
             const standardStart = 9 * 60;  // 09:00
             const standardEnd = 18 * 60; // 18:00
@@ -157,29 +158,22 @@
             let overtimeMins = 0;
 
             if (isWeekend) {
-                // 주말/휴일은 전체 시간이 연장(1.5배 적용 대상)으로 처리되거나 규칙에 맞게 적용
                 overtimeMins = endMinutes - startMinutes;
             } else {
-                // 평일 09:00 ~ 18:00 구간 겹침 계산
                 const overlapStart = Math.max(startMinutes, standardStart);
                 const overlapEnd = Math.min(endMinutes, standardEnd);
                 
                 if (overlapEnd > overlapStart) {
                     normalMins = overlapEnd - overlapStart;
                 }
-                // 전체 근무 시간 중 일반 근무를 제외한 나머지를 연장으로 처리
                 const totalMins = endMinutes - startMinutes;
                 overtimeMins = Math.max(0, totalMins - normalMins);
             }
 
-            const normalHours = normalMins / 60;
             const rawOvertimeHours = overtimeMins / 60;
-            // 1.5배 가산된 보상 시간 (예: 연장 2시간 * 1.5 = 보상 3시간)
             const totalOvertimePayTime = rawOvertimeHours * 1.5;
 
             return {
-                normal: normalHours.toFixed(1),
-                overtime: rawOvertimeHours.toFixed(1),
                 totalOvertimePayTime: totalOvertimePayTime.toFixed(1)
             };
         }
@@ -252,6 +246,11 @@
         window.closeModal = function() {
             document.getElementById('logModal').classList.add('hidden');
         }
+
+        // 배경 클릭 시 모달이 닫히도록 설정 (모달 박스 내부 클릭은 위에서 차단함)
+        document.getElementById('logModal').addEventListener('click', function() {
+            closeModal();
+        });
 
         // 폼 제출 시 파이어베이스 저장 후 팝업 닫기
         document.getElementById('logForm').addEventListener('submit', async (e) => {
