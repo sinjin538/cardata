@@ -97,7 +97,6 @@
                             <th class="p-3 pl-4 whitespace-nowrap">일자</th>
                             <th class="p-3 whitespace-nowrap">차량</th>
                             <th class="p-3 whitespace-nowrap">운행 일정</th>
-                            <th class="p-3 whitespace-nowrap">동승/선운행</th>
                             <th class="p-3 text-center whitespace-nowrap">시간</th>
                             <th class="p-3 text-center whitespace-nowrap">보상시간</th>
                             <th class="p-3 text-right whitespace-nowrap">정산금액</th>
@@ -621,11 +620,12 @@ const vehicleHTML = log.vehicle ? `<div class="text-[12px] font-extrabold text-b
                 monthLogs.forEach(log => {
                     const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
                     const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
+                    
+                    // ⭐ 연계(1night) -> 1박, 연계(2night) -> 2박으로 변경
                     let scheduleTxt = "당일";
-                    if(log.scheduleType === '1night') scheduleTxt = "1박"; else if(log.scheduleType === '2night') scheduleTxt = "2박";
-                    else if(log.scheduleType === 'seoul') scheduleTxt = "서울당일"; else if(log.scheduleType === 'linked') scheduleTxt = `연계 (${log.parentType})`;
-
-                    // 동승/선운행 표시 변수 삭제됨
+                    if(log.scheduleType === '1night' || (log.scheduleType === 'linked' && log.parentType === '1night')) scheduleTxt = "1박"; 
+                    else if(log.scheduleType === '2night' || (log.scheduleType === 'linked' && log.parentType === '2night')) scheduleTxt = "2박";
+                    else if(log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) scheduleTxt = "서울당일";
 
                     tbody.innerHTML += `
                         <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
@@ -660,9 +660,12 @@ const vehicleHTML = log.vehicle ? `<div class="text-[12px] font-extrabold text-b
                     totalHours += parseFloat(calc.totalPayTime || 0); totalAllowance += allowance;
 
                     const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
+                    
+                    // ⭐ 연계(1night) -> 1박, 연계(2night) -> 2박으로 변경
                     let scheduleTxt = "당일";
-                    if(log.scheduleType === '1night') scheduleTxt = "1박"; else if(log.scheduleType === '2night') scheduleTxt = "2박";
-                    else if(log.scheduleType === 'seoul') scheduleTxt = "서울당일"; else if(log.scheduleType === 'linked') scheduleTxt = `연계 (${log.parentType})`;
+                    if(log.scheduleType === '1night' || (log.scheduleType === 'linked' && log.parentType === '1night')) scheduleTxt = "1박"; 
+                    else if(log.scheduleType === '2night' || (log.scheduleType === 'linked' && log.parentType === '2night')) scheduleTxt = "2박";
+                    else if(log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) scheduleTxt = "서울당일";
 
                     const extraDrivers = [log.driver2 ? `동승:${log.driver2}` : null, log.preDriver ? `선:${log.preDriver}` : null].filter(Boolean).join(' / ') || "-";
 
@@ -684,7 +687,6 @@ const vehicleHTML = log.vehicle ? `<div class="text-[12px] font-extrabold text-b
             document.getElementById('adminTotalHours').textContent = totalHours.toFixed(2) + " h";
             document.getElementById('adminTotalAllowance').textContent = totalAllowance.toLocaleString() + " 원";
         }
-
         window.openSummaryModal = function() { document.getElementById('summaryModal').classList.remove('hidden'); switchSummaryTab('detail'); }
         window.closeSummaryModal = function() { document.getElementById('summaryModal').classList.add('hidden'); }
 
