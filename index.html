@@ -750,16 +750,35 @@
         const timeInputs = document.querySelectorAll('input[type="number"]');
         timeInputs.forEach(input => { input.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); this.blur(); } }); input.addEventListener('change', function() { this.blur(); }); });
 
-        document.getElementById('logForm').addEventListener('submit', async function(e) {
+       document.getElementById('logForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const btn = document.getElementById('saveBtn'); btn.disabled = true; btn.innerText = "저장 중...";
-            const scheduleType = document.getElementById('scheduleType').value; const driver2 = document.getElementById('driver2').value;
-            const preDriver = document.getElementById('preDriver').value; const memo = document.getElementById('memo').value;
 
-            const date1 = selectedDateStr; const date2 = addDays(date1, 1); const date3 = addDays(date1, 2);
-            const key1 = `${currentUser}_${date1}`; const key2 = `${currentUser}_${date2}`; const key3 = `${currentUser}_${date3}`;
+            // ⭐ 1. 저장 버튼을 누르자마자 가장 먼저 '일정 선택' 여부를 검사합니다!
+            const scheduleType = document.getElementById('scheduleType').value;
+            
+            if (scheduleType === 'none') {
+                alert("운행 일정을 선택해주세요!"); 
+                return; // ❌ 여기서 코드가 완전히 멈춥니다! 창도 안 닫히고 저장도 안 됩니다.
+            }
 
-            let currentParentType = ""; if (logsData[key1] && logsData[key1].scheduleType === 'linked') currentParentType = logsData[key1].parentType;
+            // 일정을 선택했을 때만 아래 저장 로직이 정상적으로 실행됩니다.
+            const btn = document.getElementById('saveBtn'); 
+            btn.disabled = true; 
+            btn.innerText = "저장 중...";
+            
+            const driver2 = document.getElementById('driver2').value;
+            const preDriver = document.getElementById('preDriver').value; 
+            const memo = document.getElementById('memo').value;
+
+            const date1 = selectedDateStr; 
+            const date2 = addDays(date1, 1); 
+            const date3 = addDays(date1, 2);
+            const key1 = `${currentUser}_${date1}`; 
+            const key2 = `${currentUser}_${date2}`; 
+            const key3 = `${currentUser}_${date3}`;
+
+            let currentParentType = ""; 
+            if (logsData[key1] && logsData[key1].scheduleType === 'linked') currentParentType = logsData[key1].parentType;
 
             try {
                 const savePromises = [];
@@ -772,8 +791,16 @@
                     if (scheduleType !== '2night') { if (logsData[key3] && logsData[key3].parentDate === date1) savePromises.push(deleteDoc(doc(db, "drivingLogsMulti", key3))); }
                     if (scheduleType !== '1night' && scheduleType !== '2night') { if (logsData[key2] && logsData[key2].parentDate === date1) savePromises.push(deleteDoc(doc(db, "drivingLogsMulti", key2))); }
                 }
-                await Promise.all(savePromises); closeModal();
-            } catch (error) { alert("데이터 저장에 실패했습니다."); } finally { btn.disabled = false; btn.innerText = "저장하기"; }
+                
+                await Promise.all(savePromises); 
+                closeModal(); // ⭐ 저장이 데이터베이스에 완전히 끝난 뒤에만 창을 닫습니다!
+                
+            } catch (error) { 
+                alert("데이터 저장에 실패했습니다."); 
+            } finally { 
+                btn.disabled = false; 
+                btn.innerText = "저장하기"; 
+            }
         });
     </script>
 </body>
