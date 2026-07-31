@@ -2,22 +2,24 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 모바일 앱 화면처럼 딱 맞게 고정 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>차량 운행 및 출퇴근 관리 시스템</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <style>
-        body { font-family: 'Pretendard', sans-serif; }
+        body { font-family: 'Pretendard', sans-serif; -webkit-tap-highlight-color: transparent; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        input[type="text"], input[type="number"], select { font-size: 16px !important; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen p-2 md:p-6 flex flex-col items-center text-slate-800">
 
-    <!-- ⭐ 1. 로그인 화면 -->
-    <div id="loginView" class="flex flex-col items-center justify-center min-h-[80vh] w-full">
+    <!-- 1. 로그인 화면 -->
+    <div id="loginView" class="flex flex-col items-center justify-center min-h-[80vh] w-full px-4">
         <div class="bg-white p-8 md:p-10 rounded-3xl shadow-2xl shadow-indigo-200/50 w-full max-w-sm border border-slate-100 text-center">
             <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"></path></svg>
@@ -25,63 +27,56 @@
             <h2 class="text-2xl font-extrabold text-slate-800 mb-2 tracking-tight">운행 관리 시스템</h2>
             <p class="text-slate-500 text-sm mb-8">일반 사용자는 이름 입력, 관리자는 <span class="font-bold text-indigo-500">admin</span> 입력</p>
             
-            <input type="text" id="loginIdInput" placeholder="이름 또는 ID 입력" class="w-full border border-slate-300 rounded-xl px-4 py-3 mb-4 text-center text-lg font-bold focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 transition-all" onkeypress="if(event.key==='Enter') handleLogin()">
+            <input type="text" id="loginIdInput" placeholder="이름 또는 ID 입력" class="w-full border border-slate-300 rounded-xl px-4 py-3 mb-4 text-center font-bold focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 transition-all" onkeypress="if(event.key==='Enter') handleLogin()">
             <button onclick="handleLogin()" class="w-full bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white py-3 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200">접속하기</button>
         </div>
     </div>
 
-    <!-- ⭐ 2. 일반 운전원용 개인 달력 화면 -->
+    <!-- 2. 일반 운전원용 개인 달력 화면 -->
     <div id="userView" class="max-w-6xl w-full mx-auto bg-white rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden p-4 md:p-8 border border-slate-100 hidden">
         <header class="flex flex-col md:flex-row justify-between items-center mb-6 pb-4 border-b border-slate-100 gap-4">
-            <div>
+            <div class="w-full md:w-auto text-center md:text-left">
                 <span id="welcomeUserName" class="text-indigo-600 font-extrabold text-sm mb-1 block"></span>
                 <h1 id="calendarMonthTitle" class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">2026년 8월 운행 달력</h1>
             </div>
-            <div class="flex items-center gap-3">
-                <button onclick="openSummaryModal()" class="px-5 py-2 bg-gradient-to-r from-indigo-500 to-blue-500 text-white rounded-full text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
+            <div class="flex items-center justify-center gap-2 md:gap-3 w-full md:w-auto flex-wrap">
+                <button onclick="openSummaryModal()" class="px-4 md:px-5 py-2 md:py-2 bg-gradient-to-r from-indigo-500 to-blue-500 text-white rounded-full text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
                     정산보기
                 </button>
                 <div class="flex bg-slate-100 rounded-full p-1 shadow-inner">
-                    <button onclick="changeMonth(-1)" class="px-3 py-1 hover:bg-white rounded-full text-sm font-bold text-slate-600">◀</button>
-                    <button onclick="changeMonth(1)" class="px-3 py-1 hover:bg-white rounded-full text-sm font-bold text-slate-600">▶</button>
+                    <button onclick="changeMonth(-1)" class="px-3 md:px-4 py-1.5 hover:bg-white rounded-full text-sm font-bold text-slate-600">◀</button>
+                    <button onclick="changeMonth(1)" class="px-3 md:px-4 py-1.5 hover:bg-white rounded-full text-sm font-bold text-slate-600">▶</button>
                 </div>
-                <button onclick="handleLogout()" class="px-3 py-1.5 bg-slate-100 hover:bg-rose-100 hover:text-rose-600 text-slate-600 rounded-lg text-xs font-bold transition-all">로그아웃</button>
+                <button onclick="handleLogout()" class="px-3 py-2 bg-slate-100 hover:bg-rose-100 hover:text-rose-600 text-slate-600 rounded-xl text-xs font-bold transition-all">로그아웃</button>
             </div>
         </header>
 
         <div class="grid grid-cols-7 gap-1 text-center font-bold mb-3 text-sm md:text-base">
-            <div class="text-rose-500">일</div>
-            <div class="text-slate-500">월</div>
-            <div class="text-slate-500">화</div>
-            <div class="text-slate-500">수</div>
-            <div class="text-slate-500">목</div>
-            <div class="text-slate-500">금</div>
+            <div class="text-rose-500">일</div><div class="text-slate-500">월</div><div class="text-slate-500">화</div>
+            <div class="text-slate-500">수</div><div class="text-slate-500">목</div><div class="text-slate-500">금</div>
             <div class="text-blue-500">토</div>
         </div>
-        
-        <div id="calendarGrid" class="grid grid-cols-7 gap-1.5 md:gap-2.5 auto-rows-fr">
-            <!-- 달력 데이터 -->
-        </div>
+        <div id="calendarGrid" class="grid grid-cols-7 gap-1.5 md:gap-2.5 auto-rows-fr"></div>
     </div>
 
-    <!-- ⭐ 3. 관리자용 통합 리스트 (표) 화면 -->
+    <!-- 3. 관리자용 통합 리스트 화면 -->
     <div id="adminView" class="max-w-7xl w-full mx-auto bg-white rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden p-4 md:p-8 border border-slate-100 hidden">
         <header class="flex flex-col md:flex-row justify-between items-center mb-6 pb-4 border-b border-slate-100 gap-4">
-            <div>
+            <div class="text-center md:text-left">
                 <span class="text-rose-500 font-extrabold text-sm mb-1 block">🛡️ 최고 관리자 모드</span>
-                <h1 id="adminMonthTitle" class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">2026년 8월 전체 운행 내역</h1>
+                <h1 id="adminMonthTitle" class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">2026년 8월 운행 내역</h1>
             </div>
             <div class="flex items-center gap-3">
                 <div class="flex bg-slate-100 rounded-full p-1 shadow-inner">
                     <button onclick="changeMonth(-1)" class="px-5 py-2 hover:bg-white rounded-full text-sm font-bold text-slate-600 transition-all">◀ 이전 달</button>
                     <button onclick="changeMonth(1)" class="px-5 py-2 hover:bg-white rounded-full text-sm font-bold text-slate-600 transition-all">다음 달 ▶</button>
                 </div>
-                <button onclick="handleLogout()" class="px-4 py-2 bg-slate-100 hover:bg-rose-100 hover:text-rose-600 text-slate-600 rounded-lg text-sm font-bold transition-all">로그아웃</button>
+                <button onclick="handleLogout()" class="px-4 py-2 bg-slate-100 hover:bg-rose-100 hover:text-rose-600 text-slate-600 rounded-xl text-sm font-bold transition-all">로그아웃</button>
             </div>
         </header>
 
-        <div class="overflow-x-auto border border-slate-200 rounded-xl mb-6 shadow-sm">
+        <div class="overflow-x-auto border border-slate-200 rounded-xl mb-6 shadow-sm max-h-[60vh] overflow-y-auto">
             <table class="w-full text-left border-collapse min-w-[800px]">
                 <thead class="bg-slate-50 sticky top-0 z-10">
                     <tr class="text-sm text-slate-600 font-bold border-b border-slate-200">
@@ -89,20 +84,17 @@
                         <th class="p-3 whitespace-nowrap text-indigo-700">작성자(ID)</th>
                         <th class="p-3 whitespace-nowrap">운행 일정</th>
                         <th class="p-3 whitespace-nowrap">동승/선운행</th>
-                        <th class="p-3 text-center whitespace-nowrap">근무시간</th>
+                        <th class="p-3 text-center whitespace-nowrap">시간</th>
                         <th class="p-3 text-center whitespace-nowrap">보상시간</th>
                         <th class="p-3 text-right whitespace-nowrap">정산금액</th>
                         <th class="p-3 pr-4 whitespace-nowrap w-48">비고</th>
                     </tr>
                 </thead>
-                <tbody id="adminTableBody" class="text-sm">
-                    <!-- 관리자용 리스트 삽입 -->
-                </tbody>
+                <tbody id="adminTableBody" class="text-sm"></tbody>
             </table>
         </div>
         
-        <!-- 관리자 하단 총합계 -->
-        <div class="bg-slate-800 text-white p-5 rounded-xl flex flex-col md:flex-row justify-between items-center gap-4 shadow-lg">
+        <div class="bg-slate-800 text-white p-5 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4 shadow-lg">
             <span class="font-bold text-slate-300">이번 달 전체 합계</span>
             <div class="flex gap-6">
                 <div class="text-right">
@@ -118,21 +110,20 @@
         </div>
     </div>
 
-    <!-- [기존과 동일한 모달창들 생략 없이 그대로 유지] -->
-    <!-- 1. 일반사용자 정산 팝업 모달창 -->
+    <!-- 개인 정산 팝업 모달창 -->
     <div id="summaryModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50 overflow-y-auto">
-        <div class="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl relative my-auto border border-slate-100" onclick="event.stopPropagation()">
+        <div class="bg-white rounded-3xl max-w-3xl w-full p-6 shadow-2xl relative my-auto border border-slate-100" onclick="event.stopPropagation()">
             <div class="flex justify-between items-center mb-5">
-                <h2 id="summaryModalTitle" class="text-2xl font-extrabold text-slate-800 tracking-tight flex items-center">
+                <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight flex items-center">
                     <svg class="w-6 h-6 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                     내 정산 내역
                 </h2>
-                <button onclick="closeSummaryModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                <button onclick="closeSummaryModal()" class="text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full p-1 transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
             
-            <div class="flex gap-2 mb-4 bg-slate-100 p-1 rounded-xl">
+            <div class="flex gap-2 mb-4 bg-slate-100 p-1.5 rounded-xl">
                 <button id="tabDetailBtn" onclick="switchSummaryTab('detail')" class="flex-1 py-2 text-sm font-bold rounded-lg bg-white shadow-sm text-indigo-600 transition-all">이번 달 상세 내역</button>
                 <button id="tabMonthBtn" onclick="switchSummaryTab('month')" class="flex-1 py-2 text-sm font-bold rounded-lg text-slate-500 hover:text-slate-700 transition-all">월별 총합계</button>
             </div>
@@ -153,15 +144,15 @@
                     </table>
                 </div>
                 
-                <div class="bg-gradient-to-r from-slate-50 to-indigo-50/30 p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-3">
-                    <div class="flex flex-col items-center md:items-start">
-                        <span class="font-medium text-slate-500 text-xs mb-1">내 보상 시간 합계</span>
-                        <span id="summaryTotalHours" class="text-indigo-600 font-extrabold text-xl">0.0 h</span>
+                <div class="bg-gradient-to-r from-slate-50 to-indigo-50/30 p-4 md:p-5 rounded-xl border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-3">
+                    <div class="flex flex-col items-center md:items-start w-full md:w-auto">
+                        <span class="font-medium text-slate-500 text-xs mb-1">이번 달 보상 시간 합계</span>
+                        <span id="summaryTotalHours" class="text-indigo-600 font-extrabold text-2xl">0.0 h</span>
                     </div>
-                    <div class="h-8 border-l border-slate-300 hidden md:block"></div>
-                    <div class="flex flex-col items-center md:items-end">
-                        <span class="font-medium text-slate-500 text-xs mb-1">내 비용 정산 합계</span>
-                        <span id="summaryTotalAllowance" class="text-emerald-600 font-extrabold text-xl">0 원</span>
+                    <div class="w-full h-px md:w-px md:h-10 bg-slate-300 md:block"></div>
+                    <div class="flex flex-col items-center md:items-end w-full md:w-auto">
+                        <span class="font-medium text-slate-500 text-xs mb-1">이번 달 비용 정산 합계</span>
+                        <span id="summaryTotalAllowance" class="text-emerald-600 font-extrabold text-2xl">0 원</span>
                     </div>
                 </div>
             </div>
@@ -183,15 +174,15 @@
         </div>
     </div>
 
-    <!-- 2. 일정 입력 팝업 모달창 -->
+    <!-- 일정 입력 팝업 모달창 -->
     <div id="logModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50 overflow-y-auto">
-        <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl relative my-auto border border-slate-100" onclick="event.stopPropagation()">
-            <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
-                <h2 id="modalDateTitle" class="text-xl font-extrabold text-slate-800 flex items-center">
-                    <svg class="w-5 h-5 mr-1.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+        <div class="bg-white rounded-3xl max-w-xl w-full p-5 md:p-7 shadow-2xl relative my-auto border border-slate-100" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-5 border-b border-slate-100 pb-4">
+                <h2 id="modalDateTitle" class="text-xl md:text-2xl font-extrabold text-slate-800 flex items-center">
+                    <svg class="w-6 h-6 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     날짜 운행 정보
                 </h2>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full p-1.5 transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
@@ -199,7 +190,7 @@
             <form id="logForm" class="space-y-4">
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">운행 일정 (비용 정산)</label>
-                    <select id="scheduleType" class="w-full border border-slate-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 font-medium transition-all">
+                    <select id="scheduleType" class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 font-bold transition-all text-slate-700">
                         <option value="none">일정 선택 안함</option>
                         <option value="seoul">서울당일 (정산 0원)</option>
                         <option value="day">당일 (일비 12,500원)</option>
@@ -209,92 +200,119 @@
                     </select>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">운전원 (필수)</label>
+                        <input type="text" id="driver1" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 outline-none bg-slate-100 text-slate-500 font-bold cursor-not-allowed" readonly>
+                    </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">같이나간 운전원</label>
-                        <input type="text" id="driver2" placeholder="이름 (선택)" class="w-full border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 transition-all">
+                        <input type="text" id="driver2" placeholder="이름 (선택)" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 transition-all font-medium">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">선운행</label>
-                        <input type="text" id="preDriver" placeholder="이름 (선택)" class="w-full border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 transition-all">
+                        <input type="text" id="preDriver" placeholder="이름 (선택)" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 transition-all font-medium">
                     </div>
                 </div>
 
                 <!-- 1일차 -->
-                <div id="day1Box" class="bg-indigo-50/50 border border-indigo-100 p-4 rounded-xl">
+                <div id="day1Box" class="bg-indigo-50/50 border border-indigo-100 p-4 rounded-2xl">
                     <div class="flex justify-between items-center mb-3">
                         <span class="font-bold text-sm text-indigo-900" id="day1Label">1일차 시간 (당일)</span>
-                        <label class="flex items-center gap-1.5 text-xs font-bold text-rose-600 bg-white px-2.5 py-1.5 rounded-lg border border-rose-100 cursor-pointer shadow-sm hover:bg-rose-50 transition-colors">
-                            <input type="checkbox" id="isHoliday1" class="accent-rose-500 w-3.5 h-3.5"> 휴일적용
+                        <label class="flex items-center gap-1.5 text-xs font-bold text-rose-600 bg-white px-3 py-1.5 rounded-lg border border-rose-100 cursor-pointer shadow-sm hover:bg-rose-50 transition-colors">
+                            <input type="checkbox" id="isHoliday1" class="accent-rose-500 w-4 h-4 rounded"> 휴일적용
                         </label>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
-                        <input type="number" step="0.5" inputmode="decimal" id="startTime1" placeholder="출근 (예: 9)" class="w-full border border-white rounded-lg px-3 py-2 outline-none text-center text-sm shadow-sm focus:ring-2 focus:ring-indigo-400" required>
-                        <input type="number" step="0.5" inputmode="decimal" id="endTime1" placeholder="퇴근 (예: 18.5)" class="w-full border border-white rounded-lg px-3 py-2 outline-none text-center text-sm shadow-sm focus:ring-2 focus:ring-indigo-400" required>
+                        <input type="number" step="0.5" inputmode="decimal" id="startTime1" placeholder="출근 (예: 9)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 outline-none text-center font-bold shadow-sm focus:ring-2 focus:ring-indigo-400" required>
+                        <input type="number" step="0.5" inputmode="decimal" id="endTime1" placeholder="퇴근 (예: 18.5)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 outline-none text-center font-bold shadow-sm focus:ring-2 focus:ring-indigo-400" required>
                     </div>
                 </div>
 
                 <!-- 2일차 -->
-                <div id="day2Box" class="bg-sky-50/50 border border-sky-100 p-4 rounded-xl hidden">
+                <div id="day2Box" class="bg-sky-50/50 border border-sky-100 p-4 rounded-2xl hidden">
                     <div class="flex justify-between items-center mb-3">
                         <span class="font-bold text-sm text-sky-900" id="day2Label">2일차 시간</span>
-                        <label class="flex items-center gap-1.5 text-xs font-bold text-rose-600 bg-white px-2.5 py-1.5 rounded-lg border border-rose-100 cursor-pointer shadow-sm hover:bg-rose-50 transition-colors">
-                            <input type="checkbox" id="isHoliday2" class="accent-rose-500 w-3.5 h-3.5"> 휴일적용
+                        <label class="flex items-center gap-1.5 text-xs font-bold text-rose-600 bg-white px-3 py-1.5 rounded-lg border border-rose-100 cursor-pointer shadow-sm hover:bg-rose-50 transition-colors">
+                            <input type="checkbox" id="isHoliday2" class="accent-rose-500 w-4 h-4 rounded"> 휴일적용
                         </label>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
-                        <input type="number" step="0.5" inputmode="decimal" id="startTime2" placeholder="출근 (예: 9)" class="w-full border border-white rounded-lg px-3 py-2 outline-none text-center text-sm shadow-sm focus:ring-2 focus:ring-sky-400">
-                        <input type="number" step="0.5" inputmode="decimal" id="endTime2" placeholder="퇴근 (예: 18.5)" class="w-full border border-white rounded-lg px-3 py-2 outline-none text-center text-sm shadow-sm focus:ring-2 focus:ring-sky-400">
+                        <input type="number" step="0.5" inputmode="decimal" id="startTime2" placeholder="출근 (예: 9)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 outline-none text-center font-bold shadow-sm focus:ring-2 focus:ring-sky-400">
+                        <input type="number" step="0.5" inputmode="decimal" id="endTime2" placeholder="퇴근 (예: 18.5)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 outline-none text-center font-bold shadow-sm focus:ring-2 focus:ring-sky-400">
                     </div>
                 </div>
 
                 <!-- 3일차 -->
-                <div id="day3Box" class="bg-violet-50/50 border border-violet-100 p-4 rounded-xl hidden">
+                <div id="day3Box" class="bg-violet-50/50 border border-violet-100 p-4 rounded-2xl hidden">
                     <div class="flex justify-between items-center mb-3">
                         <span class="font-bold text-sm text-violet-900" id="day3Label">3일차 시간</span>
-                        <label class="flex items-center gap-1.5 text-xs font-bold text-rose-600 bg-white px-2.5 py-1.5 rounded-lg border border-rose-100 cursor-pointer shadow-sm hover:bg-rose-50 transition-colors">
-                            <input type="checkbox" id="isHoliday3" class="accent-rose-500 w-3.5 h-3.5"> 휴일적용
+                        <label class="flex items-center gap-1.5 text-xs font-bold text-rose-600 bg-white px-3 py-1.5 rounded-lg border border-rose-100 cursor-pointer shadow-sm hover:bg-rose-50 transition-colors">
+                            <input type="checkbox" id="isHoliday3" class="accent-rose-500 w-4 h-4 rounded"> 휴일적용
                         </label>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
-                        <input type="number" step="0.5" inputmode="decimal" id="startTime3" placeholder="출근 (예: 9)" class="w-full border border-white rounded-lg px-3 py-2 outline-none text-center text-sm shadow-sm focus:ring-2 focus:ring-violet-400">
-                        <input type="number" step="0.5" inputmode="decimal" id="endTime3" placeholder="퇴근 (예: 18.5)" class="w-full border border-white rounded-lg px-3 py-2 outline-none text-center text-sm shadow-sm focus:ring-2 focus:ring-violet-400">
+                        <input type="number" step="0.5" inputmode="decimal" id="startTime3" placeholder="출근 (예: 9)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 outline-none text-center font-bold shadow-sm focus:ring-2 focus:ring-violet-400">
+                        <input type="number" step="0.5" inputmode="decimal" id="endTime3" placeholder="퇴근 (예: 18.5)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 outline-none text-center font-bold shadow-sm focus:ring-2 focus:ring-violet-400">
                     </div>
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">비고 및 목적</label>
-                    <input type="text" id="memo" placeholder="예: 본사 ↔ 공장" class="w-full border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 transition-all text-sm">
+                    <input type="text" id="memo" placeholder="예: 본사 ↔ 공장" class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 transition-all font-medium text-sm">
                 </div>
 
-                <div class="flex justify-between items-center w-full pt-3 mt-1 border-t border-slate-100">
-                    <button type="button" id="deleteBtn" onclick="deleteLog()" class="px-5 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold text-sm shadow-md transition-colors hidden">삭제</button>
-                    <div class="flex gap-2 ml-auto">
-                        <button type="button" onclick="closeModal()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-sm transition-colors">취소</button>
-                        <button type="submit" id="saveBtn" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition-all">저장</button>
+                <div class="flex justify-between items-center w-full pt-4 mt-2 border-t border-slate-100">
+                    <button type="button" id="deleteBtn" onclick="deleteLog()" class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-bold text-sm transition-colors hidden border border-rose-200">일정 삭제</button>
+                    <div class="flex gap-2 ml-auto w-full md:w-auto">
+                        <button type="button" onclick="closeModal()" class="flex-1 md:flex-none px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-sm transition-colors">취소</button>
+                        <button type="submit" id="saveBtn" class="flex-1 md:flex-none px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition-all">저장하기</button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- 핵심 스크립트 -->
-    <script>
+    <!-- ⭐ 파이어베이스 연동 및 로직 스크립트 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // 🔥 입력해주신 파이어베이스 설정값 적용 완료
+        const firebaseConfig = {
+            apiKey: "AIzaSyAC-4qsyKMuGp6o583agoFructJKiX67Oo",
+            authDomain: "carpro-97259.firebaseapp.com",
+            projectId: "carpro-97259",
+            storageBucket: "carpro-97259.firebasestorage.app",
+            messagingSenderId: "565637957634",
+            appId: "1:565637957634:web:dca9222b84f1d9955e3f1b",
+            measurementId: "G-JWL5TQWCB2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
         let currentYear = new Date().getFullYear();
         let currentMonth = new Date().getMonth(); 
         let selectedDateStr = "";
         
-        // ⭐ 접속자 관리
         let currentUser = "";
         let isAdmin = false;
-        
-        // 데이터 구조 변경: { "홍길동_2026-08-17": { ... }, "admin_...": {...} }
-        let logsData = JSON.parse(localStorage.getItem('drivingLogsMulti')) || {};
+        let logsData = {}; 
 
-        const iconTime = `<svg class="w-[11px] h-[11px] inline-block mr-0.5 mb-[2px] text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
-        const iconMoney = `<svg class="w-3 h-3 inline-block mr-0.5 mb-[2px] text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+        // 파이어베이스 실시간 동기화
+        onSnapshot(collection(db, "drivingLogsMulti"), (snapshot) => {
+            logsData = {};
+            snapshot.forEach((doc) => {
+                logsData[doc.id] = doc.data();
+            });
+            if (isAdmin) renderAdminTable();
+            else if (currentUser !== "") renderCalendar();
+        });
 
-        // 로그인 기능
+        const iconTime = `<svg class="w-3 h-3 inline-block mr-0.5 mb-[2px] text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+        const iconMoney = `<svg class="w-3 h-3 inline-block mr-0.5 mb-[2px] text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>`;
+
         window.handleLogin = function() {
             const inputId = document.getElementById('loginIdInput').value.trim();
             if (!inputId) { alert("이름이나 ID를 입력해주세요!"); return; }
@@ -314,7 +332,6 @@
             }
         }
 
-        // 로그아웃 기능
         window.handleLogout = function() {
             currentUser = "";
             isAdmin = false;
@@ -322,12 +339,6 @@
             document.getElementById('loginView').classList.remove('hidden');
             document.getElementById('userView').classList.add('hidden');
             document.getElementById('adminView').classList.add('hidden');
-        }
-
-        function saveToLocal() {
-            localStorage.setItem('drivingLogsMulti', JSON.stringify(logsData));
-            if (isAdmin) renderAdminTable();
-            else renderCalendar();
         }
 
         window.changeMonth = function(direction) {
@@ -354,7 +365,9 @@
             "08-15": "광복절", "10-03": "개천절", "10-09": "한글날", "12-25": "성탄절",
             "2026-02-16": "설날", "2026-02-17": "설날", "2026-02-18": "설날", "2026-03-02": "대체휴일", 
             "2026-05-24": "부처님오신날", "2026-05-25": "대체휴일",
-            "2026-09-24": "추석", "2026-09-25": "추석", "2026-09-26": "추석"
+            "2026-09-24": "추석", "2026-09-25": "추석", "2026-09-26": "추석",
+            "2027-02-06": "설날", "2027-02-07": "설날", "2027-02-08": "설날", "2027-02-09": "대체휴일",
+            "2027-05-13": "부처님오신날", "2027-09-14": "추석", "2027-09-15": "추석", "2027-09-16": "추석"
         };
 
         function getHolidayName(dateStr) {
@@ -396,7 +409,6 @@
             return 0;
         }
 
-        // ⭐ 개인별 달력 렌더링 (일반 사용자)
         function renderCalendar() {
             const titleEl = document.getElementById('calendarMonthTitle');
             const gridEl = document.getElementById('calendarGrid');
@@ -414,8 +426,6 @@
                 const monthStr = String(currentMonth + 1).padStart(2, '0');
                 const dayStr = String(day).padStart(2, '0');
                 const dateKey = `${currentYear}-${monthStr}-${dayStr}`;
-
-                // 현재 로그인한 사람의 데이터만 가져옴
                 const logKey = `${currentUser}_${dateKey}`;
                 const log = logsData[logKey];
 
@@ -427,7 +437,7 @@
                 
                 if (holidayName) {
                     dateColorClass = "text-rose-500";
-                    dateBadgeHTML = `<span class="text-[10px] text-rose-500 ml-1 font-semibold tracking-tighter bg-rose-50 px-1 rounded">(${holidayName})</span>`;
+                    dateBadgeHTML = `<span class="text-[10px] text-rose-500 ml-1 font-bold tracking-tighter bg-rose-50 px-1.5 py-0.5 rounded-md">(${holidayName})</span>`;
                 } else if (dayOfWeek === 0) dateColorClass = "text-rose-500";
                 else if (dayOfWeek === 6) dateColorClass = "text-blue-500";
 
@@ -444,18 +454,19 @@
                     const allowance = calculateAllowance(log);
                     
                     let allowanceHTML = '';
-                    if (allowance > 0) allowanceHTML = `<div class="text-[11px] font-bold text-emerald-700 bg-emerald-100/70 border border-emerald-200 rounded-md px-1.5 mt-1 text-center shadow-sm flex justify-center items-center h-5">${iconMoney}${allowance.toLocaleString()}원</div>`;
-                    else if (log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) allowanceHTML = `<div class="text-[11px] font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded-md px-1.5 mt-1 text-center shadow-sm flex justify-center items-center h-5">서울당일</div>`;
+                    if (allowance > 0) allowanceHTML = `<div class="text-[11px] font-bold text-emerald-700 bg-emerald-100/70 border border-emerald-200 rounded-lg px-1.5 mt-1.5 text-center shadow-sm flex justify-center items-center h-5 tracking-tight">${iconMoney}${allowance.toLocaleString()}원</div>`;
+                    else if (log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) allowanceHTML = `<div class="text-[11px] font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded-lg px-1.5 mt-1.5 text-center shadow-sm flex justify-center items-center h-5 tracking-tight">서울당일</div>`;
 
-                    const driver2HTML = log.driver2 ? `<div class="text-[11px] font-bold text-indigo-700 bg-indigo-100/70 border border-indigo-200 rounded-md px-1.5 mt-0.5 shadow-sm truncate">${log.driver2}</div>` : '';
-                    const preDriverHTML = log.preDriver ? `<div class="text-[11px] font-bold text-amber-700 bg-amber-100/70 border border-amber-200 rounded-md px-1.5 mt-0.5 shadow-sm truncate">선: ${log.preDriver}</div>` : '';
+                    const driver2HTML = log.driver2 ? `<div class="text-[11px] font-bold text-indigo-700 bg-indigo-100/70 border border-indigo-200 rounded-lg px-1.5 mt-0.5 shadow-sm truncate">${log.driver2}</div>` : '';
+                    const preDriverHTML = log.preDriver ? `<div class="text-[11px] font-bold text-amber-700 bg-amber-100/70 border border-amber-200 rounded-lg px-1.5 mt-0.5 shadow-sm truncate">선: ${log.preDriver}</div>` : '';
                     const payColor = log.isHoliday ? 'text-rose-600 bg-rose-50 border-rose-100' : 'text-slate-600 bg-slate-50 border-slate-200';
 
                     contentHTML = `
+                        <div class="text-[11px] font-extrabold text-blue-700 bg-blue-100/70 border border-blue-200 rounded-lg px-1.5 shadow-sm truncate py-0.5">${log.driver1}</div>
                         ${driver2HTML}
                         ${preDriverHTML}
-                        <div class="text-[10px] text-slate-600 bg-white/80 border border-slate-200 rounded-md px-1 mt-1.5 text-center font-bold shadow-sm tracking-tighter flex justify-center items-center h-5">${iconTime}${log.startTime} ~ ${log.endTime}</div>
-                        <div class="text-[10px] font-bold border rounded-md px-1 mt-0.5 ${payColor} shadow-sm text-center flex justify-center items-center h-5">${calc.label}: ${calc.totalPayTime}h</div>
+                        <div class="text-[10px] text-slate-600 bg-white border border-slate-200 rounded-lg px-1 mt-1.5 text-center font-bold shadow-sm tracking-tighter flex justify-center items-center h-5">${iconTime}${log.startTime} ~ ${log.endTime}</div>
+                        <div class="text-[10px] font-bold border rounded-lg px-1 mt-0.5 ${payColor} shadow-sm text-center flex justify-center items-center h-5">${calc.label}: ${calc.totalPayTime}h</div>
                         ${allowanceHTML}
                     `;
                 }
@@ -472,17 +483,14 @@
             }
         }
 
-        // ⭐ 최고 관리자용 통합 테이블 렌더링
         function renderAdminTable() {
             document.getElementById('adminMonthTitle').textContent = `${currentYear}년 ${currentMonth + 1}월 전체 운행 내역`;
             const tbody = document.getElementById('adminTableBody');
             tbody.innerHTML = "";
 
             const targetPrefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
-            let totalHours = 0;
-            let totalAllowance = 0;
+            let totalHours = 0; let totalAllowance = 0;
 
-            // 전체 데이터 중 이번 달 데이터만 필터링 후 날짜순 정렬
             const monthLogs = Object.values(logsData)
                 .filter(log => log.date.startsWith(targetPrefix))
                 .sort((a, b) => a.date.localeCompare(b.date) || a.userId.localeCompare(b.userId));
@@ -506,18 +514,18 @@
                     else if(log.scheduleType === 'seoul') scheduleTxt = "서울당일";
                     else if(log.scheduleType === 'linked') scheduleTxt = `연계 (${log.parentType})`;
 
-                    const extraDrivers = [log.driver2 ? `동승: ${log.driver2}` : null, log.preDriver ? `선: ${log.preDriver}` : null].filter(Boolean).join(' / ') || "-";
+                    const extraDrivers = [log.driver2 ? `동승:${log.driver2}` : null, log.preDriver ? `선:${log.preDriver}` : null].filter(Boolean).join(' / ') || "-";
 
                     tbody.innerHTML += `
                         <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                            <td class="p-3 pl-4 font-bold text-slate-700">${log.date.split('-')[2]}일 (${dayStr})</td>
+                            <td class="p-3 pl-4 font-bold text-slate-700">${log.date.split('-')[2]}일 <span class="text-xs text-slate-400 font-normal">(${dayStr})</span></td>
                             <td class="p-3 text-indigo-700 font-extrabold">${log.userId}</td>
-                            <td class="p-3 text-slate-600 font-medium">${scheduleTxt}</td>
-                            <td class="p-3 text-slate-500 text-xs">${extraDrivers}</td>
-                            <td class="p-3 text-center text-xs font-semibold bg-slate-50/50">${log.startTime}~${log.endTime}</td>
-                            <td class="p-3 text-center font-bold ${log.isHoliday ? 'text-rose-500' : 'text-blue-600'}">${calc.totalPayTime}h</td>
-                            <td class="p-3 text-right font-bold text-emerald-600">${allowance > 0 ? allowance.toLocaleString()+'원' : '-'}</td>
-                            <td class="p-3 pr-4 text-slate-500 text-xs truncate max-w-xs">${log.memo || '-'}</td>
+                            <td class="p-3 text-slate-600 font-bold">${scheduleTxt}</td>
+                            <td class="p-3 text-slate-500 text-xs font-semibold">${extraDrivers}</td>
+                            <td class="p-3 text-center text-xs font-bold text-slate-600 bg-slate-50/50">${log.startTime}~${log.endTime}</td>
+                            <td class="p-3 text-center font-extrabold ${log.isHoliday ? 'text-rose-500' : 'text-blue-600'}">${calc.totalPayTime}h</td>
+                            <td class="p-3 text-right font-extrabold text-emerald-600">${allowance > 0 ? allowance.toLocaleString()+'원' : '-'}</td>
+                            <td class="p-3 pr-4 text-slate-500 text-xs truncate max-w-xs font-medium">${log.memo || '-'}</td>
                         </tr>
                     `;
                 });
@@ -526,14 +534,11 @@
             document.getElementById('adminTotalAllowance').textContent = totalAllowance.toLocaleString() + " 원";
         }
 
-
         window.openSummaryModal = function() {
             document.getElementById('summaryModal').classList.remove('hidden');
             switchSummaryTab('detail'); 
         }
-        window.closeSummaryModal = function() {
-            document.getElementById('summaryModal').classList.add('hidden');
-        }
+        window.closeSummaryModal = function() { document.getElementById('summaryModal').classList.add('hidden'); }
 
         window.switchSummaryTab = function(tab) {
             const detailBtn = document.getElementById('tabDetailBtn');
@@ -544,14 +549,12 @@
             if (tab === 'detail') {
                 detailBtn.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-white shadow-sm text-indigo-600 transition-all";
                 monthBtn.className = "flex-1 py-2 text-sm font-bold rounded-lg text-slate-500 hover:text-slate-700 transition-all";
-                detailView.classList.remove('hidden');
-                monthView.classList.add('hidden');
+                detailView.classList.remove('hidden'); monthView.classList.add('hidden');
                 renderSummaryDetail();
             } else {
                 monthBtn.className = "flex-1 py-2 text-sm font-bold rounded-lg bg-white shadow-sm text-indigo-600 transition-all";
                 detailBtn.className = "flex-1 py-2 text-sm font-bold rounded-lg text-slate-500 hover:text-slate-700 transition-all";
-                detailView.classList.add('hidden');
-                monthView.classList.remove('hidden');
+                detailView.classList.add('hidden'); monthView.classList.remove('hidden');
                 renderSummaryMonthly();
             }
         }
@@ -561,12 +564,11 @@
             tbody.innerHTML = "";
             let totalHours = 0; let totalAllowance = 0;
             
-            // 본인 데이터만
             const targetPrefix = `${currentUser}_${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
             const sortedKeys = Object.keys(logsData).filter(key => key.startsWith(targetPrefix)).sort();
 
             if (sortedKeys.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 font-medium bg-slate-50">이번 달 운행 내역이 없습니다.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400 font-medium">이번 달 운행 내역이 없습니다.</td></tr>`;
             } else {
                 sortedKeys.forEach(key => {
                     const log = logsData[key];
@@ -576,7 +578,7 @@
                     totalHours += parseFloat(calc.totalPayTime || 0);
                     totalAllowance += allowance;
 
-                    const extraDrivers = [log.driver2 ? log.driver2 : null, log.preDriver ? `선:${log.preDriver}` : null].filter(Boolean).join(', ');
+                    const extraDrivers = [log.driver2 ? log.driver2 : null, log.preDriver ? `선: ${log.preDriver}` : null].filter(Boolean).join(', ');
                     const dateObj = new Date(log.date);
                     const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
                     
@@ -587,10 +589,10 @@
                     tbody.innerHTML += `
                         <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                             <td class="p-3 pl-4 font-bold text-slate-700">${log.date.split('-')[2]}일 <span class="text-xs font-normal text-slate-400">(${dayStr})</span></td>
-                            <td class="p-3 text-slate-700 font-medium">${extraDrivers || '-'}</td>
-                            <td class="p-3 text-center text-xs text-slate-500 font-semibold tracking-tighter bg-slate-50/50">${iconTime}${log.startTime}~${log.endTime}</td>
-                            <td class="p-3 text-center font-bold ${log.isHoliday ? 'text-rose-500' : 'text-blue-600'}">${calc.totalPayTime}h</td>
-                            <td class="p-3 pr-4 text-right font-bold text-emerald-600">${allowanceStr}</td>
+                            <td class="p-3 text-slate-700 font-bold">${extraDrivers || '-'}</td>
+                            <td class="p-3 text-center text-xs text-slate-600 font-bold tracking-tighter bg-slate-50/50">${iconTime}${log.startTime}~${log.endTime}</td>
+                            <td class="p-3 text-center font-extrabold ${log.isHoliday ? 'text-rose-500' : 'text-blue-600'}">${calc.totalPayTime}h</td>
+                            <td class="p-3 pr-4 text-right font-extrabold text-emerald-600 flex items-center justify-end gap-1">${allowanceStr}</td>
                         </tr>
                     `;
                 });
@@ -605,7 +607,7 @@
             const monthlyStats = {};
             
             Object.keys(logsData).forEach(key => {
-                if(!key.startsWith(currentUser + "_")) return; // 본인것만
+                if(!key.startsWith(currentUser + "_")) return; 
                 const log = logsData[key];
                 const monthKey = log.date.substring(0, 7); 
                 
@@ -619,7 +621,7 @@
             const sortedMonths = Object.keys(monthlyStats).sort((a,b) => b.localeCompare(a));
 
             if (sortedMonths.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-slate-400 font-medium bg-slate-50">저장된 운행 내역이 없습니다.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="3" class="p-8 text-center text-slate-400 font-medium">저장된 운행 내역이 없습니다.</td></tr>`;
             } else {
                 sortedMonths.forEach(monthKey => {
                     const stats = monthlyStats[monthKey];
@@ -627,19 +629,19 @@
                     tbody.innerHTML += `
                         <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                             <td class="p-4 text-center font-extrabold text-slate-700 text-lg">${yyyy}년 ${parseInt(mm)}월</td>
-                            <td class="p-4 text-center font-bold text-indigo-600 text-lg">${stats.hours.toFixed(1)} h</td>
-                            <td class="p-4 text-center font-bold text-emerald-600 text-lg flex justify-center items-center h-full">${iconMoney}${stats.allowance.toLocaleString()} 원</td>
+                            <td class="p-4 text-center font-extrabold text-indigo-600 text-lg">${stats.hours.toFixed(1)} h</td>
+                            <td class="p-4 text-center font-extrabold text-emerald-600 text-lg flex justify-center items-center h-full gap-1.5">${iconMoney}${stats.allowance.toLocaleString()} 원</td>
                         </tr>
                     `;
                 });
             }
         }
 
-        // 스케줄 선택 시 박스 표시
         document.getElementById('scheduleType').addEventListener('change', function(e) {
             const val = e.target.value;
             const day2 = document.getElementById('day2Box');
             const day3 = document.getElementById('day3Box');
+
             if (val === '1night') {
                 day2.classList.remove('hidden'); day3.classList.add('hidden');
                 document.getElementById('startTime2').required = true; document.getElementById('endTime2').required = true;
@@ -655,10 +657,12 @@
             }
         });
 
-        // 모달 열기
         window.openModal = function(dateStr) {
             selectedDateStr = dateStr;
-            document.getElementById('modalDateTitle').innerHTML = `<span class="text-indigo-500 mr-2">📅</span> ${dateStr} 운행 정보`;
+            document.getElementById('modalDateTitle').innerHTML = `
+                <svg class="w-6 h-6 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                ${dateStr} 운행 정보
+            `;
             
             document.getElementById('logForm').reset();
             document.getElementById('scheduleType').value = "none";
@@ -689,10 +693,7 @@
             document.getElementById('isHoliday2').checked = checkIsHolidayByDefault(addDays(dateStr, 1));
             document.getElementById('isHoliday3').checked = checkIsHolidayByDefault(addDays(dateStr, 2));
 
-            // ⭐ 로그인된 본인 이름 고정 처리
             document.getElementById('driver1').value = currentUser;
-            document.getElementById('driver1').readOnly = true;
-            document.getElementById('driver1').className = "w-full border border-slate-200 rounded-xl px-3 py-2 bg-slate-100 text-slate-500 outline-none font-bold cursor-not-allowed";
 
             if (logsData[logKey]) {
                 const data = logsData[logKey];
@@ -733,8 +734,12 @@
             document.getElementById('logForm').reset();
         }
 
-        window.deleteLog = function() {
+        // ⭐ 파이어베이스 연동 삭제 로직
+        window.deleteLog = async function() {
             if (!confirm("정말 이 일정을 삭제하시겠습니까?\n(1박/2박 일정인 경우 연결된 다음 날짜도 모두 삭제됩니다)")) return;
+
+            const btn = document.getElementById('deleteBtn');
+            btn.disabled = true; btn.innerText = "삭제 중...";
 
             const date1 = selectedDateStr;
             const logKey1 = `${currentUser}_${date1}`;
@@ -745,17 +750,23 @@
                 if (log.scheduleType === 'linked' && log.parentDate) parentDate = log.parentDate;
 
                 const pKey = `${currentUser}_${parentDate}`;
-                if (logsData[pKey]) delete logsData[pKey];
-                
                 const d2Key = `${currentUser}_${addDays(parentDate, 1)}`;
                 const d3Key = `${currentUser}_${addDays(parentDate, 2)}`;
 
-                if (logsData[d2Key] && logsData[d2Key].parentDate === parentDate) delete logsData[d2Key];
-                if (logsData[d3Key] && logsData[d3Key].parentDate === parentDate) delete logsData[d3Key];
-
-                saveToLocal();
+                try {
+                    const delPromises = [];
+                    if (logsData[pKey]) delPromises.push(deleteDoc(doc(db, "drivingLogsMulti", pKey)));
+                    if (logsData[d2Key] && logsData[d2Key].parentDate === parentDate) delPromises.push(deleteDoc(doc(db, "drivingLogsMulti", d2Key)));
+                    if (logsData[d3Key] && logsData[d3Key].parentDate === parentDate) delPromises.push(deleteDoc(doc(db, "drivingLogsMulti", d3Key)));
+                    
+                    await Promise.all(delPromises);
+                    closeModal();
+                } catch (error) {
+                    console.error("삭제 실패: ", error);
+                    alert("데이터 삭제에 실패했습니다.");
+                    btn.disabled = false; btn.innerText = "일정 삭제";
+                }
             }
-            closeModal();
         }
 
         const timeInputs = document.querySelectorAll('input[type="number"]');
@@ -764,9 +775,13 @@
             input.addEventListener('change', function() { this.blur(); });
         });
 
-        document.getElementById('logForm').addEventListener('submit', function(e) {
+        // ⭐ 파이어베이스 연동 저장 로직
+        document.getElementById('logForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true; btn.innerText = "저장 중...";
+
             const scheduleType = document.getElementById('scheduleType').value;
             const driver2 = document.getElementById('driver2').value;
             const preDriver = document.getElementById('preDriver').value;
@@ -785,51 +800,62 @@
                 currentParentType = logsData[key1].parentType;
             }
 
-            if (scheduleType === 'linked') {
-                logsData[key1] = {
-                    userId: currentUser, date: date1, scheduleType: 'linked', parentType: currentParentType,
-                    driver1: currentUser, driver2, preDriver, 
-                    startTime: document.getElementById('startTime1').value,
-                    endTime: document.getElementById('endTime1').value,
-                    isHoliday: document.getElementById('isHoliday1').checked, memo
-                };
-            } else {
-                logsData[key1] = {
-                    userId: currentUser, date: date1, scheduleType: scheduleType, 
-                    driver1: currentUser, driver2, preDriver,
-                    startTime: document.getElementById('startTime1').value,
-                    endTime: document.getElementById('endTime1').value,
-                    isHoliday: document.getElementById('isHoliday1').checked, memo
-                };
+            try {
+                const savePromises = [];
 
-                if (scheduleType === '1night' || scheduleType === '2night') {
-                    logsData[key2] = {
-                        userId: currentUser, date: date2, scheduleType: 'linked', parentType: scheduleType, parentDate: date1, 
+                if (scheduleType === 'linked') {
+                    savePromises.push(setDoc(doc(db, "drivingLogsMulti", key1), {
+                        userId: currentUser, date: date1, scheduleType: 'linked', parentType: currentParentType,
                         driver1: currentUser, driver2, preDriver, 
-                        startTime: document.getElementById('startTime2').value,
-                        endTime: document.getElementById('endTime2').value,
-                        isHoliday: document.getElementById('isHoliday2').checked, memo: memo + " (2일차)"
-                    };
-                }
-                if (scheduleType === '2night') {
-                    logsData[key3] = {
-                        userId: currentUser, date: date3, scheduleType: 'linked', parentType: scheduleType, parentDate: date1,
-                        driver1: currentUser, driver2, preDriver, 
-                        startTime: document.getElementById('startTime3').value,
-                        endTime: document.getElementById('endTime3').value,
-                        isHoliday: document.getElementById('isHoliday3').checked, memo: memo + " (3일차)"
-                    };
-                }
+                        startTime: document.getElementById('startTime1').value,
+                        endTime: document.getElementById('endTime1').value,
+                        isHoliday: document.getElementById('isHoliday1').checked, memo, updatedAt: new Date()
+                    }));
+                } else {
+                    savePromises.push(setDoc(doc(db, "drivingLogsMulti", key1), {
+                        userId: currentUser, date: date1, scheduleType: scheduleType, 
+                        driver1: currentUser, driver2, preDriver,
+                        startTime: document.getElementById('startTime1').value,
+                        endTime: document.getElementById('endTime1').value,
+                        isHoliday: document.getElementById('isHoliday1').checked, memo, updatedAt: new Date()
+                    }));
 
-                if (scheduleType !== '2night') {
-                    if (logsData[key3] && logsData[key3].parentDate === date1) delete logsData[key3];
+                    if (scheduleType === '1night' || scheduleType === '2night') {
+                        savePromises.push(setDoc(doc(db, "drivingLogsMulti", key2), {
+                            userId: currentUser, date: date2, scheduleType: 'linked', parentType: scheduleType, parentDate: date1, 
+                            driver1: currentUser, driver2, preDriver, 
+                            startTime: document.getElementById('startTime2').value,
+                            endTime: document.getElementById('endTime2').value,
+                            isHoliday: document.getElementById('isHoliday2').checked, memo: memo + " (2일차)", updatedAt: new Date()
+                        }));
+                    }
+                    if (scheduleType === '2night') {
+                        savePromises.push(setDoc(doc(db, "drivingLogsMulti", key3), {
+                            userId: currentUser, date: date3, scheduleType: 'linked', parentType: scheduleType, parentDate: date1,
+                            driver1: currentUser, driver2, preDriver, 
+                            startTime: document.getElementById('startTime3').value,
+                            endTime: document.getElementById('endTime3').value,
+                            isHoliday: document.getElementById('isHoliday3').checked, memo: memo + " (3일차)", updatedAt: new Date()
+                        }));
+                    }
+
+                    if (scheduleType !== '2night') {
+                        if (logsData[key3] && logsData[key3].parentDate === date1) savePromises.push(deleteDoc(doc(db, "drivingLogsMulti", key3)));
+                    }
+                    if (scheduleType !== '1night' && scheduleType !== '2night') {
+                        if (logsData[key2] && logsData[key2].parentDate === date1) savePromises.push(deleteDoc(doc(db, "drivingLogsMulti", key2)));
+                    }
                 }
-                if (scheduleType !== '1night' && scheduleType !== '2night') {
-                    if (logsData[key2] && logsData[key2].parentDate === date1) delete logsData[key2];
-                }
+                
+                await Promise.all(savePromises);
+                closeModal();
+
+            } catch (error) {
+                console.error("저장 실패: ", error);
+                alert("데이터 저장에 실패했습니다. 파이어베이스 연결을 확인해주세요.");
+            } finally {
+                btn.disabled = false; btn.innerText = "저장하기";
             }
-            saveToLocal();
-            closeModal();
         });
     </script>
 </body>
