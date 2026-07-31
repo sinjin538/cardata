@@ -516,7 +516,7 @@
             return 0;
         }
 
-        function renderCalendar() {
+       function renderCalendar() {
             const titleEl = document.getElementById('calendarMonthTitle'); const gridEl = document.getElementById('calendarGrid');
             titleEl.textContent = `${currentYear}년 ${currentMonth + 1}월 운행 달력`; gridEl.innerHTML = "";
 
@@ -535,18 +535,19 @@
                 if (holidayName) { dateColorClass = "text-rose-500"; dateBadgeHTML = `<span class="text-[10px] text-rose-500 ml-1 font-bold tracking-tighter bg-rose-50 px-1.5 py-0.5 rounded-md">(${holidayName})</span>`; } 
                 else if (dayOfWeek === 0) dateColorClass = "text-rose-500"; else if (dayOfWeek === 6) dateColorClass = "text-blue-500";
 
+                // ⭐ 1. 요청하신 '조금 더 진한 바탕색' 적용
                 let cellBgClass = 'bg-white border-slate-200 hover:border-indigo-400 hover:shadow-md';
                 if (log) {
                     let sType = log.scheduleType === 'linked' ? log.parentType : log.scheduleType;
                     
                     if (sType === 'day') {
-                        cellBgClass = 'bg-blue-50 border-blue-200 hover:border-blue-400 hover:shadow-md';
+                        cellBgClass = 'bg-blue-100 border-blue-300 hover:border-blue-500 hover:shadow-md'; // 당일 (더 진한 파랑)
                     } else if (sType === '1night') {
-                        cellBgClass = 'bg-yellow-50 border-yellow-200 hover:border-yellow-400 hover:shadow-md';
+                        cellBgClass = 'bg-yellow-200 border-yellow-400 hover:border-yellow-500 hover:shadow-md'; // 1박 (더 진한 노랑)
                     } else if (sType === '2night') {
-                        cellBgClass = 'bg-orange-50 border-orange-200 hover:border-orange-400 hover:shadow-md';
+                        cellBgClass = 'bg-orange-200 border-orange-400 hover:border-orange-500 hover:shadow-md'; // 2박 (더 진한 살색/주황)
                     } else if (sType === 'seoul') {
-                        cellBgClass = 'bg-white border-slate-200 hover:border-slate-400 hover:shadow-md';
+                        cellBgClass = 'bg-slate-100 border-slate-300 hover:border-slate-500 hover:shadow-md'; // 서울당일 (연한 회색톤으로 흰색과 구분)
                     }
                 }
 
@@ -554,25 +555,40 @@
 
                 if (log) {
                     const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
-                    let allowanceHTML = '';
-                    if (allowance > 0) allowanceHTML = `<div class="text-[11px] font-bold text-emerald-700 bg-emerald-100/70 border border-emerald-200 rounded-lg px-1.5 mt-1.5 text-center shadow-sm flex justify-center items-center h-5 tracking-tight">${iconMoney}${allowance.toLocaleString()}원</div>`;
-                    else if (log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) allowanceHTML = `<div class="text-[11px] font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded-lg px-1.5 mt-1.5 text-center shadow-sm flex justify-center items-center h-5 tracking-tight">서울당일</div>`;
-
-                    const vehicleHTML = log.vehicle ? `<div class="text-[11px] font-extrabold text-slate-700 bg-slate-200/70 border border-slate-300 rounded-lg px-1.5 shadow-sm truncate py-0.5 mb-0.5">🚙 ${log.vehicle}</div>` : '';
-                    const driver2HTML = log.driver2 ? `<div class="text-[11px] font-bold text-indigo-700 bg-indigo-100/70 border border-indigo-200 rounded-lg px-1.5 mt-0.5 shadow-sm truncate">${log.driver2}</div>` : '';
-                    const preDriverHTML = log.preDriver ? `<div class="text-[11px] font-bold text-amber-700 bg-amber-100/70 border border-amber-200 rounded-lg px-1.5 mt-0.5 shadow-sm truncate">선: ${log.preDriver}</div>` : '';
-                    const payColor = log.isHoliday ? 'text-rose-600 bg-rose-50 border-rose-100' : 'text-slate-600 bg-slate-50 border-slate-200';
                     
-                    // ⭐ 시간을 보기 좋게 변환하여 표시 (예: 9:00 ~ 18:30)
+                    // 정산 및 비용 디자인
+                    let allowanceHTML = '';
+                    if (allowance > 0) allowanceHTML = `<div class="text-[11px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 rounded-lg px-1.5 text-center shadow-sm flex justify-center items-center h-5 tracking-tight">${iconMoney}${allowance.toLocaleString()}원</div>`;
+                    else if (log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) allowanceHTML = `<div class="text-[11px] font-bold text-slate-600 bg-slate-200 border border-slate-300 rounded-lg px-1.5 text-center shadow-sm flex justify-center items-center h-5 tracking-tight">서울당일</div>`;
+
+                    // ⭐ 2. 차량 번호 눈에 띄게 (그림 🚙 제거, 배경을 짙은색으로 강조)
+                    const vehicleHTML = log.vehicle ? `<div class="text-[12px] font-black text-white bg-slate-800 rounded-md px-1.5 shadow-md truncate py-0.5 text-center tracking-wider">${log.vehicle}</div>` : '';
+                    
+                    // ⭐ 3. 운전원 합치기 + 선운행자 이름 밑에 빨간색 밑줄(underline) 치기
+                    let d1Txt = log.driver1;
+                    if (log.preDriver && log.preDriver === log.driver1) {
+                        d1Txt = `<span class="underline decoration-rose-500 decoration-2 underline-offset-2">${log.driver1}</span>`;
+                    }
+                    
+                    let d2Txt = "";
+                    if (log.driver2) {
+                        if (log.preDriver && log.preDriver === log.driver2) {
+                            d2Txt = `, <span class="underline decoration-rose-500 decoration-2 underline-offset-2">${log.driver2}</span>`;
+                        } else {
+                            d2Txt = `, ${log.driver2}`;
+                        }
+                    }
+                    // 이름 합쳐서 한 줄로 출력
+                    const driverComboHTML = `<div class="text-[11px] font-extrabold text-blue-900 bg-white/80 border border-blue-200 rounded-lg px-1 shadow-sm truncate py-1 text-center">${d1Txt}${d2Txt}</div>`;
+
+                    const payColor = log.isHoliday ? 'text-rose-700 bg-rose-100 border-rose-300' : 'text-slate-700 bg-slate-100 border-slate-300';
                     const displayTime = `${formatTime(log.startTime)} ~ ${formatTime(log.endTime)}`;
 
                     contentHTML = `
                         ${vehicleHTML}
-                        <div class="text-[11px] font-extrabold text-blue-700 bg-blue-100/70 border border-blue-200 rounded-lg px-1.5 shadow-sm truncate py-0.5">${log.driver1}</div>
-                        ${driver2HTML}
-                        ${preDriverHTML}
-                        <div class="text-[10px] text-slate-600 bg-white border border-slate-200 rounded-lg px-1 mt-1.5 text-center font-bold shadow-sm tracking-tighter flex justify-center items-center h-5">${iconTime}${displayTime}</div>
-                        <div class="text-[10px] font-bold border rounded-lg px-1 mt-0.5 ${payColor} shadow-sm text-center flex justify-center items-center h-5">${calc.label}: ${calc.totalPayTime}h</div>
+                        ${driverComboHTML}
+                        <div class="text-[10px] text-slate-700 bg-white/90 border border-slate-200 rounded-lg px-1 text-center font-bold shadow-sm tracking-tighter flex justify-center items-center h-5">${iconTime}${displayTime}</div>
+                        <div class="text-[10px] font-bold border rounded-lg px-1 ${payColor} shadow-sm text-center flex justify-center items-center h-5">${calc.label}: ${calc.totalPayTime}h</div>
                         ${allowanceHTML}
                     `;
                 }
@@ -580,10 +596,11 @@
                 gridEl.innerHTML += `
                     <div onclick="openModal('${dateKey}')" class="h-full min-h-[6.5rem] ${cellBgClass} border rounded-2xl p-1.5 md:p-2 cursor-pointer transition-all duration-200 flex flex-col">
                         <div class="flex items-center ml-0.5"><span class="text-[13px] md:text-sm font-extrabold ${dateColorClass}">${day}</span>${dateBadgeHTML}</div>
-                        <div class="flex flex-col gap-0.5 mt-1.5">${contentHTML}</div>
+                        <div class="flex flex-col gap-1 mt-1.5">${contentHTML}</div>
                     </div>
                 `;
             }
+            
             // 달력을 다 그린 후 하단 개인 내역 테이블도 렌더링
             renderUserTable();
         }
