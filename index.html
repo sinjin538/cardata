@@ -856,14 +856,37 @@
                 document.getElementById('startTime3').required = false; document.getElementById('endTime3').required = false;
             }
         });
-
-        window.openModal = function(dateStr) {
+if (document.getElementById('isOff')) {
+            document.getElementById('isOff').addEventListener('change', function(e) {
+                const isChecked = e.target.checked;
+                // 1. 시간 필수 입력(required) 무시하기
+                document.getElementById('startTime1').required = !isChecked;
+                document.getElementById('endTime1').required = !isChecked;
+                
+                // 2. 다른 칸들 입력 못하게 회색으로 비활성화 (편의성)
+                const inputsToDisable = ['startTime1', 'endTime1', 'startTime2', 'endTime2', 'startTime3', 'endTime3', 'scheduleType', 'vehicle', 'driver2', 'preDriver', 'memo'];
+                inputsToDisable.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.disabled = isChecked;
+                });
+            });
+        }
+       window.openModal = function(dateStr) {
             selectedDateStr = dateStr;
             document.getElementById('modalDateTitle').innerHTML = `<svg class="w-6 h-6 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>${dateStr} 운행 정보`;
             document.getElementById('logForm').reset(); document.getElementById('scheduleType').value = "none";
             ['1', '2', '3'].forEach(num => { document.getElementById(`startTime${num}`).value = ""; document.getElementById(`endTime${num}`).value = ""; document.getElementById(`isHoliday${num}`).checked = false; });
             document.getElementById('day2Box').classList.add('hidden'); document.getElementById('day3Box').classList.add('hidden');
-            document.getElementById('scheduleType').disabled = false;
+            
+            // ⭐ 팝업 열 때 모든 입력창 비활성화(disabled) 해제 및 필수값 복구
+            const inputsToReset = ['startTime1', 'endTime1', 'startTime2', 'endTime2', 'startTime3', 'endTime3', 'scheduleType', 'vehicle', 'driver2', 'preDriver', 'memo'];
+            inputsToReset.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.disabled = false;
+            });
+            document.getElementById('startTime1').required = true;
+            document.getElementById('endTime1').required = true;
+            
             document.getElementById('vehicle').value = "";
             if (document.getElementById('isOff')) document.getElementById('isOff').checked = false;
 
@@ -887,7 +910,11 @@
                 const data = logsData[logKey];
                 
                 if (data.isOff) {
-                    if(document.getElementById('isOff')) document.getElementById('isOff').checked = true;
+                    // ⭐ 휴무 데이터가 있을 경우 다시 체크하고 비활성화 트리거 실행
+                    if(document.getElementById('isOff')) {
+                        document.getElementById('isOff').checked = true;
+                        document.getElementById('isOff').dispatchEvent(new Event('change')); 
+                    }
                 } else {
                     document.getElementById('vehicle').value = data.vehicle || "";
                     document.getElementById('driver2').value = data.driver2 || ""; 
