@@ -133,19 +133,18 @@
 
         <div class="overflow-x-auto border border-slate-200 rounded-xl mb-6 shadow-sm max-h-[60vh] overflow-y-auto">
             <table class="w-full text-left border-collapse min-w-[900px]">
-                <thead class="bg-slate-50 sticky top-0 z-10">
-                    <tr class="text-sm text-slate-600 font-bold border-b border-slate-200">
-                        <th class="p-3 pl-4 whitespace-nowrap">일자</th>
-                        <th class="p-3 whitespace-nowrap text-indigo-700">작성자(ID)</th>
-                        <th class="p-3 whitespace-nowrap">차량</th>
-                        <th class="p-3 whitespace-nowrap">운행 일정</th>
-                        <th class="p-3 whitespace-nowrap">동승/선운행</th>
-                        <th class="p-3 text-center whitespace-nowrap">시간</th>
-                        <th class="p-3 text-center whitespace-nowrap">보상시간</th>
-                        <th class="p-3 text-right whitespace-nowrap">정산금액</th>
-                        <th class="p-3 pr-4 whitespace-nowrap w-48">비고</th>
-                    </tr>
-                </thead>
+               <thead class="bg-slate-50 sticky top-0 z-10">
+                        <tr class="text-sm text-slate-600 font-bold border-b border-slate-200">
+                            <th class="p-3 pl-4 whitespace-nowrap">일자</th>
+                            <th class="p-3 whitespace-nowrap">차량</th>
+                            <th class="p-3 whitespace-nowrap">운행 일정</th>
+                            <!-- 💡 동승/선운행 줄은 삭제했습니다 -->
+                            <th class="p-3 text-center whitespace-nowrap">시간</th>
+                            <th class="p-3 text-center whitespace-nowrap">보상시간</th>
+                            <th class="p-3 text-right whitespace-nowrap">정산금액</th>
+                            <th class="p-3 pr-4 whitespace-nowrap">비고</th>
+                        </tr>
+                    </thead>
                 <tbody id="adminTableBody" class="text-sm"></tbody>
             </table>
         </div>
@@ -562,8 +561,8 @@
                     if (allowance > 0) allowanceHTML = `<div class="text-[11px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 rounded-lg px-1.5 mt-1 text-center shadow-sm flex justify-center items-center h-5 tracking-tight">${iconMoney}${allowance.toLocaleString()}원</div>`;
                     else if (log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) allowanceHTML = `<div class="text-[11px] font-bold text-slate-600 bg-slate-200 border border-slate-300 rounded-lg px-1.5 mt-1 text-center shadow-sm flex justify-center items-center h-5 tracking-tight">서울당일</div>`;
 
-                    const vehicleHTML = log.vehicle ? `<div class="text-[12px] font-black text-white bg-slate-800 rounded-md px-1.5 shadow-md truncate py-0.5 mb-1 text-center tracking-wider">${log.vehicle}</div>` : '';
-                    
+                    // 검정 바탕 없애고 깔끔하고 진한 파란색 글씨로 변경!
+const vehicleHTML = log.vehicle ? `<div class="text-[12px] font-extrabold text-blue-600 truncate py-0.5 mb-0.5 text-center tracking-wider">${log.vehicle}</div>` : '';
                     // ⭐ 이름 공백 제거(.trim()) 후 밑줄(선운행) 정확히 그어주기
                     let d1Name = log.driver1 ? log.driver1.trim() : "";
                     let d2Name = log.driver2 ? log.driver2.trim() : "";
