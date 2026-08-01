@@ -52,7 +52,6 @@
                     <span id="welcomeUserName" class="text-indigo-600 font-extrabold text-sm mb-1 block"></span>
                     <h1 id="calendarMonthTitle" class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">2026년 8월 운행 달력</h1>
                 </div>
-                <!-- 관리자 전용 버튼 -->
                 <button id="adminToggleBtn" onclick="toggleAdminMode()" class="hidden px-4 py-1.5 bg-slate-800 text-white rounded-lg text-sm font-bold shadow-md hover:bg-slate-900 transition-colors animate-pulse border border-slate-700">👑 관리자 모드 가기</button>
             </div>
             
@@ -84,7 +83,7 @@
             👈 달력을 좌우로 스크롤하여 확인하세요 👉
         </div>
 
-        <!-- ⭐ 새로 추가된 내 운행 내역 테이블 (달력 하단) -->
+        <!-- 내 운행 내역 테이블 (달력 하단) -->
         <div class="mt-8 border-t border-slate-200 pt-6">
             <h3 class="text-lg font-extrabold text-slate-800 mb-4 flex items-center">
                 <svg class="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
@@ -132,18 +131,19 @@
 
         <div class="overflow-x-auto border border-slate-200 rounded-xl mb-6 shadow-sm max-h-[60vh] overflow-y-auto">
             <table class="w-full text-left border-collapse min-w-[900px]">
-               <thead class="bg-slate-50 sticky top-0 z-10">
-                        <tr class="text-sm text-slate-600 font-bold border-b border-slate-200">
-                            <th class="p-3 pl-4 whitespace-nowrap">일자</th>
-                            <th class="p-3 whitespace-nowrap">차량</th>
-                            <th class="p-3 whitespace-nowrap">운행 일정</th>
-                            <!-- 💡 동승/선운행 줄은 삭제했습니다 -->
-                            <th class="p-3 text-center whitespace-nowrap">시간</th>
-                            <th class="p-3 text-center whitespace-nowrap">보상시간</th>
-                            <th class="p-3 text-right whitespace-nowrap">정산금액</th>
-                            <th class="p-3 pr-4 whitespace-nowrap">비고</th>
-                        </tr>
-                    </thead>
+                <thead class="bg-slate-50 sticky top-0 z-10">
+                    <tr class="text-sm text-slate-600 font-bold border-b border-slate-200">
+                        <th class="p-3 pl-4 whitespace-nowrap">일자</th>
+                        <th class="p-3 whitespace-nowrap text-indigo-700">작성자(ID)</th>
+                        <th class="p-3 whitespace-nowrap">차량</th>
+                        <th class="p-3 whitespace-nowrap">운행 일정</th>
+                        <th class="p-3 whitespace-nowrap">동승/선운행</th>
+                        <th class="p-3 text-center whitespace-nowrap">시간</th>
+                        <th class="p-3 text-center whitespace-nowrap">보상시간</th>
+                        <th class="p-3 text-right whitespace-nowrap">정산금액</th>
+                        <th class="p-3 pr-4 whitespace-nowrap w-48">비고</th>
+                    </tr>
+                </thead>
                 <tbody id="adminTableBody" class="text-sm"></tbody>
             </table>
         </div>
@@ -185,18 +185,15 @@
             <div id="summaryDetailView" class="block">
                 <div class="overflow-x-auto max-h-[50vh] overflow-y-auto mb-4 border border-slate-200 rounded-xl">
                     <table class="w-full text-left border-collapse min-w-[500px]">
-                       <thead class="bg-slate-50 sticky top-0 z-10">
-                        <tr class="text-sm text-slate-600 font-bold border-b border-slate-200">
-                            <th class="p-3 pl-4 whitespace-nowrap">일자</th>
-                            <th class="p-3 whitespace-nowrap">차량</th>
-                            <th class="p-3 whitespace-nowrap">운행 일정</th>
-                            <!-- 동승/선운행 줄은 삭제됨 -->
-                            <th class="p-3 text-center whitespace-nowrap">시간</th>
-                            <th class="p-3 text-center whitespace-nowrap">보상시간</th>
-                            <th class="p-3 text-right whitespace-nowrap">정산금액</th>
-                            <th class="p-3 pr-4 whitespace-nowrap">비고</th>
-                        </tr>
-                    </thead>
+                        <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm">
+                            <tr class="text-sm text-slate-600 font-semibold">
+                                <th class="p-3 pl-4 border-b border-slate-200">날짜</th>
+                                <th class="p-3 border-b border-slate-200">차량/동승</th>
+                                <th class="p-3 border-b border-slate-200 text-center">시간</th>
+                                <th class="p-3 border-b border-slate-200 text-center">보상시간</th>
+                                <th class="p-3 pr-4 border-b border-slate-200 text-right">정산금액</th>
+                            </tr>
+                        </thead>
                         <tbody id="summaryTableBody" class="text-sm"></tbody>
                     </table>
                 </div>
@@ -245,15 +242,6 @@
             </div>
             
             <form id="logForm" class="space-y-4">
-                
-                <!-- ⭐ 새로 추가되는 휴무 체크박스 구역 -->
-                <div class="mb-2">
-                    <label class="flex items-center gap-2.5 text-sm font-bold text-rose-600 bg-rose-50 px-4 py-3.5 rounded-xl border border-rose-200 cursor-pointer shadow-sm hover:bg-rose-100 transition-colors">
-                        <input type="checkbox" id="isOff" class="accent-rose-600 w-5 h-5 rounded"> 🏖️ 휴무 지정 (체크 시 시간/차량 등 무시됨)
-                    </label>
-                </div>
-                <!-- ============================ -->
-
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">운행 일정 (비용 정산)</label>
                     <select id="scheduleType" class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 font-bold transition-all text-slate-700">
@@ -540,32 +528,28 @@
                 const dayOfWeek = new Date(currentYear, currentMonth, day).getDay(); const holidayName = getHolidayName(dateKey);
 
                 let dateColorClass = "text-slate-700"; let dateBadgeHTML = "";
+                
                 if (holidayName) { dateColorClass = "text-rose-500"; dateBadgeHTML = `<span class="text-[10px] text-rose-500 ml-1 font-bold tracking-tighter bg-rose-50 px-1.5 py-0.5 rounded-md">(${holidayName})</span>`; } 
                 else if (dayOfWeek === 0) dateColorClass = "text-rose-500"; else if (dayOfWeek === 6) dateColorClass = "text-blue-500";
 
-                // ⭐ 글로벌 휴무자 찾기 (모든 사용자의 데이터를 뒤져서 오늘 휴무인 사람 찾기)
-                let offUsers = [];
-                Object.values(logsData).forEach(d => {
-                    if (d.date === dateKey && d.isOff) {
-                        offUsers.push(d.userId);
-                    }
-                });
-
                 let cellBgClass = 'bg-white border-slate-200 hover:border-indigo-400 hover:shadow-md';
-                if (log && !log.isOff) {
+                if (log) {
                     let sType = log.scheduleType === 'linked' ? log.parentType : log.scheduleType;
-                    if (sType === 'day') cellBgClass = 'bg-blue-50 border-blue-200 hover:border-blue-300 hover:shadow-md'; 
-                    else if (sType === '1night') cellBgClass = 'bg-yellow-100 border-yellow-300 hover:border-yellow-400 hover:shadow-md'; 
-                    else if (sType === '2night') cellBgClass = 'bg-orange-100 border-orange-300 hover:border-orange-400 hover:shadow-md'; 
-                    else if (sType === 'seoul') cellBgClass = 'bg-slate-50 border-slate-200 hover:border-slate-300 hover:shadow-md'; 
-                } else if (log && log.isOff) {
-                    cellBgClass = 'bg-rose-50 border-rose-200 hover:border-rose-300 hover:shadow-md'; // 내 휴무일 배경색
+                    
+                    if (sType === 'day') {
+                        cellBgClass = 'bg-blue-50 border-blue-200 hover:border-blue-300 hover:shadow-md'; 
+                    } else if (sType === '1night') {
+                        cellBgClass = 'bg-yellow-100 border-yellow-300 hover:border-yellow-400 hover:shadow-md'; // 화사한 노랑
+                    } else if (sType === '2night') {
+                        cellBgClass = 'bg-orange-100 border-orange-300 hover:border-orange-400 hover:shadow-md'; // 화사한 피치/살색
+                    } else if (sType === 'seoul') {
+                        cellBgClass = 'bg-slate-50 border-slate-200 hover:border-slate-300 hover:shadow-md'; // 깔끔한 회색
+                    }
                 }
 
                 let contentHTML = ``;
 
-                // 본인이 오늘 정상 운행일 경우 렌더링
-                if (log && !log.isOff) {
+                if (log) {
                     const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
                     let allowanceHTML = '';
                     if (allowance > 0) allowanceHTML = `<div class="text-[11px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 rounded-lg px-1.5 mt-1 text-center shadow-sm flex justify-center items-center h-5 tracking-tight">${iconMoney}${allowance.toLocaleString()}원</div>`;
@@ -592,6 +576,7 @@
                     }
                     
                     const driverComboHTML = `<div class="text-[11px] font-extrabold text-blue-900 bg-white/80 border border-blue-200 rounded-lg px-1 shadow-sm truncate py-1 mb-1 text-center">${d1Txt}${d2Txt}</div>`;
+                    
                     const payColor = log.isHoliday ? 'text-rose-700 bg-rose-100 border-rose-300' : 'text-slate-700 bg-slate-100 border-slate-300';
                     const displayTime = `${formatTime(log.startTime)} ~ ${formatTime(log.endTime)}`;
 
@@ -604,15 +589,10 @@
                     `;
                 }
 
-                // ⭐ 누구든 휴무자가 있다면 달력 맨 밑으로 밀어서(mt-auto) 띄워줌
-                if (offUsers.length > 0) {
-                    contentHTML += `<div class="text-[11px] font-bold text-rose-700 bg-rose-100/80 border border-rose-300 rounded-lg px-1 mt-auto text-center shadow-sm py-1 tracking-tight break-keep">🏖️ 휴무: ${offUsers.join(', ')}</div>`;
-                }
-
                 gridEl.innerHTML += `
                     <div onclick="openModal('${dateKey}')" class="h-full min-h-[6.5rem] ${cellBgClass} border rounded-2xl p-1.5 md:p-2 cursor-pointer transition-all duration-200 flex flex-col">
                         <div class="flex items-center ml-0.5"><span class="text-[13px] md:text-sm font-extrabold ${dateColorClass}">${day}</span>${dateBadgeHTML}</div>
-                        <div class="flex flex-col mt-1 h-full">${contentHTML}</div>
+                        <div class="flex flex-col mt-1.5">${contentHTML}</div>
                     </div>
                 `;
             }
@@ -631,25 +611,9 @@
                 tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 font-medium">이번 달 운행 내역이 없습니다.</td></tr>`;
             } else {
                 monthLogs.forEach(log => {
+                    const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
                     const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
                     
-                    // ⭐ 휴무일 표 랜더링
-                    if (log.isOff) {
-                        tbody.innerHTML += `
-                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors bg-rose-50/40">
-                                <td class="p-3 pl-4 font-bold text-slate-700">${log.date.split('-')[2]}일 <span class="text-xs text-slate-400 font-normal">(${dayStr})</span></td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                                <td class="p-3 text-rose-600 font-extrabold text-center">🏖️ 휴무</td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                            </tr>
-                        `;
-                        return; // 아래 일반 운행 렌더링 건너뜀
-                    }
-
-                    const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
                     let scheduleTxt = "당일";
                     if(log.scheduleType === '1night' || (log.scheduleType === 'linked' && log.parentType === '1night')) scheduleTxt = "1박"; 
                     else if(log.scheduleType === '2night' || (log.scheduleType === 'linked' && log.parentType === '2night')) scheduleTxt = "2박";
@@ -685,29 +649,11 @@
                 tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400 font-medium">이번 달 운행 내역이 없습니다.</td></tr>`;
             } else {
                 monthLogs.forEach(log => {
-                    const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
-                    
-                    // ⭐ 관리자 표에서도 휴무일 렌더링
-                    if (log.isOff) {
-                        tbody.innerHTML += `
-                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors bg-rose-50/40">
-                                <td class="p-3 pl-4 font-bold text-slate-700">${log.date.split('-')[2]}일 <span class="text-xs text-slate-400 font-normal">(${dayStr})</span></td>
-                                <td class="p-3 text-indigo-700 font-extrabold">${log.userId}</td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                                <td class="p-3 text-rose-600 font-extrabold text-center">🏖️ 휴무</td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                            </tr>
-                        `;
-                        return; // 아래 일반 운행 렌더링 건너뜀
-                    }
-
                     const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
                     totalHours += parseFloat(calc.totalPayTime || 0); totalAllowance += allowance;
 
+                    const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
+                    
                     let scheduleTxt = "당일";
                     if(log.scheduleType === '1night' || (log.scheduleType === 'linked' && log.parentType === '1night')) scheduleTxt = "1박"; 
                     else if(log.scheduleType === '2night' || (log.scheduleType === 'linked' && log.parentType === '2night')) scheduleTxt = "2박";
@@ -764,26 +710,11 @@
                 tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400 font-medium">이번 달 운행 내역이 없습니다.</td></tr>`;
             } else {
                 sortedKeys.forEach(key => {
-                    const log = logsData[key]; 
-                    const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
-
-                    if (log.isOff) {
-                        tbody.innerHTML += `
-                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors bg-rose-50/40">
-                                <td class="p-3 pl-4 font-bold text-slate-700">${log.date.split('-')[2]}일 <span class="text-xs font-normal text-slate-400">(${dayStr})</span></td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                                <td class="p-3 text-rose-600 font-extrabold text-center">🏖️ 휴무</td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                            </tr>
-                        `;
-                        return; 
-                    }
-
-                    const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
+                    const log = logsData[key]; const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
                     totalHours += parseFloat(calc.totalPayTime || 0); totalAllowance += allowance;
 
                     const extraDrivers = [log.driver2 ? log.driver2 : null, log.preDriver ? `선: ${log.preDriver}` : null].filter(Boolean).join(', ');
+                    const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
                     
                     let allowanceStr = "-";
                     if(allowance > 0) allowanceStr = `${iconMoney}${allowance.toLocaleString()}원`;
@@ -812,10 +743,7 @@
             
             Object.keys(logsData).forEach(key => {
                 if(!key.startsWith(currentUser + "_")) return; 
-                const log = logsData[key]; 
-                if(log.isOff) return; // 휴무는 정산 시간/비용 합산 제외
-                
-                const monthKey = log.date.substring(0, 7); 
+                const log = logsData[key]; const monthKey = log.date.substring(0, 7); 
                 if(!monthlyStats[monthKey]) monthlyStats[monthKey] = { hours: 0, allowance: 0 };
                 
                 const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday);
@@ -856,39 +784,15 @@
                 document.getElementById('startTime3').required = false; document.getElementById('endTime3').required = false;
             }
         });
-if (document.getElementById('isOff')) {
-            document.getElementById('isOff').addEventListener('change', function(e) {
-                const isChecked = e.target.checked;
-                // 1. 시간 필수 입력(required) 무시하기
-                document.getElementById('startTime1').required = !isChecked;
-                document.getElementById('endTime1').required = !isChecked;
-                
-                // 2. 다른 칸들 입력 못하게 회색으로 비활성화 (편의성)
-                const inputsToDisable = ['startTime1', 'endTime1', 'startTime2', 'endTime2', 'startTime3', 'endTime3', 'scheduleType', 'vehicle', 'driver2', 'preDriver', 'memo'];
-                inputsToDisable.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.disabled = isChecked;
-                });
-            });
-        }
-       window.openModal = function(dateStr) {
+
+        window.openModal = function(dateStr) {
             selectedDateStr = dateStr;
             document.getElementById('modalDateTitle').innerHTML = `<svg class="w-6 h-6 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>${dateStr} 운행 정보`;
             document.getElementById('logForm').reset(); document.getElementById('scheduleType').value = "none";
             ['1', '2', '3'].forEach(num => { document.getElementById(`startTime${num}`).value = ""; document.getElementById(`endTime${num}`).value = ""; document.getElementById(`isHoliday${num}`).checked = false; });
             document.getElementById('day2Box').classList.add('hidden'); document.getElementById('day3Box').classList.add('hidden');
-            
-            // ⭐ 팝업 열 때 모든 입력창 비활성화(disabled) 해제 및 필수값 복구
-            const inputsToReset = ['startTime1', 'endTime1', 'startTime2', 'endTime2', 'startTime3', 'endTime3', 'scheduleType', 'vehicle', 'driver2', 'preDriver', 'memo'];
-            inputsToReset.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.disabled = false;
-            });
-            document.getElementById('startTime1').required = true;
-            document.getElementById('endTime1').required = true;
-            
-            document.getElementById('vehicle').value = "";
-            if (document.getElementById('isOff')) document.getElementById('isOff').checked = false;
+            document.getElementById('scheduleType').disabled = false;
+            document.getElementById('vehicle').value = ""; // 초기화
 
             const logKey = `${currentUser}_${dateStr}`;
             const delBtn = document.getElementById('deleteBtn');
@@ -908,33 +812,24 @@ if (document.getElementById('isOff')) {
 
             if (logsData[logKey]) {
                 const data = logsData[logKey];
-                
-                if (data.isOff) {
-                    // ⭐ 휴무 데이터가 있을 경우 다시 체크하고 비활성화 트리거 실행
-                    if(document.getElementById('isOff')) {
-                        document.getElementById('isOff').checked = true;
-                        document.getElementById('isOff').dispatchEvent(new Event('change')); 
-                    }
-                } else {
-                    document.getElementById('vehicle').value = data.vehicle || "";
-                    document.getElementById('driver2').value = data.driver2 || ""; 
-                    document.getElementById('preDriver').value = data.preDriver || "";
-                    document.getElementById('startTime1').value = data.startTime || ""; 
-                    document.getElementById('endTime1').value = data.endTime || "";
-                    document.getElementById('isHoliday1').checked = data.isHoliday || false;
-                    document.getElementById('memo').value = data.memo || ""; 
-                    document.getElementById('scheduleType').value = data.scheduleType || "none";
+                document.getElementById('vehicle').value = data.vehicle || "";
+                document.getElementById('driver2').value = data.driver2 || ""; 
+                document.getElementById('preDriver').value = data.preDriver || "";
+                document.getElementById('startTime1').value = data.startTime || ""; 
+                document.getElementById('endTime1').value = data.endTime || "";
+                document.getElementById('isHoliday1').checked = data.isHoliday || false;
+                document.getElementById('memo').value = data.memo || ""; 
+                document.getElementById('scheduleType').value = data.scheduleType || "none";
 
-                    if(data.scheduleType === 'linked') document.getElementById('scheduleType').disabled = true;
+                if(data.scheduleType === 'linked') document.getElementById('scheduleType').disabled = true;
 
-                    if (data.scheduleType === '1night' || data.scheduleType === '2night') {
-                        document.getElementById('scheduleType').dispatchEvent(new Event('change'));
-                        const day2Data = logsData[`${currentUser}_${addDays(dateStr, 1)}`];
-                        if (day2Data) { document.getElementById('startTime2').value = day2Data.startTime || ""; document.getElementById('endTime2').value = day2Data.endTime || ""; document.getElementById('isHoliday2').checked = day2Data.isHoliday || false; }
-                        if (data.scheduleType === '2night') {
-                            const day3Data = logsData[`${currentUser}_${addDays(dateStr, 2)}`];
-                            if (day3Data) { document.getElementById('startTime3').value = day3Data.startTime || ""; document.getElementById('endTime3').value = day3Data.endTime || ""; document.getElementById('isHoliday3').checked = day3Data.isHoliday || false; }
-                        }
+                if (data.scheduleType === '1night' || data.scheduleType === '2night') {
+                    document.getElementById('scheduleType').dispatchEvent(new Event('change'));
+                    const day2Data = logsData[`${currentUser}_${addDays(dateStr, 1)}`];
+                    if (day2Data) { document.getElementById('startTime2').value = day2Data.startTime || ""; document.getElementById('endTime2').value = day2Data.endTime || ""; document.getElementById('isHoliday2').checked = day2Data.isHoliday || false; }
+                    if (data.scheduleType === '2night') {
+                        const day3Data = logsData[`${currentUser}_${addDays(dateStr, 2)}`];
+                        if (day3Data) { document.getElementById('startTime3').value = day3Data.startTime || ""; document.getElementById('endTime3').value = day3Data.endTime || ""; document.getElementById('isHoliday3').checked = day3Data.isHoliday || false; }
                     }
                 }
             }
@@ -967,23 +862,6 @@ if (document.getElementById('isOff')) {
         document.getElementById('logForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const isOff = document.getElementById('isOff') ? document.getElementById('isOff').checked : false;
-            const date1 = selectedDateStr; const date2 = addDays(date1, 1); const date3 = addDays(date1, 2);
-            const key1 = `${currentUser}_${date1}`; const key2 = `${currentUser}_${date2}`; const key3 = `${currentUser}_${date3}`;
-
-            // ⭐ 휴무 처리 (휴무 체크 시 차량/시간 입력 조건 무시하고 즉시 저장)
-            if (isOff) {
-                const btn = document.getElementById('saveBtn'); btn.disabled = true; btn.innerText = "저장 중...";
-                try {
-                    await setDoc(doc(db, "drivingLogsMulti", key1), { userId: currentUser, date: date1, isOff: true, driver1: currentUser, updatedAt: new Date() });
-                    // 혹시 기존에 연결된 일정이 있었다면 찌꺼기 삭제
-                    if (logsData[key2] && logsData[key2].parentDate === date1) await deleteDoc(doc(db, "drivingLogsMulti", key2));
-                    if (logsData[key3] && logsData[key3].parentDate === date1) await deleteDoc(doc(db, "drivingLogsMulti", key3));
-                    closeModal();
-                } catch (error) { alert("데이터 저장에 실패했습니다."); } finally { btn.disabled = false; btn.innerText = "저장하기"; }
-                return;
-            }
-
             const scheduleType = document.getElementById('scheduleType').value;
             if (scheduleType === 'none') { alert("운행 일정을 선택해주세요!"); return; }
 
@@ -993,6 +871,9 @@ if (document.getElementById('isOff')) {
             const btn = document.getElementById('saveBtn'); btn.disabled = true; btn.innerText = "저장 중...";
             const driver2 = document.getElementById('driver2').value;
             const preDriver = document.getElementById('preDriver').value; const memo = document.getElementById('memo').value;
+
+            const date1 = selectedDateStr; const date2 = addDays(date1, 1); const date3 = addDays(date1, 2);
+            const key1 = `${currentUser}_${date1}`; const key2 = `${currentUser}_${date2}`; const key3 = `${currentUser}_${date3}`;
 
             let currentParentType = ""; if (logsData[key1] && logsData[key1].scheduleType === 'linked') currentParentType = logsData[key1].parentType;
 
