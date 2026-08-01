@@ -374,7 +374,8 @@
     </div>
 
     <!-- ⭐ 파이어베이스 연동 및 권한 스크립트 -->
-   <script type="module">
+   <!-- ⭐ 파이어베이스 연동 및 전체 자바스크립트 스크립트 -->
+    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, getDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -391,6 +392,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // 가입 허용 명단
         const ALLOWED_NAMES = ["이상헌", "이명순", "김탁", "변석현", "강철규", "한상훈", "문인식", "함동한", "박기준"];
         const ADMIN_NAME = "박기준";
 
@@ -400,12 +402,13 @@
         let currentUser = "";
         let isAdmin = false;
         let logsData = {}; 
-        let memosData = {}; // ⭐ 메모 데이터를 담을 빈 공간
+        let memosData = {}; 
 
+        // ⭐ 스마트폰 뒤로가기 앱 종료 방지
         window.addEventListener('popstate', function(event) {
             if (!document.getElementById('logModal').classList.contains('hidden')) {
                 document.getElementById('logModal').classList.add('hidden'); document.getElementById('logForm').reset();
-            } else if (!document.getElementById('memoModal').classList.contains('hidden')) { // ⭐ 메모창 뒤로가기 제어
+            } else if (document.getElementById('memoModal') && !document.getElementById('memoModal').classList.contains('hidden')) { 
                 document.getElementById('memoModal').classList.add('hidden');
             } else if (!document.getElementById('summaryModal').classList.contains('hidden')) {
                 document.getElementById('summaryModal').classList.add('hidden');
@@ -421,17 +424,17 @@
             logsData = {};
             snapshot.forEach((doc) => { logsData[doc.id] = doc.data(); });
             if (currentUser !== "") {
-                if (!document.getElementById('adminView').classList.contains('hidden')) renderAdminTable();
+                if (document.getElementById('adminView') && !document.getElementById('adminView').classList.contains('hidden')) renderAdminTable();
                 else renderCalendar();
             }
         });
 
-        // ⭐ 메모 기록 실시간 연동
+        // 메모 기록 실시간 연동
         onSnapshot(collection(db, "calendarMemos"), (snapshot) => {
             memosData = {};
             snapshot.forEach((doc) => { memosData[doc.id] = doc.data(); });
             if (currentUser !== "") {
-                if (document.getElementById('adminView').classList.contains('hidden')) renderCalendar();
+                if (document.getElementById('adminView') && document.getElementById('adminView').classList.contains('hidden')) renderCalendar();
             }
         });
 
@@ -443,6 +446,9 @@
             const m = (val - h) * 60;
             return `${h}:${m === 0 ? '00' : m}`;
         }
+
+        const iconTime = `<svg class="w-3 h-3 inline-block mr-0.5 mb-[2px] text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+        const iconMoney = `<svg class="w-3 h-3 inline-block mr-0.5 mb-[2px] text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
 
         window.toggleAuth = function(isSignup) {
             if(isSignup) {
@@ -462,15 +468,14 @@
             if(!name || !pwd || !pwdConfirm) { alert("모든 칸을 입력해주세요."); return; }
             if(!ALLOWED_NAMES.includes(name)) { alert(`등록된 운전원 이름이 아닙니다.\n(허용: ${ALLOWED_NAMES.join(', ')})`); return; }
             if(pwd !== pwdConfirm) { alert("비밀번호가 일치하지 않습니다."); return; }
-            if(pwd.length < 6) { alert("비밀번호는 6자리 이상 설정해주세요."); return; }
+            if(pwd.length < 6) { alert("비밀번호는 6자리 이상 설정해주세요."); return; } // ⭐ 6자리 제한
 
             try {
                 const userRef = doc(db, "drivingUsersAuth", name);
                 const docSnap = await getDoc(userRef);
                 if(docSnap.exists()) {
                     alert("이미 가입된 이름입니다. 로그인을 진행해주세요.");
-                    toggleAuth(false);
-                    return;
+                    toggleAuth(false); return;
                 }
                 await setDoc(userRef, { password: pwd, createdAt: new Date() });
                 alert("✅ 회원가입이 완료되었습니다! 로그인해주세요.");
@@ -494,7 +499,7 @@
 
                 currentUser = name; isAdmin = (name === ADMIN_NAME);
                 
-                history.pushState({ page: 'calendar' }, null, '');
+                history.pushState({ page: 'calendar' }, null, ''); // 히스토리 추가
 
                 document.getElementById('loginView').classList.add('hidden');
                 document.getElementById('userView').classList.remove('hidden');
@@ -552,9 +557,9 @@
         }
 
         function calculateOvertime(startStr, endStr, isHoliday) {
-            if (!startStr || !endStr) return { totalPayTime: 0 };
+            if (!startStr || !endStr) return { totalPayTime: 0, label: "" };
             let startVal = parseFloat(startStr); let endVal = parseFloat(endStr);
-            if (isNaN(startVal) || isNaN(endVal)) return { totalPayTime: 0 };
+            if (isNaN(startVal) || isNaN(endVal)) return { totalPayTime: 0, label: "" };
 
             if (endVal <= startVal) endVal += 24.0; 
             const overlapStart = Math.max(startVal, 9.0); const overlapEnd = Math.min(endVal, 18.0);
@@ -563,8 +568,8 @@
             let normalHours = Math.max(0, rawNormalHours - restTime); 
             let overtimeHours = Math.max(0, (endVal - startVal) - rawNormalHours);
 
-            if (isHoliday) { return { totalPayTime: ((normalHours * 1.5) + (overtimeHours * 2.0)).toFixed(2) }; } 
-            else { return { totalPayTime: (overtimeHours * 1.5).toFixed(2) }; }
+            if (isHoliday) { return { totalPayTime: ((normalHours * 1.5) + (overtimeHours * 2.0)).toFixed(2), label: "휴일보상" }; } 
+            else { return { totalPayTime: (overtimeHours * 1.5).toFixed(2), label: "평일연장" }; }
         }
         
         function calculateAllowance(log) {
@@ -574,6 +579,7 @@
             return 0;
         }
 
+        // ⭐ 통합된 최신 렌더 달력 기능
         function renderCalendar() {
             const titleEl = document.getElementById('calendarMonthTitle'); const gridEl = document.getElementById('calendarGrid');
             titleEl.textContent = `${currentYear}년 ${currentMonth + 1}월 운행 달력`; 
@@ -591,7 +597,7 @@
                 const monthStr = String(currentMonth + 1).padStart(2, '0'); const dayStr = String(day).padStart(2, '0');
                 const dateKey = `${currentYear}-${monthStr}-${dayStr}`; 
                 const logKey = `${currentUser}_${dateKey}`; const log = logsData[logKey];
-                const memoInfo = memosData[logKey]; // ⭐ 파이어베이스에서 내 메모 가져오기
+                const memoInfo = memosData[logKey]; 
 
                 const dayOfWeek = new Date(currentYear, currentMonth, day).getDay(); const holidayName = getHolidayName(dateKey);
 
@@ -599,11 +605,10 @@
                 if (holidayName) { dateColorClass = "text-rose-500"; dateBadgeHTML = `<span class="text-[10px] text-rose-500 ml-1 font-bold tracking-tighter bg-rose-50 px-1.5 py-0.5 rounded-md">(${holidayName})</span>`; } 
                 else if (dayOfWeek === 0) dateColorClass = "text-rose-500"; else if (dayOfWeek === 6) dateColorClass = "text-blue-500";
 
-                // ⭐ 숫자 옆에 표시될 빨간색 메모 HTML
-                const customMemoHTML = memoInfo ? `<span class="text-[12px] text-rose-600 font-black ml-1.5 truncate tracking-tighter">${memoInfo.text}</span>` : '';
+                const customMemoHTML = memoInfo ? `<span onclick="openMemoModalForDate('${dateKey}', event)" class="text-[11px] text-rose-600 font-black tracking-tight leading-snug bg-rose-50/50 hover:bg-rose-100 px-1 rounded cursor-pointer transition-colors shadow-sm whitespace-normal break-keep">${memoInfo.text}</span>` : '';
 
                 let cellBgClass = 'bg-white border-slate-200 hover:border-indigo-400 hover:shadow-md';
-                if (log) {
+                if (log && !log.isOff) {
                     let sType = log.scheduleType === 'linked' ? log.parentType : log.scheduleType;
                     if (sType === 'day') {
                         cellBgClass = 'bg-[radial-gradient(circle,_#bfdbfe_0%,_#eff6ff_100%)] border-blue-300 hover:border-blue-400 hover:shadow-md'; 
@@ -614,11 +619,16 @@
                     } else if (sType === 'seoul') {
                         cellBgClass = 'bg-[radial-gradient(circle,_#e2e8f0_0%,_#f8fafc_100%)] border-slate-300 hover:border-slate-400 hover:shadow-md'; 
                     }
+                } else if (log && log.isOff) {
+                    cellBgClass = 'bg-rose-100 border-rose-300 hover:border-rose-400 hover:shadow-md'; 
                 }
+
+                let offUsers = [];
+                Object.values(logsData).forEach(d => { if (d.date === dateKey && d.isOff) offUsers.push(d.userId); });
 
                 let contentHTML = ``;
 
-                if (log) {
+                if (log && !log.isOff) {
                     const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
                     
                     let allowanceHTML = '';
@@ -627,20 +637,14 @@
 
                     const vehicleHTML = log.vehicle ? `<div class="text-[13px] font-extrabold text-blue-700 text-center tracking-wider leading-snug">${log.vehicle}</div>` : '';
                     
-                    let d1Name = log.driver1 ? log.driver1.trim() : "";
-                    let d2Name = log.driver2 ? log.driver2.trim() : "";
-                    let preName = log.preDriver ? log.preDriver.trim() : "";
-
-                    let d1Txt = log.driver1;
-                    if (preName && d1Name === preName) { d1Txt = `<span class="underline decoration-rose-500 decoration-2 underline-offset-2">${log.driver1}</span>`; }
-                    let d2Txt = "";
-                    if (log.driver2) { if (preName && d2Name === preName) { d2Txt = `, <span class="underline decoration-rose-500 decoration-2 underline-offset-2">${log.driver2}</span>`; } else { d2Txt = `, ${log.driver2}`; } }
+                    let d1Name = log.driver1 ? log.driver1.trim() : ""; let d2Name = log.driver2 ? log.driver2.trim() : ""; let preName = log.preDriver ? log.preDriver.trim() : "";
+                    let d1Txt = log.driver1; if (preName && d1Name === preName) { d1Txt = `<span class="underline decoration-rose-500 decoration-2 underline-offset-2">${log.driver1}</span>`; }
+                    let d2Txt = ""; if (log.driver2) { if (preName && d2Name === preName) { d2Txt = `, <span class="underline decoration-rose-500 decoration-2 underline-offset-2">${log.driver2}</span>`; } else { d2Txt = `, ${log.driver2}`; } }
                     
                     const driverComboHTML = `<div class="text-[13px] font-bold text-slate-800 truncate text-center leading-snug">${d1Txt}${d2Txt}</div>`;
-                    
                     const payColor = log.isHoliday ? 'text-rose-500' : 'text-amber-600';
                     const overtimeHTML = `<div class="text-[11px] font-bold ${payColor} text-center leading-snug">${calc.totalPayTime}h</div>`;
-                    const memoLogHTML = log.memo ? `<div class="text-[11px] font-semibold text-slate-500 text-center truncate leading-snug px-0.5 mt-auto pt-1" title="${log.memo}">${log.memo}</div>` : '';
+                    const memoLogHTML = log.memo ? `<div class="text-[11px] font-semibold text-slate-500 text-center whitespace-normal break-keep leading-snug px-0.5 mt-auto pt-1" title="${log.memo}">${log.memo}</div>` : '';
 
                     contentHTML = `
                         <div class="flex flex-col gap-0.5 mt-1 flex-1">
@@ -653,12 +657,17 @@
                     `;
                 }
 
-                // ⭐ 커스텀 메모 뱃지를 날짜 옆에 배치 (flex, overflow-hidden으로 넘침 방지)
+                if (offUsers.length > 0) {
+                    contentHTML += `<div class="text-xs font-bold text-rose-500 mt-auto text-center py-1 tracking-tight break-keep leading-snug">🏖️ 휴무: ${offUsers.join(', ')}</div>`;
+                }
+
                 gridEl.innerHTML += `
                     <div onclick="openModal('${dateKey}')" class="h-full min-h-[6.5rem] ${cellBgClass} border rounded-xl p-1 md:p-1.5 cursor-pointer hover:opacity-80 transition-all duration-200 flex flex-col shadow-sm relative">
-                        <div class="flex items-center ml-0.5 whitespace-nowrap overflow-hidden">
-                            <span class="text-[13px] md:text-sm font-extrabold ${dateColorClass}">${day}</span>
-                            ${dateBadgeHTML}
+                        <div class="flex flex-wrap items-center ml-0.5 gap-x-1 gap-y-0.5 w-full">
+                            <div class="flex items-center whitespace-nowrap">
+                                <span class="text-[13px] md:text-sm font-extrabold ${dateColorClass}">${day}</span>
+                                ${dateBadgeHTML}
+                            </div>
                             ${customMemoHTML}
                         </div>
                         ${contentHTML}
@@ -680,8 +689,24 @@
                 tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 font-medium">이번 달 운행 내역이 없습니다.</td></tr>`;
             } else {
                 monthLogs.forEach(log => {
-                    const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
                     const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
+                    
+                    if (log.isOff) {
+                        tbody.innerHTML += `
+                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors bg-rose-50/40">
+                                <td class="p-3 pl-4 font-bold text-slate-700">${log.date.split('-')[2]}일 <span class="text-xs text-slate-400 font-normal">(${dayStr})</span></td>
+                                <td class="p-3 text-slate-400 text-center">-</td>
+                                <td class="p-3 text-rose-600 font-extrabold text-center">🏖️ 휴무</td>
+                                <td class="p-3 text-slate-400 text-center">-</td>
+                                <td class="p-3 text-slate-400 text-center">-</td>
+                                <td class="p-3 text-slate-400 text-center">-</td>
+                                <td class="p-3 text-slate-400 text-center">-</td>
+                            </tr>
+                        `;
+                        return; 
+                    }
+
+                    const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
                     
                     let scheduleTxt = "당일";
                     if(log.scheduleType === '1night' || (log.scheduleType === 'linked' && log.parentType === '1night')) scheduleTxt = "1박"; 
@@ -717,10 +742,27 @@
                 tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400 font-medium">이번 달 운행 내역이 없습니다.</td></tr>`;
             } else {
                 monthLogs.forEach(log => {
+                    const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
+                    
+                    if (log.isOff) {
+                        tbody.innerHTML += `
+                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors bg-rose-50/40">
+                                <td class="p-3 pl-4 font-bold text-slate-700">${log.date.split('-')[2]}일 <span class="text-xs text-slate-400 font-normal">(${dayStr})</span></td>
+                                <td class="p-3 text-indigo-700 font-extrabold">${log.userId}</td>
+                                <td class="p-3 text-slate-400 text-center">-</td>
+                                <td class="p-3 text-rose-600 font-extrabold text-center">🏖️ 휴무</td>
+                                <td class="p-3 text-slate-400 text-center">-</td>
+                                <td class="p-3 text-slate-400 text-center">-</td>
+                                <td class="p-3 text-slate-400 text-center">-</td>
+                                <td class="p-3 text-slate-400 text-center">-</td>
+                                <td class="p-3 text-slate-400 text-center">-</td>
+                            </tr>
+                        `;
+                        return; 
+                    }
+
                     const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
                     totalHours += parseFloat(calc.totalPayTime || 0); totalAllowance += allowance;
-
-                    const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
                     
                     let scheduleTxt = "당일";
                     if(log.scheduleType === '1night' || (log.scheduleType === 'linked' && log.parentType === '1night')) scheduleTxt = "1박"; 
@@ -748,7 +790,7 @@
             document.getElementById('adminTotalAllowance').textContent = totalAllowance.toLocaleString() + " 원";
         }
 
-        // ⭐ 모달 관련 함수들
+        // 모달창 관리
         window.openSummaryModal = function() { 
             history.pushState({ page: 'summary' }, null, ''); 
             document.getElementById('summaryModal').classList.remove('hidden'); switchSummaryTab('detail'); 
@@ -757,55 +799,58 @@
             if (!document.getElementById('summaryModal').classList.contains('hidden')) { history.back(); }
         }
 
-        // ⭐ 메모 모달창 열기
-       // ⭐ 달력에서 메모를 직접 클릭했을 때 해당 날짜로 바로 열어주는 기능
-        window.openMemoModalForDate = function(dateStr, event) {
-            event.stopPropagation(); // 달력 본체(일정창)가 열리는 것을 방지
+        // ⭐ 메모 관련 기능 연결 
+        window.openMemoModal = function() {
             history.pushState({ page: 'memo' }, null, '');
             document.getElementById('memoModal').classList.remove('hidden');
-            
-            document.getElementById('memoDateInput').value = dateStr;
-            checkMemoExist(); // 해당 날짜 메모 불러오고 삭제 버튼 띄우기
-        }
-            // 오늘 날짜로 기본 세팅
             const today = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
             document.getElementById('memoDateInput').value = today;
-            checkMemoExist(); // 이미 작성된 메모가 있는지 확인
+            checkMemoExist();
+        }
+
+        window.openMemoModalForDate = function(dateStr, event) {
+            event.stopPropagation();
+            history.pushState({ page: 'memo' }, null, '');
+            document.getElementById('memoModal').classList.remove('hidden');
+            document.getElementById('memoDateInput').value = dateStr;
+            checkMemoExist();
         }
 
         window.closeMemoModal = function() {
-            if (!document.getElementById('memoModal').classList.contains('hidden')) { history.back(); }
+            if (document.getElementById('memoModal') && !document.getElementById('memoModal').classList.contains('hidden')) { history.back(); }
         }
 
-        // 날짜를 바꿀 때마다 메모가 있는지 확인
-        document.getElementById('memoDateInput').addEventListener('change', checkMemoExist);
+        if (document.getElementById('memoDateInput')) {
+            document.getElementById('memoDateInput').addEventListener('change', checkMemoExist);
+        }
 
         function checkMemoExist() {
+            if(!document.getElementById('memoDateInput')) return;
             const date = document.getElementById('memoDateInput').value;
             const key = `${currentUser}_${date}`;
             const btn = document.getElementById('deleteMemoBtn');
             if (memosData[key]) {
                 document.getElementById('memoTextInput').value = memosData[key].text;
-                btn.classList.remove('hidden'); // 삭제 버튼 보이기
+                btn.classList.remove('hidden'); 
             } else {
                 document.getElementById('memoTextInput').value = "";
-                btn.classList.add('hidden'); // 삭제 버튼 숨기기
+                btn.classList.add('hidden'); 
             }
         }
 
-        // 메모 저장 로직
-        document.getElementById('memoForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const date = document.getElementById('memoDateInput').value;
-            const text = document.getElementById('memoTextInput').value;
-            const key = `${currentUser}_${date}`;
-            try {
-                await setDoc(doc(db, "calendarMemos", key), { userId: currentUser, date: date, text: text, updatedAt: new Date() });
-                closeMemoModal();
-            } catch(e) { alert("메모 저장 실패"); }
-        });
+        if (document.getElementById('memoForm')) {
+            document.getElementById('memoForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const date = document.getElementById('memoDateInput').value;
+                const text = document.getElementById('memoTextInput').value;
+                const key = `${currentUser}_${date}`;
+                try {
+                    await setDoc(doc(db, "calendarMemos", key), { userId: currentUser, date: date, text: text, updatedAt: new Date() });
+                    closeMemoModal();
+                } catch(e) { alert("메모 저장 실패"); }
+            });
+        }
 
-        // 메모 삭제 로직
         window.deleteMemoBtnClick = async function() {
             const date = document.getElementById('memoDateInput').value;
             const key = `${currentUser}_${date}`;
@@ -842,11 +887,26 @@
                 tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400 font-medium">이번 달 운행 내역이 없습니다.</td></tr>`;
             } else {
                 sortedKeys.forEach(key => {
-                    const log = logsData[key]; const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
+                    const log = logsData[key]; 
+                    const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
+
+                    if (log.isOff) {
+                        tbody.innerHTML += `
+                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors bg-rose-50/40">
+                                <td class="p-3 pl-4 font-bold text-slate-700">${log.date.split('-')[2]}일 <span class="text-xs font-normal text-slate-400">(${dayStr})</span></td>
+                                <td class="p-3 text-slate-400 text-center">-</td>
+                                <td class="p-3 text-center text-xs text-slate-600 font-bold bg-slate-50/50">-</td>
+                                <td class="p-3 text-rose-600 font-extrabold text-center">🏖️ 휴무</td>
+                                <td class="p-3 text-slate-400 text-center">-</td>
+                            </tr>
+                        `;
+                        return; 
+                    }
+
+                    const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
                     totalHours += parseFloat(calc.totalPayTime || 0); totalAllowance += allowance;
 
                     const extraDrivers = [log.driver2 ? log.driver2 : null, log.preDriver ? `선: ${log.preDriver}` : null].filter(Boolean).join(', ');
-                    const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
                     
                     let allowanceStr = "-";
                     if(allowance > 0) allowanceStr = `${iconMoney}${allowance.toLocaleString()}원`;
@@ -875,7 +935,10 @@
             
             Object.keys(logsData).forEach(key => {
                 if(!key.startsWith(currentUser + "_")) return; 
-                const log = logsData[key]; const monthKey = log.date.substring(0, 7); 
+                const log = logsData[key]; 
+                if(log.isOff) return; 
+                
+                const monthKey = log.date.substring(0, 7); 
                 if(!monthlyStats[monthKey]) monthlyStats[monthKey] = { hours: 0, allowance: 0 };
                 
                 const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday);
@@ -898,6 +961,20 @@
                     `;
                 });
             }
+        }
+
+        if (document.getElementById('isOff')) {
+            document.getElementById('isOff').addEventListener('change', function(e) {
+                const isChecked = e.target.checked;
+                document.getElementById('startTime1').required = !isChecked;
+                document.getElementById('endTime1').required = !isChecked;
+                
+                const inputsToDisable = ['startTime1', 'endTime1', 'startTime2', 'endTime2', 'startTime3', 'endTime3', 'scheduleType', 'vehicle', 'driver2', 'preDriver', 'memo'];
+                inputsToDisable.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.disabled = isChecked;
+                });
+            });
         }
 
         document.getElementById('scheduleType').addEventListener('change', function(e) {
@@ -925,8 +1002,17 @@
             document.getElementById('logForm').reset(); document.getElementById('scheduleType').value = "none";
             ['1', '2', '3'].forEach(num => { document.getElementById(`startTime${num}`).value = ""; document.getElementById(`endTime${num}`).value = ""; document.getElementById(`isHoliday${num}`).checked = false; });
             document.getElementById('day2Box').classList.add('hidden'); document.getElementById('day3Box').classList.add('hidden');
-            document.getElementById('scheduleType').disabled = false;
-            document.getElementById('vehicle').value = ""; 
+            
+            const inputsToReset = ['startTime1', 'endTime1', 'startTime2', 'endTime2', 'startTime3', 'endTime3', 'scheduleType', 'vehicle', 'driver2', 'preDriver', 'memo'];
+            inputsToReset.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.disabled = false;
+            });
+            document.getElementById('startTime1').required = true;
+            document.getElementById('endTime1').required = true;
+            
+            document.getElementById('vehicle').value = "";
+            if (document.getElementById('isOff')) document.getElementById('isOff').checked = false;
 
             const logKey = `${currentUser}_${dateStr}`;
             const delBtn = document.getElementById('deleteBtn');
@@ -946,24 +1032,32 @@
 
             if (logsData[logKey]) {
                 const data = logsData[logKey];
-                document.getElementById('vehicle').value = data.vehicle || "";
-                document.getElementById('driver2').value = data.driver2 || ""; 
-                document.getElementById('preDriver').value = data.preDriver || "";
-                document.getElementById('startTime1').value = data.startTime || ""; 
-                document.getElementById('endTime1').value = data.endTime || "";
-                document.getElementById('isHoliday1').checked = data.isHoliday || false;
-                document.getElementById('memo').value = data.memo || ""; 
-                document.getElementById('scheduleType').value = data.scheduleType || "none";
+                
+                if (data.isOff) {
+                    if(document.getElementById('isOff')) {
+                        document.getElementById('isOff').checked = true;
+                        document.getElementById('isOff').dispatchEvent(new Event('change')); 
+                    }
+                } else {
+                    document.getElementById('vehicle').value = data.vehicle || "";
+                    document.getElementById('driver2').value = data.driver2 || ""; 
+                    document.getElementById('preDriver').value = data.preDriver || "";
+                    document.getElementById('startTime1').value = data.startTime || ""; 
+                    document.getElementById('endTime1').value = data.endTime || "";
+                    document.getElementById('isHoliday1').checked = data.isHoliday || false;
+                    document.getElementById('memo').value = data.memo || ""; 
+                    document.getElementById('scheduleType').value = data.scheduleType || "none";
 
-                if(data.scheduleType === 'linked') document.getElementById('scheduleType').disabled = true;
+                    if(data.scheduleType === 'linked') document.getElementById('scheduleType').disabled = true;
 
-                if (data.scheduleType === '1night' || data.scheduleType === '2night') {
-                    document.getElementById('scheduleType').dispatchEvent(new Event('change'));
-                    const day2Data = logsData[`${currentUser}_${addDays(dateStr, 1)}`];
-                    if (day2Data) { document.getElementById('startTime2').value = day2Data.startTime || ""; document.getElementById('endTime2').value = day2Data.endTime || ""; document.getElementById('isHoliday2').checked = day2Data.isHoliday || false; }
-                    if (data.scheduleType === '2night') {
-                        const day3Data = logsData[`${currentUser}_${addDays(dateStr, 2)}`];
-                        if (day3Data) { document.getElementById('startTime3').value = day3Data.startTime || ""; document.getElementById('endTime3').value = day3Data.endTime || ""; document.getElementById('isHoliday3').checked = day3Data.isHoliday || false; }
+                    if (data.scheduleType === '1night' || data.scheduleType === '2night') {
+                        document.getElementById('scheduleType').dispatchEvent(new Event('change'));
+                        const day2Data = logsData[`${currentUser}_${addDays(dateStr, 1)}`];
+                        if (day2Data) { document.getElementById('startTime2').value = day2Data.startTime || ""; document.getElementById('endTime2').value = day2Data.endTime || ""; document.getElementById('isHoliday2').checked = day2Data.isHoliday || false; }
+                        if (data.scheduleType === '2night') {
+                            const day3Data = logsData[`${currentUser}_${addDays(dateStr, 2)}`];
+                            if (day3Data) { document.getElementById('startTime3').value = day3Data.startTime || ""; document.getElementById('endTime3').value = day3Data.endTime || ""; document.getElementById('isHoliday3').checked = day3Data.isHoliday || false; }
+                        }
                     }
                 }
             }
@@ -998,6 +1092,21 @@
         document.getElementById('logForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            const isOff = document.getElementById('isOff') ? document.getElementById('isOff').checked : false;
+            const date1 = selectedDateStr; const date2 = addDays(date1, 1); const date3 = addDays(date1, 2);
+            const key1 = `${currentUser}_${date1}`; const key2 = `${currentUser}_${date2}`; const key3 = `${currentUser}_${date3}`;
+
+            if (isOff) {
+                const btn = document.getElementById('saveBtn'); btn.disabled = true; btn.innerText = "저장 중...";
+                try {
+                    await setDoc(doc(db, "drivingLogsMulti", key1), { userId: currentUser, date: date1, isOff: true, driver1: currentUser, updatedAt: new Date() });
+                    if (logsData[key2] && logsData[key2].parentDate === date1) await deleteDoc(doc(db, "drivingLogsMulti", key2));
+                    if (logsData[key3] && logsData[key3].parentDate === date1) await deleteDoc(doc(db, "drivingLogsMulti", key3));
+                    closeModal();
+                } catch (error) { alert("데이터 저장에 실패했습니다."); } finally { btn.disabled = false; btn.innerText = "저장하기"; }
+                return;
+            }
+
             const scheduleType = document.getElementById('scheduleType').value;
             if (scheduleType === 'none') { alert("운행 일정을 선택해주세요!"); return; }
 
@@ -1007,9 +1116,6 @@
             const btn = document.getElementById('saveBtn'); btn.disabled = true; btn.innerText = "저장 중...";
             const driver2 = document.getElementById('driver2').value;
             const preDriver = document.getElementById('preDriver').value; const memo = document.getElementById('memo').value;
-
-            const date1 = selectedDateStr; const date2 = addDays(date1, 1); const date3 = addDays(date1, 2);
-            const key1 = `${currentUser}_${date1}`; const key2 = `${currentUser}_${date2}`; const key3 = `${currentUser}_${date3}`;
 
             let currentParentType = ""; if (logsData[key1] && logsData[key1].scheduleType === 'linked') currentParentType = logsData[key1].parentType;
 
