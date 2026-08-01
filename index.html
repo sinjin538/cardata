@@ -55,10 +55,15 @@
                 <button id="adminToggleBtn" onclick="toggleAdminMode()" class="hidden px-4 py-1.5 bg-slate-800 text-white rounded-lg text-sm font-bold shadow-md hover:bg-slate-900 transition-colors animate-pulse border border-slate-700">👑 관리자 모드 가기</button>
             </div>
             
-            <div class="flex items-center justify-center gap-2 md:gap-3 w-full md:w-auto flex-wrap">
+          <div class="flex items-center justify-center gap-2 md:gap-3 w-full md:w-auto flex-wrap">
+                <!-- ⭐ 추가된 메모 버튼 -->
+                <button onclick="openMemoModal()" class="px-4 py-2 bg-gradient-to-r from-rose-400 to-rose-500 text-white rounded-full text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    메모
+                </button>
                 <button onclick="openSummaryModal()" class="px-4 md:px-5 py-2 md:py-2 bg-gradient-to-r from-indigo-500 to-blue-500 text-white rounded-full text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-                    정산보기
+                    정산
                 </button>
                 <div class="flex bg-slate-100 rounded-full p-1 shadow-inner">
                     <button onclick="changeMonth(-1)" class="px-3 md:px-4 py-1.5 hover:bg-white rounded-full text-sm font-bold text-slate-600">◀</button>
@@ -227,7 +232,35 @@
             </div>
         </div>
     </div>
-
+<!-- ⭐ 달력 메모 팝업 모달창 -->
+    <div id="memoModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl relative" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-5 border-b border-slate-100 pb-3">
+                <h2 class="text-xl font-extrabold text-slate-800 flex items-center">
+                    <svg class="w-5 h-5 mr-1.5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    달력 메모
+                </h2>
+                <button onclick="closeMemoModal()" class="text-slate-400 hover:text-slate-600 bg-slate-100 rounded-full p-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <form id="memoForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">날짜 선택</label>
+                    <input type="date" id="memoDateInput" class="w-full border border-slate-300 rounded-xl px-4 py-3 outline-none font-bold text-slate-700 focus:ring-2 focus:ring-rose-400" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">메모 내용 (달력에 빨간색 표시)</label>
+                    <input type="text" id="memoTextInput" placeholder="예: 차량수리, 휴가" class="w-full border border-slate-300 rounded-xl px-4 py-3 outline-none text-sm font-medium focus:ring-2 focus:ring-rose-400" required maxlength="10">
+                </div>
+                <div class="flex justify-between items-center pt-2 border-t border-slate-100 mt-2">
+                    <button type="button" id="deleteMemoBtn" onclick="deleteMemoBtnClick()" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-bold text-sm hidden">삭제</button>
+                    <div class="flex gap-2 ml-auto">
+                        <button type="button" onclick="closeMemoModal()" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm">취소</button>
+                        <button type="submit" class="px-6 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold text-sm">저장</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
     <!-- 일정 입력 팝업 모달창 -->
     <div id="logModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50 overflow-y-auto">
         <div class="bg-white rounded-3xl max-w-2xl w-full p-5 md:p-7 shadow-2xl relative my-auto border border-slate-100" onclick="event.stopPropagation()">
@@ -341,7 +374,7 @@
     </div>
 
     <!-- ⭐ 파이어베이스 연동 및 권한 스크립트 -->
-    <script type="module">
+   <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, getDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -367,41 +400,40 @@
         let currentUser = "";
         let isAdmin = false;
         let logsData = {}; 
+        let memosData = {}; // ⭐ 메모 데이터를 담을 빈 공간
 
-        // ⭐ 휴대폰 뒤로가기 버튼 제어 (앱 종료 방지)
         window.addEventListener('popstate', function(event) {
-            // 1. 입력 모달창이 열려있다면 닫기
             if (!document.getElementById('logModal').classList.contains('hidden')) {
-                document.getElementById('logModal').classList.add('hidden');
-                document.getElementById('logForm').reset();
-            } 
-            // 2. 정산 모달창이 열려있다면 닫기
-            else if (!document.getElementById('summaryModal').classList.contains('hidden')) {
+                document.getElementById('logModal').classList.add('hidden'); document.getElementById('logForm').reset();
+            } else if (!document.getElementById('memoModal').classList.contains('hidden')) { // ⭐ 메모창 뒤로가기 제어
+                document.getElementById('memoModal').classList.add('hidden');
+            } else if (!document.getElementById('summaryModal').classList.contains('hidden')) {
                 document.getElementById('summaryModal').classList.add('hidden');
-            } 
-            // 3. 관리자 화면이라면 개인 달력으로 돌아가기
-            else if (!document.getElementById('adminView').classList.contains('hidden')) {
-                document.getElementById('adminView').classList.add('hidden');
-                document.getElementById('userView').classList.remove('hidden');
-                renderCalendar();
-            } 
-            // 4. 개인 달력 화면이라면 로그아웃 처리
-            else if (!document.getElementById('userView').classList.contains('hidden')) {
+            } else if (!document.getElementById('adminView').classList.contains('hidden')) {
+                document.getElementById('adminView').classList.add('hidden'); document.getElementById('userView').classList.remove('hidden'); renderCalendar();
+            } else if (!document.getElementById('userView').classList.contains('hidden')) {
                 handleLogout(true);
             }
         });
 
+        // 운행 기록 실시간 연동
         onSnapshot(collection(db, "drivingLogsMulti"), (snapshot) => {
             logsData = {};
             snapshot.forEach((doc) => { logsData[doc.id] = doc.data(); });
             if (currentUser !== "") {
-                if (document.getElementById('adminView').classList.contains('hidden') === false) renderAdminTable();
+                if (!document.getElementById('adminView').classList.contains('hidden')) renderAdminTable();
                 else renderCalendar();
             }
         });
 
-        const iconTime = `<svg class="w-3 h-3 inline-block mr-0.5 mb-[2px] text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
-        const iconMoney = `<svg class="w-3 h-3 inline-block mr-0.5 mb-[2px] text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+        // ⭐ 메모 기록 실시간 연동
+        onSnapshot(collection(db, "calendarMemos"), (snapshot) => {
+            memosData = {};
+            snapshot.forEach((doc) => { memosData[doc.id] = doc.data(); });
+            if (currentUser !== "") {
+                if (document.getElementById('adminView').classList.contains('hidden')) renderCalendar();
+            }
+        });
 
         function formatTime(timeStr) {
             if (!timeStr) return "";
@@ -462,7 +494,6 @@
 
                 currentUser = name; isAdmin = (name === ADMIN_NAME);
                 
-                // ⭐ 로그인 성공 시 브라우저 히스토리에 상태 추가
                 history.pushState({ page: 'calendar' }, null, '');
 
                 document.getElementById('loginView').classList.add('hidden');
@@ -482,23 +513,17 @@
             document.getElementById('loginView').classList.remove('hidden'); 
             document.getElementById('userView').classList.add('hidden'); 
             document.getElementById('adminView').classList.add('hidden');
-            
-            // ⭐ 로그아웃 버튼을 직접 눌렀을 때는 새로고침하여 앱을 처음 상태로 완전히 초기화
-            if (fromPopState !== true) {
-                window.location.reload(); 
-            }
+            if (fromPopState !== true) { window.location.reload(); }
         }
 
         window.toggleAdminMode = function() {
-            history.pushState({ page: 'admin' }, null, ''); // ⭐ 히스토리 추가
+            history.pushState({ page: 'admin' }, null, ''); 
             document.getElementById('userView').classList.add('hidden'); 
             document.getElementById('adminView').classList.remove('hidden'); 
             renderAdminTable();
         }
         window.toggleUserMode = function() {
-            if (!document.getElementById('adminView').classList.contains('hidden')) {
-                history.back(); // 뒤로가기 실행 -> popstate가 화면 전환 처리
-            }
+            if (!document.getElementById('adminView').classList.contains('hidden')) { history.back(); }
         }
 
         window.changeMonth = function(direction) {
@@ -527,21 +552,19 @@
         }
 
         function calculateOvertime(startStr, endStr, isHoliday) {
-            if (!startStr || !endStr) return { totalPayTime: 0, label: "" };
+            if (!startStr || !endStr) return { totalPayTime: 0 };
             let startVal = parseFloat(startStr); let endVal = parseFloat(endStr);
-            if (isNaN(startVal) || isNaN(endVal)) return { totalPayTime: 0, label: "" };
+            if (isNaN(startVal) || isNaN(endVal)) return { totalPayTime: 0 };
 
             if (endVal <= startVal) endVal += 24.0; 
-
             const overlapStart = Math.max(startVal, 9.0); const overlapEnd = Math.min(endVal, 18.0);
             let rawNormalHours = (overlapEnd > overlapStart) ? overlapEnd - overlapStart : 0;
-            
             let restTime = (rawNormalHours >= 4) ? 1.0 : 0;
             let normalHours = Math.max(0, rawNormalHours - restTime); 
             let overtimeHours = Math.max(0, (endVal - startVal) - rawNormalHours);
 
-            if (isHoliday) { return { totalPayTime: ((normalHours * 1.5) + (overtimeHours * 2.0)).toFixed(2), label: "휴일보상" }; } 
-            else { return { totalPayTime: (overtimeHours * 1.5).toFixed(2), label: "평일연장" }; }
+            if (isHoliday) { return { totalPayTime: ((normalHours * 1.5) + (overtimeHours * 2.0)).toFixed(2) }; } 
+            else { return { totalPayTime: (overtimeHours * 1.5).toFixed(2) }; }
         }
         
         function calculateAllowance(log) {
@@ -551,7 +574,7 @@
             return 0;
         }
 
-       function renderCalendar() {
+        function renderCalendar() {
             const titleEl = document.getElementById('calendarMonthTitle'); const gridEl = document.getElementById('calendarGrid');
             titleEl.textContent = `${currentYear}년 ${currentMonth + 1}월 운행 달력`; 
             
@@ -566,7 +589,9 @@
 
             for (let day = 1; day <= lastDay; day++) {
                 const monthStr = String(currentMonth + 1).padStart(2, '0'); const dayStr = String(day).padStart(2, '0');
-                const dateKey = `${currentYear}-${monthStr}-${dayStr}`; const logKey = `${currentUser}_${dateKey}`; const log = logsData[logKey];
+                const dateKey = `${currentYear}-${monthStr}-${dayStr}`; 
+                const logKey = `${currentUser}_${dateKey}`; const log = logsData[logKey];
+                const memoInfo = memosData[logKey]; // ⭐ 파이어베이스에서 내 메모 가져오기
 
                 const dayOfWeek = new Date(currentYear, currentMonth, day).getDay(); const holidayName = getHolidayName(dateKey);
 
@@ -574,7 +599,9 @@
                 if (holidayName) { dateColorClass = "text-rose-500"; dateBadgeHTML = `<span class="text-[10px] text-rose-500 ml-1 font-bold tracking-tighter bg-rose-50 px-1.5 py-0.5 rounded-md">(${holidayName})</span>`; } 
                 else if (dayOfWeek === 0) dateColorClass = "text-rose-500"; else if (dayOfWeek === 6) dateColorClass = "text-blue-500";
 
-                // ⭐ 배경색을 그라데이션(가운데가 진하고 가장자리가 연하게)으로 변경
+                // ⭐ 숫자 옆에 표시될 빨간색 메모 HTML
+                const customMemoHTML = memoInfo ? `<span class="text-[12px] text-rose-600 font-black ml-1.5 truncate tracking-tighter">${memoInfo.text}</span>` : '';
+
                 let cellBgClass = 'bg-white border-slate-200 hover:border-indigo-400 hover:shadow-md';
                 if (log) {
                     let sType = log.scheduleType === 'linked' ? log.parentType : log.scheduleType;
@@ -605,25 +632,15 @@
                     let preName = log.preDriver ? log.preDriver.trim() : "";
 
                     let d1Txt = log.driver1;
-                    if (preName && d1Name === preName) {
-                        d1Txt = `<span class="underline decoration-rose-500 decoration-2 underline-offset-2">${log.driver1}</span>`;
-                    }
-
+                    if (preName && d1Name === preName) { d1Txt = `<span class="underline decoration-rose-500 decoration-2 underline-offset-2">${log.driver1}</span>`; }
                     let d2Txt = "";
-                    if (log.driver2) {
-                        if (preName && d2Name === preName) {
-                            d2Txt = `, <span class="underline decoration-rose-500 decoration-2 underline-offset-2">${log.driver2}</span>`;
-                        } else {
-                            d2Txt = `, ${log.driver2}`;
-                        }
-                    }
+                    if (log.driver2) { if (preName && d2Name === preName) { d2Txt = `, <span class="underline decoration-rose-500 decoration-2 underline-offset-2">${log.driver2}</span>`; } else { d2Txt = `, ${log.driver2}`; } }
                     
                     const driverComboHTML = `<div class="text-[13px] font-bold text-slate-800 truncate text-center leading-snug">${d1Txt}${d2Txt}</div>`;
                     
                     const payColor = log.isHoliday ? 'text-rose-500' : 'text-amber-600';
                     const overtimeHTML = `<div class="text-[11px] font-bold ${payColor} text-center leading-snug">${calc.totalPayTime}h</div>`;
-
-                    const memoHTML = log.memo ? `<div class="text-[11px] font-semibold text-slate-500 text-center truncate leading-snug px-0.5 mt-auto pt-1" title="${log.memo}">${log.memo}</div>` : '';
+                    const memoLogHTML = log.memo ? `<div class="text-[11px] font-semibold text-slate-500 text-center truncate leading-snug px-0.5 mt-auto pt-1" title="${log.memo}">${log.memo}</div>` : '';
 
                     contentHTML = `
                         <div class="flex flex-col gap-0.5 mt-1 flex-1">
@@ -631,20 +648,26 @@
                             ${driverComboHTML}
                             ${overtimeHTML}
                             ${allowanceHTML}
-                            ${memoHTML}
+                            ${memoLogHTML}
                         </div>
                     `;
                 }
 
+                // ⭐ 커스텀 메모 뱃지를 날짜 옆에 배치 (flex, overflow-hidden으로 넘침 방지)
                 gridEl.innerHTML += `
                     <div onclick="openModal('${dateKey}')" class="h-full min-h-[6.5rem] ${cellBgClass} border rounded-xl p-1 md:p-1.5 cursor-pointer hover:opacity-80 transition-all duration-200 flex flex-col shadow-sm relative">
-                        <div class="flex items-center ml-0.5"><span class="text-[13px] md:text-sm font-extrabold ${dateColorClass}">${day}</span>${dateBadgeHTML}</div>
+                        <div class="flex items-center ml-0.5 whitespace-nowrap overflow-hidden">
+                            <span class="text-[13px] md:text-sm font-extrabold ${dateColorClass}">${day}</span>
+                            ${dateBadgeHTML}
+                            ${customMemoHTML}
+                        </div>
                         ${contentHTML}
                     </div>
                 `;
             }
             renderUserTable();
         }
+
         function renderUserTable() {
             const tbody = document.getElementById('userTableBody'); tbody.innerHTML = "";
             const targetPrefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
@@ -657,22 +680,6 @@
                 tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 font-medium">이번 달 운행 내역이 없습니다.</td></tr>`;
             } else {
                 monthLogs.forEach(log => {
-                    if (log.isOff) {
-                        const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
-                        tbody.innerHTML += `
-                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors bg-rose-50/40">
-                                <td class="p-3 pl-4 font-bold text-slate-700">${log.date.split('-')[2]}일 <span class="text-xs text-slate-400 font-normal">(${dayStr})</span></td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                                <td class="p-3 text-rose-600 font-extrabold text-center">🏖️ 휴무</td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                            </tr>
-                        `;
-                        return; 
-                    }
-
                     const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
                     const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
                     
@@ -699,7 +706,6 @@
         function renderAdminTable() {
             document.getElementById('adminMonthTitle').textContent = `${currentYear}년 ${currentMonth + 1}월 전체 운행 내역`;
             const tbody = document.getElementById('adminTableBody'); tbody.innerHTML = "";
-
             const targetPrefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
             let totalHours = 0; let totalAllowance = 0;
 
@@ -711,28 +717,11 @@
                 tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400 font-medium">이번 달 운행 내역이 없습니다.</td></tr>`;
             } else {
                 monthLogs.forEach(log => {
-                    const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
-                    
-                    if (log.isOff) {
-                        tbody.innerHTML += `
-                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors bg-rose-50/40">
-                                <td class="p-3 pl-4 font-bold text-slate-700">${log.date.split('-')[2]}일 <span class="text-xs text-slate-400 font-normal">(${dayStr})</span></td>
-                                <td class="p-3 text-indigo-700 font-extrabold">${log.userId}</td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                                <td class="p-3 text-rose-600 font-extrabold text-center">🏖️ 휴무</td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                            </tr>
-                        `;
-                        return; 
-                    }
-
                     const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
                     totalHours += parseFloat(calc.totalPayTime || 0); totalAllowance += allowance;
 
+                    const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
+                    
                     let scheduleTxt = "당일";
                     if(log.scheduleType === '1night' || (log.scheduleType === 'linked' && log.parentType === '1night')) scheduleTxt = "1박"; 
                     else if(log.scheduleType === '2night' || (log.scheduleType === 'linked' && log.parentType === '2night')) scheduleTxt = "2박";
@@ -759,15 +748,66 @@
             document.getElementById('adminTotalAllowance').textContent = totalAllowance.toLocaleString() + " 원";
         }
 
+        // ⭐ 모달 관련 함수들
         window.openSummaryModal = function() { 
-            history.pushState({ page: 'summary' }, null, ''); // ⭐ 히스토리 추가
-            document.getElementById('summaryModal').classList.remove('hidden'); 
-            switchSummaryTab('detail'); 
+            history.pushState({ page: 'summary' }, null, ''); 
+            document.getElementById('summaryModal').classList.remove('hidden'); switchSummaryTab('detail'); 
         }
         window.closeSummaryModal = function() { 
-            if (!document.getElementById('summaryModal').classList.contains('hidden')) {
-                history.back(); // ⭐ 뒤로가기 실행
+            if (!document.getElementById('summaryModal').classList.contains('hidden')) { history.back(); }
+        }
+
+        // ⭐ 메모 모달창 열기
+        window.openMemoModal = function() {
+            history.pushState({ page: 'memo' }, null, '');
+            document.getElementById('memoModal').classList.remove('hidden');
+            
+            // 오늘 날짜로 기본 세팅
+            const today = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
+            document.getElementById('memoDateInput').value = today;
+            checkMemoExist(); // 이미 작성된 메모가 있는지 확인
+        }
+
+        window.closeMemoModal = function() {
+            if (!document.getElementById('memoModal').classList.contains('hidden')) { history.back(); }
+        }
+
+        // 날짜를 바꿀 때마다 메모가 있는지 확인
+        document.getElementById('memoDateInput').addEventListener('change', checkMemoExist);
+
+        function checkMemoExist() {
+            const date = document.getElementById('memoDateInput').value;
+            const key = `${currentUser}_${date}`;
+            const btn = document.getElementById('deleteMemoBtn');
+            if (memosData[key]) {
+                document.getElementById('memoTextInput').value = memosData[key].text;
+                btn.classList.remove('hidden'); // 삭제 버튼 보이기
+            } else {
+                document.getElementById('memoTextInput').value = "";
+                btn.classList.add('hidden'); // 삭제 버튼 숨기기
             }
+        }
+
+        // 메모 저장 로직
+        document.getElementById('memoForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const date = document.getElementById('memoDateInput').value;
+            const text = document.getElementById('memoTextInput').value;
+            const key = `${currentUser}_${date}`;
+            try {
+                await setDoc(doc(db, "calendarMemos", key), { userId: currentUser, date: date, text: text, updatedAt: new Date() });
+                closeMemoModal();
+            } catch(e) { alert("메모 저장 실패"); }
+        });
+
+        // 메모 삭제 로직
+        window.deleteMemoBtnClick = async function() {
+            const date = document.getElementById('memoDateInput').value;
+            const key = `${currentUser}_${date}`;
+            try {
+                await deleteDoc(doc(db, "calendarMemos", key));
+                closeMemoModal();
+            } catch(e) { alert("메모 삭제 실패"); }
         }
 
         window.switchSummaryTab = function(tab) {
@@ -797,26 +837,11 @@
                 tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400 font-medium">이번 달 운행 내역이 없습니다.</td></tr>`;
             } else {
                 sortedKeys.forEach(key => {
-                    const log = logsData[key]; 
-                    const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
-
-                    if (log.isOff) {
-                        tbody.innerHTML += `
-                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors bg-rose-50/40">
-                                <td class="p-3 pl-4 font-bold text-slate-700">${log.date.split('-')[2]}일 <span class="text-xs font-normal text-slate-400">(${dayStr})</span></td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                                <td class="p-3 text-center text-xs text-slate-600 font-bold bg-slate-50/50">-</td>
-                                <td class="p-3 text-rose-600 font-extrabold text-center">🏖️ 휴무</td>
-                                <td class="p-3 text-slate-400 text-center">-</td>
-                            </tr>
-                        `;
-                        return; 
-                    }
-
-                    const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
+                    const log = logsData[key]; const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
                     totalHours += parseFloat(calc.totalPayTime || 0); totalAllowance += allowance;
 
                     const extraDrivers = [log.driver2 ? log.driver2 : null, log.preDriver ? `선: ${log.preDriver}` : null].filter(Boolean).join(', ');
+                    const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
                     
                     let allowanceStr = "-";
                     if(allowance > 0) allowanceStr = `${iconMoney}${allowance.toLocaleString()}원`;
@@ -845,10 +870,7 @@
             
             Object.keys(logsData).forEach(key => {
                 if(!key.startsWith(currentUser + "_")) return; 
-                const log = logsData[key]; 
-                if(log.isOff) return; 
-                
-                const monthKey = log.date.substring(0, 7); 
+                const log = logsData[key]; const monthKey = log.date.substring(0, 7); 
                 if(!monthlyStats[monthKey]) monthlyStats[monthKey] = { hours: 0, allowance: 0 };
                 
                 const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday);
@@ -873,20 +895,6 @@
             }
         }
 
-        if (document.getElementById('isOff')) {
-            document.getElementById('isOff').addEventListener('change', function(e) {
-                const isChecked = e.target.checked;
-                document.getElementById('startTime1').required = !isChecked;
-                document.getElementById('endTime1').required = !isChecked;
-                
-                const inputsToDisable = ['startTime1', 'endTime1', 'startTime2', 'endTime2', 'startTime3', 'endTime3', 'scheduleType', 'vehicle', 'driver2', 'preDriver', 'memo'];
-                inputsToDisable.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.disabled = isChecked;
-                });
-            });
-        }
-
         document.getElementById('scheduleType').addEventListener('change', function(e) {
             const val = e.target.value; const day2 = document.getElementById('day2Box'); const day3 = document.getElementById('day3Box');
             if (val === '1night') {
@@ -905,24 +913,15 @@
         });
 
         window.openModal = function(dateStr) {
-            history.pushState({ page: 'modal' }, null, ''); // ⭐ 히스토리 추가
+            history.pushState({ page: 'modal' }, null, ''); 
             
             selectedDateStr = dateStr;
             document.getElementById('modalDateTitle').innerHTML = `<svg class="w-6 h-6 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>${dateStr} 운행 정보`;
             document.getElementById('logForm').reset(); document.getElementById('scheduleType').value = "none";
             ['1', '2', '3'].forEach(num => { document.getElementById(`startTime${num}`).value = ""; document.getElementById(`endTime${num}`).value = ""; document.getElementById(`isHoliday${num}`).checked = false; });
             document.getElementById('day2Box').classList.add('hidden'); document.getElementById('day3Box').classList.add('hidden');
-            
-            const inputsToReset = ['startTime1', 'endTime1', 'startTime2', 'endTime2', 'startTime3', 'endTime3', 'scheduleType', 'vehicle', 'driver2', 'preDriver', 'memo'];
-            inputsToReset.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.disabled = false;
-            });
-            document.getElementById('startTime1').required = true;
-            document.getElementById('endTime1').required = true;
-            
-            document.getElementById('vehicle').value = "";
-            if (document.getElementById('isOff')) document.getElementById('isOff').checked = false;
+            document.getElementById('scheduleType').disabled = false;
+            document.getElementById('vehicle').value = ""; 
 
             const logKey = `${currentUser}_${dateStr}`;
             const delBtn = document.getElementById('deleteBtn');
@@ -942,32 +941,24 @@
 
             if (logsData[logKey]) {
                 const data = logsData[logKey];
-                
-                if (data.isOff) {
-                    if(document.getElementById('isOff')) {
-                        document.getElementById('isOff').checked = true;
-                        document.getElementById('isOff').dispatchEvent(new Event('change')); 
-                    }
-                } else {
-                    document.getElementById('vehicle').value = data.vehicle || "";
-                    document.getElementById('driver2').value = data.driver2 || ""; 
-                    document.getElementById('preDriver').value = data.preDriver || "";
-                    document.getElementById('startTime1').value = data.startTime || ""; 
-                    document.getElementById('endTime1').value = data.endTime || "";
-                    document.getElementById('isHoliday1').checked = data.isHoliday || false;
-                    document.getElementById('memo').value = data.memo || ""; 
-                    document.getElementById('scheduleType').value = data.scheduleType || "none";
+                document.getElementById('vehicle').value = data.vehicle || "";
+                document.getElementById('driver2').value = data.driver2 || ""; 
+                document.getElementById('preDriver').value = data.preDriver || "";
+                document.getElementById('startTime1').value = data.startTime || ""; 
+                document.getElementById('endTime1').value = data.endTime || "";
+                document.getElementById('isHoliday1').checked = data.isHoliday || false;
+                document.getElementById('memo').value = data.memo || ""; 
+                document.getElementById('scheduleType').value = data.scheduleType || "none";
 
-                    if(data.scheduleType === 'linked') document.getElementById('scheduleType').disabled = true;
+                if(data.scheduleType === 'linked') document.getElementById('scheduleType').disabled = true;
 
-                    if (data.scheduleType === '1night' || data.scheduleType === '2night') {
-                        document.getElementById('scheduleType').dispatchEvent(new Event('change'));
-                        const day2Data = logsData[`${currentUser}_${addDays(dateStr, 1)}`];
-                        if (day2Data) { document.getElementById('startTime2').value = day2Data.startTime || ""; document.getElementById('endTime2').value = day2Data.endTime || ""; document.getElementById('isHoliday2').checked = day2Data.isHoliday || false; }
-                        if (data.scheduleType === '2night') {
-                            const day3Data = logsData[`${currentUser}_${addDays(dateStr, 2)}`];
-                            if (day3Data) { document.getElementById('startTime3').value = day3Data.startTime || ""; document.getElementById('endTime3').value = day3Data.endTime || ""; document.getElementById('isHoliday3').checked = day3Data.isHoliday || false; }
-                        }
+                if (data.scheduleType === '1night' || data.scheduleType === '2night') {
+                    document.getElementById('scheduleType').dispatchEvent(new Event('change'));
+                    const day2Data = logsData[`${currentUser}_${addDays(dateStr, 1)}`];
+                    if (day2Data) { document.getElementById('startTime2').value = day2Data.startTime || ""; document.getElementById('endTime2').value = day2Data.endTime || ""; document.getElementById('isHoliday2').checked = day2Data.isHoliday || false; }
+                    if (data.scheduleType === '2night') {
+                        const day3Data = logsData[`${currentUser}_${addDays(dateStr, 2)}`];
+                        if (day3Data) { document.getElementById('startTime3').value = day3Data.startTime || ""; document.getElementById('endTime3').value = day3Data.endTime || ""; document.getElementById('isHoliday3').checked = day3Data.isHoliday || false; }
                     }
                 }
             }
@@ -975,9 +966,7 @@
         }
 
         window.closeModal = function() { 
-            if (!document.getElementById('logModal').classList.contains('hidden')) {
-                history.back(); // ⭐ 뒤로가기 실행
-            }
+            if (!document.getElementById('logModal').classList.contains('hidden')) { history.back(); }
         }
 
         window.deleteLog = async function() {
@@ -1004,21 +993,6 @@
         document.getElementById('logForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const isOff = document.getElementById('isOff') ? document.getElementById('isOff').checked : false;
-            const date1 = selectedDateStr; const date2 = addDays(date1, 1); const date3 = addDays(date1, 2);
-            const key1 = `${currentUser}_${date1}`; const key2 = `${currentUser}_${date2}`; const key3 = `${currentUser}_${date3}`;
-
-            if (isOff) {
-                const btn = document.getElementById('saveBtn'); btn.disabled = true; btn.innerText = "저장 중...";
-                try {
-                    await setDoc(doc(db, "drivingLogsMulti", key1), { userId: currentUser, date: date1, isOff: true, driver1: currentUser, updatedAt: new Date() });
-                    if (logsData[key2] && logsData[key2].parentDate === date1) await deleteDoc(doc(db, "drivingLogsMulti", key2));
-                    if (logsData[key3] && logsData[key3].parentDate === date1) await deleteDoc(doc(db, "drivingLogsMulti", key3));
-                    closeModal();
-                } catch (error) { alert("데이터 저장에 실패했습니다."); } finally { btn.disabled = false; btn.innerText = "저장하기"; }
-                return;
-            }
-
             const scheduleType = document.getElementById('scheduleType').value;
             if (scheduleType === 'none') { alert("운행 일정을 선택해주세요!"); return; }
 
@@ -1028,6 +1002,9 @@
             const btn = document.getElementById('saveBtn'); btn.disabled = true; btn.innerText = "저장 중...";
             const driver2 = document.getElementById('driver2').value;
             const preDriver = document.getElementById('preDriver').value; const memo = document.getElementById('memo').value;
+
+            const date1 = selectedDateStr; const date2 = addDays(date1, 1); const date3 = addDays(date1, 2);
+            const key1 = `${currentUser}_${date1}`; const key2 = `${currentUser}_${date2}`; const key3 = `${currentUser}_${date3}`;
 
             let currentParentType = ""; if (logsData[key1] && logsData[key1].scheduleType === 'linked') currentParentType = logsData[key1].parentType;
 
