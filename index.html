@@ -758,10 +758,15 @@
         }
 
         // ⭐ 메모 모달창 열기
-        window.openMemoModal = function() {
+       // ⭐ 달력에서 메모를 직접 클릭했을 때 해당 날짜로 바로 열어주는 기능
+        window.openMemoModalForDate = function(dateStr, event) {
+            event.stopPropagation(); // 달력 본체(일정창)가 열리는 것을 방지
             history.pushState({ page: 'memo' }, null, '');
             document.getElementById('memoModal').classList.remove('hidden');
             
+            document.getElementById('memoDateInput').value = dateStr;
+            checkMemoExist(); // 해당 날짜 메모 불러오고 삭제 버튼 띄우기
+        }
             // 오늘 날짜로 기본 세팅
             const today = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
             document.getElementById('memoDateInput').value = today;
