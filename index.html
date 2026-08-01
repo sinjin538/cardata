@@ -513,17 +513,15 @@
             return 0;
         }
 
-       function renderCalendar() {
+      function renderCalendar() {
             const titleEl = document.getElementById('calendarMonthTitle'); const gridEl = document.getElementById('calendarGrid');
             titleEl.textContent = `${currentYear}년 ${currentMonth + 1}월 운행 달력`; 
             
-            // ⭐ 1. 달력 네모칸 공백(gap)을 예전보다 훨씬 좁게(gap-1) 설정해서 오밀조밀하게 만듭니다.
             gridEl.className = "grid grid-cols-7 gap-1 md:gap-1.5 auto-rows-fr";
             gridEl.innerHTML = "";
 
             const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay(); const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-            // 빈 칸 랜더링 (둥근 모서리 유지)
             for (let i = 0; i < firstDayIndex; i++) {
                 gridEl.innerHTML += `<div class="min-h-[6.5rem] bg-slate-50/50 rounded-xl opacity-40 border border-slate-200"></div>`;
             }
@@ -545,7 +543,6 @@
                     }
                 });
 
-                // 배경색 (진한 색상 유지)
                 let cellBgClass = 'bg-white border-slate-200 hover:border-indigo-400 hover:shadow-md';
                 if (log && !log.isOff) {
                     let sType = log.scheduleType === 'linked' ? log.parentType : log.scheduleType;
@@ -562,11 +559,13 @@
                 if (log && !log.isOff) {
                     const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
                     
+                    // ⭐ 1. 정산 금액: 기존 크기(text-xs)보다 작게 (text-[11px])
                     let allowanceHTML = '';
-                    if (allowance > 0) allowanceHTML = `<div class="text-xs font-bold text-emerald-600 text-center tracking-tight leading-snug">${allowance.toLocaleString()}원</div>`;
-                    else if (log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) allowanceHTML = `<div class="text-xs font-bold text-slate-500 text-center tracking-tight leading-snug">서울당일</div>`;
+                    if (allowance > 0) allowanceHTML = `<div class="text-[11px] font-bold text-emerald-600 text-center tracking-tight leading-snug">${allowance.toLocaleString()}원</div>`;
+                    else if (log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) allowanceHTML = `<div class="text-[11px] font-bold text-slate-500 text-center tracking-tight leading-snug">서울당일</div>`;
 
-                    const vehicleHTML = log.vehicle ? `<div class="text-xs font-extrabold text-blue-700 text-center tracking-wider leading-snug">${log.vehicle}</div>` : '';
+                    // ⭐ 2. 차량 번호: 기존 크기(text-xs)보다 크게 (text-[13px])
+                    const vehicleHTML = log.vehicle ? `<div class="text-[13px] font-extrabold text-blue-700 text-center tracking-wider leading-snug">${log.vehicle}</div>` : '';
                     
                     let d1Name = log.driver1 ? log.driver1.trim() : "";
                     let d2Name = log.driver2 ? log.driver2.trim() : "";
@@ -586,12 +585,13 @@
                         }
                     }
                     
-                    const driverComboHTML = `<div class="text-xs font-bold text-slate-800 truncate text-center leading-snug">${d1Txt}${d2Txt}</div>`;
+                    // ⭐ 3. 운전원 이름: 기존 크기(text-xs)보다 크게 (text-[13px])
+                    const driverComboHTML = `<div class="text-[13px] font-bold text-slate-800 truncate text-center leading-snug">${d1Txt}${d2Txt}</div>`;
                     
+                    // ⭐ 4. 보상 시간: 평일연장/휴일보상 글자 빼고 숫자+h만 표시, 크기는 작게 (text-[11px])
                     const payColor = log.isHoliday ? 'text-rose-500' : 'text-amber-600';
-                    const overtimeHTML = `<div class="text-xs font-bold ${payColor} text-center leading-snug">${calc.label}: ${calc.totalPayTime}h</div>`;
+                    const overtimeHTML = `<div class="text-[11px] font-bold ${payColor} text-center leading-snug">${calc.totalPayTime}h</div>`;
 
-                    // ⭐ 2. 비고(memo)에 'mt-auto'를 추가해서, 다른 내용물이 적든 많든 무조건 맨 밑바닥으로 밀어버립니다.
                     const memoHTML = log.memo ? `<div class="text-[11px] font-semibold text-slate-500 text-center truncate leading-snug px-0.5 mt-auto pt-1" title="${log.memo}">${log.memo}</div>` : '';
 
                     contentHTML = `
