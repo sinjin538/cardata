@@ -430,7 +430,7 @@
             if(!name || !pwd || !pwdConfirm) { alert("모든 칸을 입력해주세요."); return; }
             if(!ALLOWED_NAMES.includes(name)) { alert(`등록된 운전원 이름이 아닙니다.\n(허용: ${ALLOWED_NAMES.join(', ')})`); return; }
             if(pwd !== pwdConfirm) { alert("비밀번호가 일치하지 않습니다."); return; }
-            if(pwd.length < 4) { alert("비밀번호는 4자리 이상 설정해주세요."); return; }
+            if(pwd.length < 6) { alert("비밀번호는 6자리 이상 설정해주세요."); return; }
 
             try {
                 const userRef = doc(db, "drivingUsersAuth", name);
@@ -551,7 +551,7 @@
             return 0;
         }
 
-        function renderCalendar() {
+       function renderCalendar() {
             const titleEl = document.getElementById('calendarMonthTitle'); const gridEl = document.getElementById('calendarGrid');
             titleEl.textContent = `${currentYear}년 ${currentMonth + 1}월 운행 달력`; 
             
@@ -574,27 +574,24 @@
                 if (holidayName) { dateColorClass = "text-rose-500"; dateBadgeHTML = `<span class="text-[10px] text-rose-500 ml-1 font-bold tracking-tighter bg-rose-50 px-1.5 py-0.5 rounded-md">(${holidayName})</span>`; } 
                 else if (dayOfWeek === 0) dateColorClass = "text-rose-500"; else if (dayOfWeek === 6) dateColorClass = "text-blue-500";
 
-                let offUsers = [];
-                Object.values(logsData).forEach(d => {
-                    if (d.date === dateKey && d.isOff) {
-                        offUsers.push(d.userId);
-                    }
-                });
-
+                // ⭐ 배경색을 그라데이션(가운데가 진하고 가장자리가 연하게)으로 변경
                 let cellBgClass = 'bg-white border-slate-200 hover:border-indigo-400 hover:shadow-md';
-                if (log && !log.isOff) {
+                if (log) {
                     let sType = log.scheduleType === 'linked' ? log.parentType : log.scheduleType;
-                    if (sType === 'day') cellBgClass = 'bg-blue-100 border-blue-300 hover:border-blue-400 hover:shadow-md'; 
-                    else if (sType === '1night') cellBgClass = 'bg-yellow-200 border-yellow-400 hover:border-yellow-500 hover:shadow-md'; 
-                    else if (sType === '2night') cellBgClass = 'bg-orange-200 border-orange-400 hover:border-orange-500 hover:shadow-md'; 
-                    else if (sType === 'seoul') cellBgClass = 'bg-slate-100 border-slate-300 hover:border-slate-400 hover:shadow-md'; 
-                } else if (log && log.isOff) {
-                    cellBgClass = 'bg-rose-100 border-rose-300 hover:border-rose-400 hover:shadow-md'; 
+                    if (sType === 'day') {
+                        cellBgClass = 'bg-[radial-gradient(circle,_#bfdbfe_0%,_#eff6ff_100%)] border-blue-300 hover:border-blue-400 hover:shadow-md'; 
+                    } else if (sType === '1night') {
+                        cellBgClass = 'bg-[radial-gradient(circle,_#fde047_0%,_#fefce8_100%)] border-yellow-400 hover:border-yellow-500 hover:shadow-md'; 
+                    } else if (sType === '2night') {
+                        cellBgClass = 'bg-[radial-gradient(circle,_#fdba74_0%,_#fff7ed_100%)] border-orange-400 hover:border-orange-500 hover:shadow-md'; 
+                    } else if (sType === 'seoul') {
+                        cellBgClass = 'bg-[radial-gradient(circle,_#e2e8f0_0%,_#f8fafc_100%)] border-slate-300 hover:border-slate-400 hover:shadow-md'; 
+                    }
                 }
 
                 let contentHTML = ``;
 
-                if (log && !log.isOff) {
+                if (log) {
                     const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
                     
                     let allowanceHTML = '';
@@ -639,10 +636,6 @@
                     `;
                 }
 
-                if (offUsers.length > 0) {
-                    contentHTML += `<div class="text-xs font-bold text-rose-500 mt-auto text-center py-1 tracking-tight break-keep leading-snug">🏖️ 휴무: ${offUsers.join(', ')}</div>`;
-                }
-
                 gridEl.innerHTML += `
                     <div onclick="openModal('${dateKey}')" class="h-full min-h-[6.5rem] ${cellBgClass} border rounded-xl p-1 md:p-1.5 cursor-pointer hover:opacity-80 transition-all duration-200 flex flex-col shadow-sm relative">
                         <div class="flex items-center ml-0.5"><span class="text-[13px] md:text-sm font-extrabold ${dateColorClass}">${day}</span>${dateBadgeHTML}</div>
@@ -652,7 +645,6 @@
             }
             renderUserTable();
         }
-
         function renderUserTable() {
             const tbody = document.getElementById('userTableBody'); tbody.innerHTML = "";
             const targetPrefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
