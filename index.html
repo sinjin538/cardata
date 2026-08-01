@@ -517,15 +517,15 @@
             const titleEl = document.getElementById('calendarMonthTitle'); const gridEl = document.getElementById('calendarGrid');
             titleEl.textContent = `${currentYear}년 ${currentMonth + 1}월 운행 달력`; 
             
-            // ⭐ 1. 달력 네모칸 공백 없애기 (자바스크립트가 알아서 틈새를 0으로 만들고 테두리를 그립니다)
-            gridEl.className = "grid grid-cols-7 gap-0 auto-rows-fr border-t border-l border-slate-300";
+            // ⭐ 1. 달력 네모칸 공백(gap)을 예전보다 훨씬 좁게(gap-1) 설정해서 오밀조밀하게 만듭니다.
+            gridEl.className = "grid grid-cols-7 gap-1 md:gap-1.5 auto-rows-fr";
             gridEl.innerHTML = "";
 
             const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay(); const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-            // 빈 칸 랜더링 (테두리만 남기고 둥근 모서리 제거)
+            // 빈 칸 랜더링 (둥근 모서리 유지)
             for (let i = 0; i < firstDayIndex; i++) {
-                gridEl.innerHTML += `<div class="min-h-[7rem] bg-slate-50/50 opacity-40 border-r border-b border-slate-300"></div>`;
+                gridEl.innerHTML += `<div class="min-h-[6.5rem] bg-slate-50/50 rounded-xl opacity-40 border border-slate-200"></div>`;
             }
 
             for (let day = 1; day <= lastDay; day++) {
@@ -545,16 +545,16 @@
                     }
                 });
 
-                // 배경색 지정
-                let cellBgClass = 'bg-white';
+                // 배경색 (진한 색상 유지)
+                let cellBgClass = 'bg-white border-slate-200 hover:border-indigo-400 hover:shadow-md';
                 if (log && !log.isOff) {
                     let sType = log.scheduleType === 'linked' ? log.parentType : log.scheduleType;
-                    if (sType === 'day') cellBgClass = 'bg-blue-100'; 
-                    else if (sType === '1night') cellBgClass = 'bg-yellow-200'; 
-                    else if (sType === '2night') cellBgClass = 'bg-orange-200'; 
-                    else if (sType === 'seoul') cellBgClass = 'bg-slate-100'; 
+                    if (sType === 'day') cellBgClass = 'bg-blue-100 border-blue-300 hover:border-blue-400 hover:shadow-md'; 
+                    else if (sType === '1night') cellBgClass = 'bg-yellow-200 border-yellow-400 hover:border-yellow-500 hover:shadow-md'; 
+                    else if (sType === '2night') cellBgClass = 'bg-orange-200 border-orange-400 hover:border-orange-500 hover:shadow-md'; 
+                    else if (sType === 'seoul') cellBgClass = 'bg-slate-100 border-slate-300 hover:border-slate-400 hover:shadow-md'; 
                 } else if (log && log.isOff) {
-                    cellBgClass = 'bg-rose-100'; 
+                    cellBgClass = 'bg-rose-100 border-rose-300 hover:border-rose-400 hover:shadow-md'; 
                 }
 
                 let contentHTML = ``;
@@ -588,20 +588,19 @@
                     
                     const driverComboHTML = `<div class="text-xs font-bold text-slate-800 truncate text-center leading-snug">${d1Txt}${d2Txt}</div>`;
                     
-                    // ⭐ 2. 시간은 지우고, 비고(memo)를 회색으로 표시 (너무 길면 줄임표 처리)
-                    const memoHTML = log.memo ? `<div class="text-[11px] font-semibold text-slate-600 text-center truncate leading-snug px-0.5" title="${log.memo}">${log.memo}</div>` : '';
-                    
                     const payColor = log.isHoliday ? 'text-rose-500' : 'text-amber-600';
                     const overtimeHTML = `<div class="text-xs font-bold ${payColor} text-center leading-snug">${calc.label}: ${calc.totalPayTime}h</div>`;
 
-                    // 시간 변수(timeHTML)가 빠지고 비고 변수(memoHTML)가 들어갔습니다.
+                    // ⭐ 2. 비고(memo)에 'mt-auto'를 추가해서, 다른 내용물이 적든 많든 무조건 맨 밑바닥으로 밀어버립니다.
+                    const memoHTML = log.memo ? `<div class="text-[11px] font-semibold text-slate-500 text-center truncate leading-snug px-0.5 mt-auto pt-1" title="${log.memo}">${log.memo}</div>` : '';
+
                     contentHTML = `
-                        <div class="flex flex-col gap-0.5 mt-1">
+                        <div class="flex flex-col gap-0.5 mt-1 flex-1">
                             ${vehicleHTML}
                             ${driverComboHTML}
-                            ${memoHTML}
                             ${overtimeHTML}
                             ${allowanceHTML}
+                            ${memoHTML}
                         </div>
                     `;
                 }
@@ -610,9 +609,8 @@
                     contentHTML += `<div class="text-xs font-bold text-rose-500 mt-auto text-center py-1 tracking-tight break-keep leading-snug">🏖️ 휴무: ${offUsers.join(', ')}</div>`;
                 }
 
-                // ⭐ 3. 둥근 모서리(rounded-2xl)를 빼고 테두리를 빈틈없이 맞춥니다.
                 gridEl.innerHTML += `
-                    <div onclick="openModal('${dateKey}')" class="h-full min-h-[7rem] ${cellBgClass} border-r border-b border-slate-300 p-1.5 cursor-pointer hover:opacity-70 transition-opacity flex flex-col relative">
+                    <div onclick="openModal('${dateKey}')" class="h-full min-h-[6.5rem] ${cellBgClass} border rounded-xl p-1 md:p-1.5 cursor-pointer hover:opacity-80 transition-all duration-200 flex flex-col shadow-sm relative">
                         <div class="flex items-center ml-0.5"><span class="text-[13px] md:text-sm font-extrabold ${dateColorClass}">${day}</span>${dateBadgeHTML}</div>
                         ${contentHTML}
                     </div>
@@ -620,7 +618,6 @@
             }
             renderUserTable();
         }
-
         function renderUserTable() {
             const tbody = document.getElementById('userTableBody'); tbody.innerHTML = "";
             const targetPrefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
