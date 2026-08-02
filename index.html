@@ -369,6 +369,7 @@
     </div>
 
     <!-- ⭐ 파이어베이스 연동 및 전체 스크립트 -->
+    <!-- ⭐ 파이어베이스 연동 및 전체 스크립트 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, getDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -583,7 +584,6 @@
                 const monthStr = String(currentMonth + 1).padStart(2, '0'); const dayStr = String(day).padStart(2, '0');
                 const dateKey = `${currentYear}-${monthStr}-${dayStr}`; 
                 const logKey = `${currentUser}_${dateKey}`; 
-                // ⭐ 과거 휴무 찌꺼기 데이터가 달력을 망치지 않도록 안전망 추가 (isOff이면 무시)
                 const log = (logsData[logKey] && !logsData[logKey].isOff) ? logsData[logKey] : null;
                 const memoInfo = memosData[logKey]; 
 
@@ -595,17 +595,18 @@
 
                 const customMemoHTML = memoInfo ? `<span onclick="openMemoModalForDate('${dateKey}', event)" class="text-[11px] text-rose-600 font-black tracking-tight leading-snug bg-rose-50/50 hover:bg-rose-100 px-1 rounded cursor-pointer transition-colors shadow-sm whitespace-normal break-keep">${memoInfo.text}</span>` : '';
 
-                let cellBgClass = 'bg-white border-slate-200 hover:border-indigo-400 hover:shadow-md';
+                // ⭐ 그라데이션 적용된 칸은 테두리(border)를 아예 빼서 선을 없앰
+                let cellBgClass = 'bg-white border border-slate-200 hover:border-indigo-400 hover:shadow-md';
                 if (log) {
                     let sType = log.scheduleType === 'linked' ? log.parentType : log.scheduleType;
                     if (sType === 'day') {
-                        cellBgClass = 'bg-[radial-gradient(circle,_#bfdbfe_0%,_#eff6ff_100%)] border-blue-300 hover:border-blue-400 hover:shadow-md'; 
+                        cellBgClass = 'bg-[radial-gradient(circle,_#bfdbfe_0%,_#eff6ff_100%)] shadow-sm hover:shadow-md'; 
                     } else if (sType === '1night') {
-                        cellBgClass = 'bg-[radial-gradient(circle,_#fde047_0%,_#fefce8_100%)] border-yellow-400 hover:border-yellow-500 hover:shadow-md'; 
+                        cellBgClass = 'bg-[radial-gradient(circle,_#fde047_0%,_#fefce8_100%)] shadow-sm hover:shadow-md'; 
                     } else if (sType === '2night') {
-                        cellBgClass = 'bg-[radial-gradient(circle,_#fdba74_0%,_#fff7ed_100%)] border-orange-400 hover:border-orange-500 hover:shadow-md'; 
+                        cellBgClass = 'bg-[radial-gradient(circle,_#fdba74_0%,_#fff7ed_100%)] shadow-sm hover:shadow-md'; 
                     } else if (sType === 'seoul') {
-                        cellBgClass = 'bg-[radial-gradient(circle,_#e2e8f0_0%,_#f8fafc_100%)] border-slate-300 hover:border-slate-400 hover:shadow-md'; 
+                        cellBgClass = 'bg-[radial-gradient(circle,_#e2e8f0_0%,_#f8fafc_100%)] shadow-sm hover:shadow-md'; 
                     }
                 }
 
@@ -640,8 +641,9 @@
                     `;
                 }
 
+                // ⭐ 템플릿에 있던 강제 border 클래스를 지웠습니다
                 gridEl.innerHTML += `
-                    <div onclick="openModal('${dateKey}')" class="h-full min-h-[6.5rem] ${cellBgClass} border rounded-xl p-1 md:p-1.5 cursor-pointer hover:opacity-80 transition-all duration-200 flex flex-col shadow-sm relative">
+                    <div onclick="openModal('${dateKey}')" class="h-full min-h-[6.5rem] ${cellBgClass} rounded-xl p-1 md:p-1.5 cursor-pointer hover:opacity-80 transition-all duration-200 flex flex-col relative">
                         <div class="flex flex-wrap items-center ml-0.5 gap-x-1 gap-y-0.5 w-full">
                             <div class="flex items-center whitespace-nowrap">
                                 <span class="text-[13px] md:text-sm font-extrabold ${dateColorClass}">${day}</span>
@@ -657,11 +659,27 @@
         }
 
         function renderUserTable() {
+            // ⭐ 제목행(thead) 강제 가운데 정렬 맞춤
+            const thead = document.querySelector('#userTableBody').previousElementSibling;
+            if(thead) {
+                thead.innerHTML = `
+                    <tr class="text-sm text-slate-600 font-bold border-b border-slate-200">
+                        <th class="p-3 whitespace-nowrap text-center">일자</th>
+                        <th class="p-3 whitespace-nowrap text-center">차량</th>
+                        <th class="p-3 whitespace-nowrap text-center">운행 일정</th>
+                        <th class="p-3 whitespace-nowrap text-center">시간</th>
+                        <th class="p-3 whitespace-nowrap text-center">보상시간</th>
+                        <th class="p-3 whitespace-nowrap text-right">정산금액</th>
+                        <th class="p-3 pr-4 whitespace-nowrap text-left">비고</th>
+                    </tr>
+                `;
+            }
+
             const tbody = document.getElementById('userTableBody'); tbody.innerHTML = "";
             const targetPrefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
             
             const monthLogs = Object.values(logsData)
-                .filter(log => log.date.startsWith(targetPrefix) && log.userId === currentUser && !log.isOff) // ⭐ 휴무 찌꺼기 무시
+                .filter(log => log.date.startsWith(targetPrefix) && log.userId === currentUser && !log.isOff)
                 .sort((a, b) => a.date.localeCompare(b.date));
 
             if (monthLogs.length === 0) {
@@ -676,15 +694,16 @@
                     else if(log.scheduleType === '2night' || (log.scheduleType === 'linked' && log.parentType === '2night')) scheduleTxt = "2박";
                     else if(log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) scheduleTxt = "서울당일";
 
+                    // ⭐ 밑에 내용행(tbody)도 제목행에 맞춰 가운데 정렬 적용
                     tbody.innerHTML += `
                         <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                            <td class="p-3 pl-4 font-bold text-slate-700">${log.date.split('-')[2]}일 <span class="text-xs text-slate-400 font-normal">(${dayStr})</span></td>
-                            <td class="p-3 text-slate-700 font-bold">${log.vehicle || '-'}</td>
-                            <td class="p-3 text-slate-600 font-bold">${scheduleTxt}</td>
+                            <td class="p-3 text-center font-bold text-slate-700">${log.date.split('-')[2]}일 <span class="text-xs text-slate-400 font-normal">(${dayStr})</span></td>
+                            <td class="p-3 text-center text-slate-700 font-bold">${log.vehicle || '-'}</td>
+                            <td class="p-3 text-center text-slate-600 font-bold">${scheduleTxt}</td>
                             <td class="p-3 text-center text-xs font-bold text-slate-600 bg-slate-50/50">${formatTime(log.startTime)}~${formatTime(log.endTime)}</td>
                             <td class="p-3 text-center font-extrabold ${log.isHoliday ? 'text-rose-500' : 'text-blue-600'}">${calc.totalPayTime}h</td>
                             <td class="p-3 text-right font-extrabold text-emerald-600">${allowance > 0 ? allowance.toLocaleString()+'원' : '-'}</td>
-                            <td class="p-3 pr-4 text-slate-500 text-xs truncate max-w-xs font-medium">${log.memo || '-'}</td>
+                            <td class="p-3 pr-4 text-left text-slate-500 text-xs truncate max-w-xs font-medium">${log.memo || '-'}</td>
                         </tr>
                     `;
                 });
@@ -693,12 +712,31 @@
 
         function renderAdminTable() {
             document.getElementById('adminMonthTitle').textContent = `${currentYear}년 ${currentMonth + 1}월 전체 운행 내역`;
+            
+            // ⭐ 관리자 표 제목행(thead) 강제 가운데 정렬 맞춤
+            const thead = document.querySelector('#adminTableBody').previousElementSibling;
+            if(thead) {
+                thead.innerHTML = `
+                    <tr class="text-sm text-slate-600 font-bold border-b border-slate-200">
+                        <th class="p-3 whitespace-nowrap text-center">일자</th>
+                        <th class="p-3 whitespace-nowrap text-center text-indigo-700">작성자(ID)</th>
+                        <th class="p-3 whitespace-nowrap text-center">차량</th>
+                        <th class="p-3 whitespace-nowrap text-center">운행 일정</th>
+                        <th class="p-3 whitespace-nowrap text-center">동승/선운행</th>
+                        <th class="p-3 whitespace-nowrap text-center">시간</th>
+                        <th class="p-3 whitespace-nowrap text-center">보상시간</th>
+                        <th class="p-3 whitespace-nowrap text-right">정산금액</th>
+                        <th class="p-3 pr-4 whitespace-nowrap w-48 text-left">비고</th>
+                    </tr>
+                `;
+            }
+
             const tbody = document.getElementById('adminTableBody'); tbody.innerHTML = "";
             const targetPrefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
             let totalHours = 0; let totalAllowance = 0;
 
             const monthLogs = Object.values(logsData)
-                .filter(log => log.date.startsWith(targetPrefix) && !log.isOff) // ⭐ 휴무 찌꺼기 무시
+                .filter(log => log.date.startsWith(targetPrefix) && !log.isOff)
                 .sort((a, b) => a.date.localeCompare(b.date) || a.userId.localeCompare(b.userId));
 
             if (monthLogs.length === 0) {
@@ -719,15 +757,15 @@
 
                     tbody.innerHTML += `
                         <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                            <td class="p-3 pl-4 font-bold text-slate-700">${log.date.split('-')[2]}일 <span class="text-xs text-slate-400 font-normal">(${dayStr})</span></td>
-                            <td class="p-3 text-indigo-700 font-extrabold">${log.userId}</td>
-                            <td class="p-3 text-slate-700 font-bold">${log.vehicle || '-'}</td>
-                            <td class="p-3 text-slate-600 font-bold">${scheduleTxt}</td>
-                            <td class="p-3 text-slate-500 text-xs font-semibold">${extraDrivers}</td>
+                            <td class="p-3 text-center font-bold text-slate-700">${log.date.split('-')[2]}일 <span class="text-xs text-slate-400 font-normal">(${dayStr})</span></td>
+                            <td class="p-3 text-center text-indigo-700 font-extrabold">${log.userId}</td>
+                            <td class="p-3 text-center text-slate-700 font-bold">${log.vehicle || '-'}</td>
+                            <td class="p-3 text-center text-slate-600 font-bold">${scheduleTxt}</td>
+                            <td class="p-3 text-center text-slate-500 text-xs font-semibold">${extraDrivers}</td>
                             <td class="p-3 text-center text-xs font-bold text-slate-600 bg-slate-50/50">${formatTime(log.startTime)}~${formatTime(log.endTime)}</td>
                             <td class="p-3 text-center font-extrabold ${log.isHoliday ? 'text-rose-500' : 'text-blue-600'}">${calc.totalPayTime}h</td>
                             <td class="p-3 text-right font-extrabold text-emerald-600">${allowance > 0 ? allowance.toLocaleString()+'원' : '-'}</td>
-                            <td class="p-3 pr-4 text-slate-500 text-xs truncate max-w-xs font-medium">${log.memo || '-'}</td>
+                            <td class="p-3 pr-4 text-left text-slate-500 text-xs truncate max-w-xs font-medium">${log.memo || '-'}</td>
                         </tr>
                     `;
                 });
@@ -822,10 +860,23 @@
         }
 
         function renderSummaryDetail() {
+            const thead = document.querySelector('#summaryTableBody').previousElementSibling;
+            if(thead) {
+                thead.innerHTML = `
+                    <tr class="text-sm text-slate-600 font-semibold">
+                        <th class="p-3 border-b border-slate-200 text-center">날짜</th>
+                        <th class="p-3 border-b border-slate-200 text-center">차량/동승</th>
+                        <th class="p-3 border-b border-slate-200 text-center">시간</th>
+                        <th class="p-3 border-b border-slate-200 text-center">보상시간</th>
+                        <th class="p-3 pr-4 border-b border-slate-200 text-right">정산금액</th>
+                    </tr>
+                `;
+            }
+
             const tbody = document.getElementById('summaryTableBody'); tbody.innerHTML = "";
             let totalHours = 0; let totalAllowance = 0;
             const targetPrefix = `${currentUser}_${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
-            const sortedKeys = Object.keys(logsData).filter(key => key.startsWith(targetPrefix) && !logsData[key].isOff).sort(); // ⭐ 휴무 무시
+            const sortedKeys = Object.keys(logsData).filter(key => key.startsWith(targetPrefix) && !logsData[key].isOff).sort(); 
 
             if (sortedKeys.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400 font-medium">이번 달 운행 내역이 없습니다.</td></tr>`;
@@ -845,8 +896,8 @@
 
                     tbody.innerHTML += `
                         <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                            <td class="p-3 pl-4 font-bold text-slate-700">${log.date.split('-')[2]}일 <span class="text-xs font-normal text-slate-400">(${dayStr})</span></td>
-                            <td class="p-3 text-slate-700 font-bold">${vehicleAndDrivers}</td>
+                            <td class="p-3 text-center font-bold text-slate-700">${log.date.split('-')[2]}일 <span class="text-xs font-normal text-slate-400">(${dayStr})</span></td>
+                            <td class="p-3 text-center text-slate-700 font-bold">${vehicleAndDrivers}</td>
                             <td class="p-3 text-center text-xs text-slate-600 font-bold tracking-tighter bg-slate-50/50">${formatTime(log.startTime)}~${formatTime(log.endTime)}</td>
                             <td class="p-3 text-center font-extrabold ${log.isHoliday ? 'text-rose-500' : 'text-blue-600'}">${calc.totalPayTime}h</td>
                             <td class="p-3 pr-4 text-right font-extrabold text-emerald-600 flex items-center justify-end gap-1">${allowanceStr}</td>
@@ -865,7 +916,7 @@
             Object.keys(logsData).forEach(key => {
                 if(!key.startsWith(currentUser + "_")) return; 
                 const log = logsData[key]; 
-                if(log.isOff) return; // ⭐ 휴무 무시
+                if(log.isOff) return; 
                 
                 const monthKey = log.date.substring(0, 7); 
                 if(!monthlyStats[monthKey]) monthlyStats[monthKey] = { hours: 0, allowance: 0 };
@@ -938,7 +989,7 @@
 
             document.getElementById('driver1').value = currentUser;
 
-            if (logsData[logKey] && !logsData[logKey].isOff) { // ⭐ 휴무 데이터는 입력창에 안 부름
+            if (logsData[logKey] && !logsData[logKey].isOff) { 
                 const data = logsData[logKey];
                 document.getElementById('vehicle').value = data.vehicle || "";
                 document.getElementById('driver2').value = data.driver2 || ""; 
@@ -971,7 +1022,6 @@
             if (!document.getElementById('logModal').classList.contains('hidden')) { history.back(); }
         }
 
-        // ⭐ 안전한 삭제 기능 (에러 시 원래 상태 복구)
         window.deleteLog = async function() {
             if (!confirm("정말 이 일정을 삭제하시겠습니까?\n(1박/2박 일정인 경우 연결된 다음 날짜도 모두 삭제됩니다)")) return;
             const btn = document.getElementById('deleteBtn'); btn.disabled = true; btn.innerText = "삭제 중...";
