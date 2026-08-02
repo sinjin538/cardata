@@ -1079,7 +1079,7 @@
                 }
                 await Promise.all(savePromises); closeModal();
             } catch (error) { alert("데이터 저장에 실패했습니다."); } finally { btn.disabled = false; btn.innerText = "저장하기"; }
-        });
+        }); 
     </script>
 </body>
 </html>
