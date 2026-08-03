@@ -87,21 +87,30 @@
         </div>
 
         <div class="mt-8 border-t border-slate-200 pt-6">
-            <h3 class="text-lg font-extrabold text-slate-800 mb-4 flex items-center">
-                <svg class="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
-                이번 달 상세 내역
-            </h3>
+            <!-- ⭐ 이번 달 상세 내역과 함께 합계 금액이 표시되는 새로운 바 -->
+            <div class="flex flex-col md:flex-row justify-between md:items-end gap-3 mb-4">
+                <h3 class="text-lg font-extrabold text-slate-800 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                    이번 달 상세 내역
+                </h3>
+                <div class="flex items-center justify-between md:justify-start gap-4 bg-slate-100/80 px-4 py-2.5 rounded-xl border border-slate-200">
+                    <div class="text-xs font-bold text-slate-500 flex items-center">보상합계 <span id="mainTotalHours" class="ml-1.5 text-sm md:text-base text-indigo-600 font-extrabold">0.00 h</span></div>
+                    <div class="w-px h-4 bg-slate-300"></div>
+                    <div class="text-xs font-bold text-slate-500 flex items-center">총 정산금액 <span id="mainTotalAllowance" class="ml-1.5 text-sm md:text-base text-emerald-600 font-extrabold">0 원</span></div>
+                </div>
+            </div>
+            
             <div class="overflow-x-auto border border-slate-200 rounded-xl shadow-sm max-h-[40vh] overflow-y-auto bg-slate-50/30">
                 <table class="w-full text-left border-collapse min-w-[800px]">
                     <thead class="bg-slate-50 sticky top-0 z-10">
                         <tr class="text-sm text-slate-600 font-bold border-b border-slate-200">
-                            <th class="p-3 pl-4 whitespace-nowrap">일자</th>
-                            <th class="p-3 whitespace-nowrap">차량</th>
-                            <th class="p-3 whitespace-nowrap">운행 일정</th>
-                            <th class="p-3 text-center whitespace-nowrap">시간</th>
-                            <th class="p-3 text-center whitespace-nowrap">보상시간</th>
-                            <th class="p-3 text-right whitespace-nowrap">정산금액</th>
-                            <th class="p-3 pr-4 whitespace-nowrap">비고</th>
+                            <th class="p-3 whitespace-nowrap text-center">일자</th>
+                            <th class="p-3 whitespace-nowrap text-center">차량</th>
+                            <th class="p-3 whitespace-nowrap text-center">운행 일정</th>
+                            <th class="p-3 whitespace-nowrap text-center">시간</th>
+                            <th class="p-3 whitespace-nowrap text-center">보상시간</th>
+                            <th class="p-3 whitespace-nowrap text-right">정산금액</th>
+                            <th class="p-3 pr-4 whitespace-nowrap text-left">비고</th>
                         </tr>
                     </thead>
                     <tbody id="userTableBody" class="text-sm bg-white"></tbody>
@@ -134,15 +143,15 @@
             <table class="w-full text-left border-collapse min-w-[900px]">
                 <thead class="bg-slate-50 sticky top-0 z-10">
                     <tr class="text-sm text-slate-600 font-bold border-b border-slate-200">
-                        <th class="p-3 pl-4 whitespace-nowrap">일자</th>
-                        <th class="p-3 whitespace-nowrap text-indigo-700">작성자(ID)</th>
-                        <th class="p-3 whitespace-nowrap">차량</th>
-                        <th class="p-3 whitespace-nowrap">운행 일정</th>
-                        <th class="p-3 whitespace-nowrap">동승/선운행</th>
-                        <th class="p-3 text-center whitespace-nowrap">시간</th>
-                        <th class="p-3 text-center whitespace-nowrap">보상시간</th>
-                        <th class="p-3 text-right whitespace-nowrap">정산금액</th>
-                        <th class="p-3 pr-4 whitespace-nowrap w-48">비고</th>
+                        <th class="p-3 whitespace-nowrap text-center">일자</th>
+                        <th class="p-3 whitespace-nowrap text-center text-indigo-700">작성자(ID)</th>
+                        <th class="p-3 whitespace-nowrap text-center">차량</th>
+                        <th class="p-3 whitespace-nowrap text-center">운행 일정</th>
+                        <th class="p-3 whitespace-nowrap text-center">동승/선운행</th>
+                        <th class="p-3 whitespace-nowrap text-center">시간</th>
+                        <th class="p-3 whitespace-nowrap text-center">보상시간</th>
+                        <th class="p-3 whitespace-nowrap text-right">정산금액</th>
+                        <th class="p-3 pr-4 whitespace-nowrap w-48 text-left">비고</th>
                     </tr>
                 </thead>
                 <tbody id="adminTableBody" class="text-sm"></tbody>
@@ -188,8 +197,8 @@
                     <table class="w-full text-left border-collapse min-w-[500px]">
                         <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm">
                             <tr class="text-sm text-slate-600 font-semibold">
-                                <th class="p-3 pl-4 border-b border-slate-200">날짜</th>
-                                <th class="p-3 border-b border-slate-200">차량/동승</th>
+                                <th class="p-3 border-b border-slate-200 text-center">날짜</th>
+                                <th class="p-3 border-b border-slate-200 text-center">차량/동승</th>
                                 <th class="p-3 border-b border-slate-200 text-center">시간</th>
                                 <th class="p-3 border-b border-slate-200 text-center">보상시간</th>
                                 <th class="p-3 pr-4 border-b border-slate-200 text-right">정산금액</th>
@@ -594,7 +603,6 @@
 
                 const customMemoHTML = memoInfo ? `<span onclick="openMemoModalForDate('${dateKey}', event)" class="text-[11px] text-rose-600 font-black tracking-tight leading-snug bg-rose-50/50 hover:bg-rose-100 px-1 rounded cursor-pointer transition-colors shadow-sm whitespace-normal break-keep">${memoInfo.text}</span>` : '';
 
-                // ⭐ 그라데이션 적용된 칸은 테두리(border)를 아예 빼서 선을 없앰
                 let cellBgClass = 'bg-white border border-slate-200 hover:border-indigo-400 hover:shadow-md';
                 if (log) {
                     let sType = log.scheduleType === 'linked' ? log.parentType : log.scheduleType;
@@ -640,7 +648,6 @@
                     `;
                 }
 
-                // ⭐ 템플릿에 있던 강제 border 클래스를 지웠습니다
                 gridEl.innerHTML += `
                     <div onclick="openModal('${dateKey}')" class="h-full min-h-[6.5rem] ${cellBgClass} rounded-xl p-1 md:p-1.5 cursor-pointer hover:opacity-80 transition-all duration-200 flex flex-col relative">
                         <div class="flex flex-wrap items-center ml-0.5 gap-x-1 gap-y-0.5 w-full">
@@ -658,22 +665,6 @@
         }
 
         function renderUserTable() {
-            // ⭐ 제목행(thead) 강제 가운데 정렬 맞춤
-            const thead = document.querySelector('#userTableBody').previousElementSibling;
-            if(thead) {
-                thead.innerHTML = `
-                    <tr class="text-sm text-slate-600 font-bold border-b border-slate-200">
-                        <th class="p-3 whitespace-nowrap text-center">일자</th>
-                        <th class="p-3 whitespace-nowrap text-center">차량</th>
-                        <th class="p-3 whitespace-nowrap text-center">운행 일정</th>
-                        <th class="p-3 whitespace-nowrap text-center">시간</th>
-                        <th class="p-3 whitespace-nowrap text-center">보상시간</th>
-                        <th class="p-3 whitespace-nowrap text-right">정산금액</th>
-                        <th class="p-3 pr-4 whitespace-nowrap text-left">비고</th>
-                    </tr>
-                `;
-            }
-
             const tbody = document.getElementById('userTableBody'); tbody.innerHTML = "";
             const targetPrefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
             
@@ -681,11 +672,21 @@
                 .filter(log => log.date.startsWith(targetPrefix) && log.userId === currentUser && !log.isOff)
                 .sort((a, b) => a.date.localeCompare(b.date));
 
+            // ⭐ 이번 달 합계를 계산할 변수
+            let totalHours = 0;
+            let totalAllowance = 0;
+
             if (monthLogs.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 font-medium">이번 달 운행 내역이 없습니다.</td></tr>`;
             } else {
                 monthLogs.forEach(log => {
-                    const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
+                    const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); 
+                    const allowance = calculateAllowance(log);
+                    
+                    // ⭐ 달력 밑에 보여줄 시간과 금액을 하나씩 더함
+                    totalHours += parseFloat(calc.totalPayTime || 0);
+                    totalAllowance += allowance;
+
                     const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
                     
                     let scheduleTxt = "당일";
@@ -693,7 +694,6 @@
                     else if(log.scheduleType === '2night' || (log.scheduleType === 'linked' && log.parentType === '2night')) scheduleTxt = "2박";
                     else if(log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) scheduleTxt = "서울당일";
 
-                    // ⭐ 밑에 내용행(tbody)도 제목행에 맞춰 가운데 정렬 적용
                     tbody.innerHTML += `
                         <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                             <td class="p-3 text-center font-bold text-slate-700">${log.date.split('-')[2]}일 <span class="text-xs text-slate-400 font-normal">(${dayStr})</span></td>
@@ -707,29 +707,17 @@
                     `;
                 });
             }
+            
+            // ⭐ 계산이 끝나면 화면 상단의 합계창에 숫자 채워넣기
+            if(document.getElementById('mainTotalHours')) {
+                document.getElementById('mainTotalHours').textContent = totalHours.toFixed(2) + " h";
+                document.getElementById('mainTotalAllowance').textContent = totalAllowance.toLocaleString() + " 원";
+            }
         }
 
         function renderAdminTable() {
             document.getElementById('adminMonthTitle').textContent = `${currentYear}년 ${currentMonth + 1}월 전체 운행 내역`;
             
-            // ⭐ 관리자 표 제목행(thead) 강제 가운데 정렬 맞춤
-            const thead = document.querySelector('#adminTableBody').previousElementSibling;
-            if(thead) {
-                thead.innerHTML = `
-                    <tr class="text-sm text-slate-600 font-bold border-b border-slate-200">
-                        <th class="p-3 whitespace-nowrap text-center">일자</th>
-                        <th class="p-3 whitespace-nowrap text-center text-indigo-700">작성자(ID)</th>
-                        <th class="p-3 whitespace-nowrap text-center">차량</th>
-                        <th class="p-3 whitespace-nowrap text-center">운행 일정</th>
-                        <th class="p-3 whitespace-nowrap text-center">동승/선운행</th>
-                        <th class="p-3 whitespace-nowrap text-center">시간</th>
-                        <th class="p-3 whitespace-nowrap text-center">보상시간</th>
-                        <th class="p-3 whitespace-nowrap text-right">정산금액</th>
-                        <th class="p-3 pr-4 whitespace-nowrap w-48 text-left">비고</th>
-                    </tr>
-                `;
-            }
-
             const tbody = document.getElementById('adminTableBody'); tbody.innerHTML = "";
             const targetPrefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
             let totalHours = 0; let totalAllowance = 0;
@@ -859,19 +847,6 @@
         }
 
         function renderSummaryDetail() {
-            const thead = document.querySelector('#summaryTableBody').previousElementSibling;
-            if(thead) {
-                thead.innerHTML = `
-                    <tr class="text-sm text-slate-600 font-semibold">
-                        <th class="p-3 border-b border-slate-200 text-center">날짜</th>
-                        <th class="p-3 border-b border-slate-200 text-center">차량/동승</th>
-                        <th class="p-3 border-b border-slate-200 text-center">시간</th>
-                        <th class="p-3 border-b border-slate-200 text-center">보상시간</th>
-                        <th class="p-3 pr-4 border-b border-slate-200 text-right">정산금액</th>
-                    </tr>
-                `;
-            }
-
             const tbody = document.getElementById('summaryTableBody'); tbody.innerHTML = "";
             let totalHours = 0; let totalAllowance = 0;
             const targetPrefix = `${currentUser}_${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
@@ -996,7 +971,13 @@
                 document.getElementById('startTime1').value = data.startTime || ""; 
                 document.getElementById('endTime1').value = data.endTime || "";
                 document.getElementById('isHoliday1').checked = data.isHoliday || false;
-                document.getElementById('memo').value = data.memo || ""; 
+                
+                // ⭐ 창을 열 때 기존의 '(1일차)' 등의 글씨를 깨끗하게 지워서 보여줍니다.
+                let cleanMemo = data.memo || "";
+                cleanMemo = cleanMemo.replace(" (1일차)", "").replace(" (2일차)", "").replace(" (3일차)", "");
+                if(cleanMemo === "(1일차)" || cleanMemo === "(2일차)" || cleanMemo === "(3일차)") cleanMemo = "";
+                document.getElementById('memo').value = cleanMemo; 
+
                 document.getElementById('scheduleType').value = data.scheduleType || "none";
 
                 if(data.scheduleType === 'linked') document.getElementById('scheduleType').disabled = true;
@@ -1059,7 +1040,12 @@
 
             const btn = document.getElementById('saveBtn'); btn.disabled = true; btn.innerText = "저장 중...";
             const driver2 = document.getElementById('driver2').value;
-            const preDriver = document.getElementById('preDriver').value; const memo = document.getElementById('memo').value;
+            const preDriver = document.getElementById('preDriver').value; 
+            const rawMemo = document.getElementById('memo').value;
+
+            // ⭐ 저장할 때 글씨가 꼬이지 않게 먼저 깔끔히 정리합니다.
+            let cleanMemo = rawMemo.replace(" (1일차)", "").replace(" (2일차)", "").replace(" (3일차)", "");
+            if(cleanMemo === "(1일차)" || cleanMemo === "(2일차)" || cleanMemo === "(3일차)") cleanMemo = "";
 
             const date1 = selectedDateStr; const date2 = addDays(date1, 1); const date3 = addDays(date1, 2);
             const key1 = `${currentUser}_${date1}`; const key2 = `${currentUser}_${date2}`; const key3 = `${currentUser}_${date3}`;
@@ -1069,17 +1055,31 @@
             try {
                 const savePromises = [];
                 if (scheduleType === 'linked') {
-                    savePromises.push(setDoc(doc(db, "drivingLogsMulti", key1), { userId: currentUser, date: date1, scheduleType: 'linked', parentType: currentParentType, vehicle: vehicle, driver1: currentUser, driver2, preDriver, startTime: document.getElementById('startTime1').value, endTime: document.getElementById('endTime1').value, isHoliday: document.getElementById('isHoliday1').checked, memo, updatedAt: new Date() }));
+                    savePromises.push(setDoc(doc(db, "drivingLogsMulti", key1), { userId: currentUser, date: date1, scheduleType: 'linked', parentType: currentParentType, vehicle: vehicle, driver1: currentUser, driver2, preDriver, startTime: document.getElementById('startTime1').value, endTime: document.getElementById('endTime1').value, isHoliday: document.getElementById('isHoliday1').checked, memo: cleanMemo, updatedAt: new Date() }));
                 } else {
-                    savePromises.push(setDoc(doc(db, "drivingLogsMulti", key1), { userId: currentUser, date: date1, scheduleType: scheduleType, vehicle: vehicle, driver1: currentUser, driver2, preDriver, startTime: document.getElementById('startTime1').value, endTime: document.getElementById('endTime1').value, isHoliday: document.getElementById('isHoliday1').checked, memo, updatedAt: new Date() }));
-                    if (scheduleType === '1night' || scheduleType === '2night') savePromises.push(setDoc(doc(db, "drivingLogsMulti", key2), { userId: currentUser, date: date2, scheduleType: 'linked', parentType: scheduleType, parentDate: date1, vehicle: vehicle, driver1: currentUser, driver2, preDriver, startTime: document.getElementById('startTime2').value, endTime: document.getElementById('endTime2').value, isHoliday: document.getElementById('isHoliday2').checked, memo: memo + " (2일차)", updatedAt: new Date() }));
-                    if (scheduleType === '2night') savePromises.push(setDoc(doc(db, "drivingLogsMulti", key3), { userId: currentUser, date: date3, scheduleType: 'linked', parentType: scheduleType, parentDate: date1, vehicle: vehicle, driver1: currentUser, driver2, preDriver, startTime: document.getElementById('startTime3').value, endTime: document.getElementById('endTime3').value, isHoliday: document.getElementById('isHoliday3').checked, memo: memo + " (3일차)", updatedAt: new Date() }));
+                    
+                    // ⭐ 1박/2박이면 1일차에 자동으로 (1일차)를 붙여줍니다!
+                    let memoDay1 = cleanMemo;
+                    if (scheduleType === '1night' || scheduleType === '2night') {
+                        memoDay1 = cleanMemo ? cleanMemo + " (1일차)" : "(1일차)";
+                    }
+
+                    savePromises.push(setDoc(doc(db, "drivingLogsMulti", key1), { userId: currentUser, date: date1, scheduleType: scheduleType, vehicle: vehicle, driver1: currentUser, driver2, preDriver, startTime: document.getElementById('startTime1').value, endTime: document.getElementById('endTime1').value, isHoliday: document.getElementById('isHoliday1').checked, memo: memoDay1, updatedAt: new Date() }));
+                    
+                    if (scheduleType === '1night' || scheduleType === '2night') {
+                        const memoDay2 = cleanMemo ? cleanMemo + " (2일차)" : "(2일차)";
+                        savePromises.push(setDoc(doc(db, "drivingLogsMulti", key2), { userId: currentUser, date: date2, scheduleType: 'linked', parentType: scheduleType, parentDate: date1, vehicle: vehicle, driver1: currentUser, driver2, preDriver, startTime: document.getElementById('startTime2').value, endTime: document.getElementById('endTime2').value, isHoliday: document.getElementById('isHoliday2').checked, memo: memoDay2, updatedAt: new Date() }));
+                    }
+                    if (scheduleType === '2night') {
+                        const memoDay3 = cleanMemo ? cleanMemo + " (3일차)" : "(3일차)";
+                        savePromises.push(setDoc(doc(db, "drivingLogsMulti", key3), { userId: currentUser, date: date3, scheduleType: 'linked', parentType: scheduleType, parentDate: date1, vehicle: vehicle, driver1: currentUser, driver2, preDriver, startTime: document.getElementById('startTime3').value, endTime: document.getElementById('endTime3').value, isHoliday: document.getElementById('isHoliday3').checked, memo: memoDay3, updatedAt: new Date() }));
+                    }
                     if (scheduleType !== '2night') { if (logsData[key3] && logsData[key3].parentDate === date1) savePromises.push(deleteDoc(doc(db, "drivingLogsMulti", key3))); }
                     if (scheduleType !== '1night' && scheduleType !== '2night') { if (logsData[key2] && logsData[key2].parentDate === date1) savePromises.push(deleteDoc(doc(db, "drivingLogsMulti", key2))); }
                 }
                 await Promise.all(savePromises); closeModal();
             } catch (error) { alert("데이터 저장에 실패했습니다."); } finally { btn.disabled = false; btn.innerText = "저장하기"; }
-        }); 
+        });
     </script>
 </body>
 </html>
