@@ -316,18 +316,18 @@
             
             <form id="logForm" class="space-y-4">
                 
-                <!-- ⭐ 새로 추가된 휴무/보상 전용 스위치 -->
+                <!-- ⭐ 새로 추가된 스위치: 하루 통째로 쉴 때 체크 -->
                 <div class="mb-2">
                     <label class="flex items-center gap-2.5 text-sm font-bold text-emerald-700 bg-emerald-50 px-4 py-3.5 rounded-xl border border-emerald-200 cursor-pointer shadow-sm hover:bg-emerald-100 transition-colors">
-                        <input type="checkbox" id="isLeaveDay" class="accent-emerald-600 w-5 h-5 rounded"> 🏖️ 휴무 또는 보상만 사용 (체크 시 일정/차량 입력 숨김)
+                        <input type="checkbox" id="isLeaveDay" class="accent-emerald-600 w-5 h-5 rounded"> 🏖️ 일정/차량 입력 생략 (보상시간만 사용할 때)
                     </label>
                 </div>
 
-                <!-- ⭐ 출근 시에만 보이는 영역 (체크하면 통째로 숨겨짐) -->
+                <!-- ⭐ 스위치를 켜면 통째로 숨겨지는 영역 -->
                 <div id="workInputs" class="space-y-4 block">
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1.5">운행 일정 (비용 정산)</label>
-                        <!-- 글씨 깔끔하게 정리 완료 -->
+                        <!-- 글씨 깔끔하게 원상복구 -->
                         <select id="scheduleType" class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 font-bold transition-all text-slate-700">
                             <option value="none">일정 선택 안함</option>
                             <option value="seoul">서울당일 (정산 0원)</option>
@@ -722,6 +722,7 @@
 
                 const customMemoHTML = memoInfo ? `<span onclick="openMemoModalForDate('${dateKey}', event)" class="text-[11px] text-rose-600 font-black tracking-tight leading-snug bg-rose-50/50 hover:bg-rose-100 px-1 rounded cursor-pointer transition-colors shadow-sm whitespace-normal break-keep">${memoInfo.text}</span>` : '';
 
+                // ⭐ 휴무든 아니든 기본 배경색 유지
                 let cellBgClass = 'bg-white border border-slate-200 hover:border-indigo-400 hover:shadow-md';
                 let contentHTML = ``;
 
@@ -735,8 +736,6 @@
                         cellBgClass = 'bg-[radial-gradient(circle,_#fdba74_0%,_#fff7ed_100%)] shadow-sm hover:shadow-md'; 
                     } else if (sType === 'seoul') {
                         cellBgClass = 'bg-[radial-gradient(circle,_#e2e8f0_0%,_#f8fafc_100%)] shadow-sm hover:shadow-md'; 
-                    } else if (sType === 'leave' || log.isLeaveDay) {
-                        cellBgClass = 'bg-[radial-gradient(circle,_#f8fafc_0%,_#f1f5f9_100%)] shadow-sm hover:shadow-md'; 
                     }
 
                     const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
@@ -745,13 +744,13 @@
                     if (allowance > 0) allowanceHTML = `<div class="text-[11px] font-bold text-emerald-600 text-center tracking-tight leading-snug">${allowance.toLocaleString()}원</div>`;
                     else if (log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) allowanceHTML = `<div class="text-[11px] font-bold text-slate-500 text-center tracking-tight leading-snug">서울당일</div>`;
 
+                    // ⭐ 보상 사용 텍스트만 깔끔하게 추가 (휴무 글씨 삭제)
                     let usageStr = '';
                     if (log.usedPayTime && parseFloat(log.usedPayTime) > 0) {
-                        usageStr = `<span class="text-[10px] text-rose-500 font-extrabold ml-1 bg-rose-50 px-1 rounded-sm border border-rose-200 inline-block tracking-tighter shrink-0">(보상-${log.usedPayTime}h)</span>`;
+                        usageStr = `<span class="text-[11px] text-rose-500 font-extrabold ml-1 tracking-tighter shrink-0">(보상-${log.usedPayTime}h)</span>`;
                     }
                     
                     let vText = log.vehicle || "";
-                    if (!vText && (log.scheduleType === 'leave' || log.isLeaveDay)) vText = "휴무";
                     
                     const vehicleHTML = (vText || usageStr) ? `<div class="text-[13px] font-extrabold text-blue-700 text-center tracking-wider leading-snug flex items-center justify-center flex-wrap px-0.5 mt-0.5">${vText}${usageStr}</div>` : '';
                     
@@ -815,17 +814,14 @@
                     if(log.scheduleType === '1night' || (log.scheduleType === 'linked' && log.parentType === '1night')) scheduleTxt = "1박"; 
                     else if(log.scheduleType === '2night' || (log.scheduleType === 'linked' && log.parentType === '2night')) scheduleTxt = "2박";
                     else if(log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) scheduleTxt = "서울당일";
-                    else if(log.scheduleType === 'leave' || log.isLeaveDay) scheduleTxt = "휴무";
                     else if(log.scheduleType === 'none') scheduleTxt = "-";
 
                     let timeStr = "-";
                     if (log.startTime || log.endTime) timeStr = `${formatTime(log.startTime)}~${formatTime(log.endTime)}`;
 
                     let extraMemo = log.memo || '-';
-                    let usages = [];
-                    if(log.usedPayTime && parseFloat(log.usedPayTime) > 0) usages.push(`[보상사용: ${log.usedPayTime}h]`);
-                    if(usages.length > 0) {
-                        if (extraMemo === '-') extraMemo = usages.join(" "); else extraMemo += " " + usages.join(" ");
+                    if(log.usedPayTime && parseFloat(log.usedPayTime) > 0) {
+                        if (extraMemo === '-') extraMemo = `[보상사용: ${log.usedPayTime}h]`; else extraMemo += ` [보상사용: ${log.usedPayTime}h]`;
                     }
 
                     tbody.innerHTML += `
@@ -871,7 +867,6 @@
                     if(log.scheduleType === '1night' || (log.scheduleType === 'linked' && log.parentType === '1night')) scheduleTxt = "1박"; 
                     else if(log.scheduleType === '2night' || (log.scheduleType === 'linked' && log.parentType === '2night')) scheduleTxt = "2박";
                     else if(log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) scheduleTxt = "서울당일";
-                    else if(log.scheduleType === 'leave' || log.isLeaveDay) scheduleTxt = "휴무";
                     else if(log.scheduleType === 'none') scheduleTxt = "-";
 
                     let timeStr = "-";
@@ -880,10 +875,8 @@
                     const extraDrivers = [log.driver2 ? `동승:${log.driver2}` : null, log.preDriver ? `선:${log.preDriver}` : null].filter(Boolean).join(' / ') || "-";
 
                     let extraMemo = log.memo || '-';
-                    let usages = [];
-                    if(log.usedPayTime && parseFloat(log.usedPayTime) > 0) usages.push(`[보상사용: ${log.usedPayTime}h]`);
-                    if(usages.length > 0) {
-                        if (extraMemo === '-') extraMemo = usages.join(" "); else extraMemo += " " + usages.join(" ");
+                    if(log.usedPayTime && parseFloat(log.usedPayTime) > 0) {
+                        if (extraMemo === '-') extraMemo = `[보상사용: ${log.usedPayTime}h]`; else extraMemo += ` [보상사용: ${log.usedPayTime}h]`;
                     }
 
                     tbody.innerHTML += `
@@ -1064,14 +1057,13 @@
             }
         }
 
-        // ⭐ 휴무/보상 체크박스 끄고 켜기 (입력칸 숨김 마법!)
+        // ⭐ 입력창 숨김 마법 (체크박스 로직)
         document.getElementById('isLeaveDay').addEventListener('change', function(e) {
             const isLeave = e.target.checked;
             const workInputs = document.getElementById('workInputs');
             
             if(isLeave) {
-                workInputs.classList.add('hidden'); // 출근 입력칸들 싹 다 숨기기
-                // 값 초기화 (저장 안되게)
+                workInputs.classList.add('hidden'); 
                 document.getElementById('scheduleType').value = 'none';
                 document.getElementById('vehicle').value = '';
                 document.getElementById('driver2').value = '';
@@ -1082,10 +1074,10 @@
                 document.getElementById('endTime1').required = false;
                 document.getElementById('vehicle').required = false;
             } else {
-                workInputs.classList.remove('hidden'); // 다시 보여주기
-                document.getElementById('startTime1').required = false; // 기본은 false (시간입력 안해도 저장되게)
+                workInputs.classList.remove('hidden'); 
+                document.getElementById('startTime1').required = false; 
                 document.getElementById('endTime1').required = false;
-                document.getElementById('vehicle').required = true; // 차량은 필수
+                document.getElementById('vehicle').required = true; 
                 document.getElementById('scheduleType').dispatchEvent(new Event('change'));
             }
         });
@@ -1118,7 +1110,7 @@
             document.getElementById('vehicle').value = ""; 
             document.getElementById('usedPayTime').value = "";
 
-            // 모달 열 때 스위치 초기화
+            // 모달 열 때 스위치 무조건 끄기로 초기화
             document.getElementById('isLeaveDay').checked = false;
             document.getElementById('isLeaveDay').dispatchEvent(new Event('change'));
 
@@ -1220,19 +1212,18 @@
             const vehicle = document.getElementById('vehicle').value;
             const uPay = document.getElementById('usedPayTime').value;
 
-            // ⭐ 똑똑해진 유효성 검사 (체크박스 안눌렀을때만 차량 요구)
+            // ⭐ 똑똑해진 유효성 검사
             if (!isLeave) {
                 if (scheduleType === 'none' && (!uPay || parseFloat(uPay) <= 0)) {
-                    alert("운행 일정을 선택해주세요! (출근안한 날은 맨 위 '휴무' 스위치를 켜주세요)"); return;
+                    alert("운행 일정을 선택해주세요! (입력을 생략하려면 맨 위 스위치를 켜주세요)"); return;
                 }
-                if (vehicle === '') {
-                    alert("운행 차량을 선택해주세요! (출근안한 날은 맨 위 '휴무' 스위치를 켜주세요)"); return;
+                if (scheduleType !== 'none' && vehicle === '') {
+                    alert("운행 차량을 선택해주세요! (입력을 생략하려면 맨 위 스위치를 켜주세요)"); return;
                 }
             } else {
-                // 체크박스 눌렀는데 보상도 안 적고 비고도 안 적으면 경고
                 const rawMemo = document.getElementById('memo').value;
                 if ((!uPay || parseFloat(uPay) <= 0) && rawMemo.trim() === '') {
-                    alert("휴무/보상 사용 내역이나 비고를 입력해주세요!"); return;
+                    alert("보상 사용 내역이나 비고를 입력해주세요!"); return;
                 }
             }
 
