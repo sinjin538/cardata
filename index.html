@@ -244,7 +244,7 @@
         </div>
     </div>
 
-    <!-- ⭐ 개인 기초 설정 팝업 모달창 (소수점 둘째자리 지원) -->
+    <!-- 개인 기초 설정 팝업 모달창 -->
     <div id="settingsModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl relative" onclick="event.stopPropagation()">
             <div class="flex justify-between items-center mb-5 border-b border-slate-100 pb-3">
@@ -324,13 +324,6 @@
             
             <form id="logForm" class="space-y-4">
                 
-                <!-- ⭐ 새로 추가된 휴가/휴무 (출근안함) 체크박스 -->
-                <div class="mb-2">
-                    <label class="flex items-center gap-2.5 text-sm font-bold text-emerald-700 bg-emerald-50 px-4 py-3.5 rounded-xl border border-emerald-200 cursor-pointer shadow-sm hover:bg-emerald-100 transition-colors">
-                        <input type="checkbox" id="isLeaveDay" class="accent-emerald-600 w-5 h-5 rounded"> 🏖️ 휴가/휴무 (출근 안함, 차량 및 시간 입력 무시됨)
-                    </label>
-                </div>
-
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1.5">운행 일정 (비용 정산)</label>
                     <select id="scheduleType" class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 font-bold transition-all text-slate-700">
@@ -339,6 +332,8 @@
                         <option value="day">당일 (일비 12,500원)</option>
                         <option value="1night">1박 (하루당 37,500원)</option>
                         <option value="2night">2박 (하루당 37,500원)</option>
+                        <!-- ⭐ 온종일 쉬는 날을 위한 옵션 추가 -->
+                        <option value="leave">휴무/연차 (출근안함, 0원)</option>
                         <option value="linked" hidden>연계 일정 (이전 날짜에서 이어짐)</option>
                     </select>
                 </div>
@@ -348,6 +343,8 @@
                         <label class="block text-xs font-semibold text-slate-600 mb-1">차량 (필수)</label>
                         <select id="vehicle" class="w-full border border-slate-300 rounded-xl px-2 py-2.5 outline-none bg-slate-50 text-slate-700 font-bold focus:ring-2 focus:ring-indigo-500 transition-all text-sm">
                             <option value="">차량선택</option>
+                            <!-- ⭐ 온종일 쉬는 날을 위한 운행없음 옵션 -->
+                            <option value="운행없음">운행없음 (휴무/휴가)</option>
                             <option value="1호차">1호차</option>
                             <option value="2호차">2호차</option>
                             <option value="3호차">3호차</option>
@@ -378,7 +375,7 @@
                         <div class="bg-indigo-50/50 p-2 rounded-xl border border-indigo-100">
                             <label class="block text-[11px] font-bold text-indigo-700 mb-1">➖ 보상시간 사용 (시간)</label>
                             <!-- ⭐ step="0.01" 로 소수점 둘째자리 지원 -->
-                            <input type="number" step="0.01" id="usedPayTime" placeholder="예: 8" class="w-full border border-indigo-200 rounded-lg px-2 py-2 outline-none bg-white text-indigo-700 font-bold focus:ring-2 focus:ring-indigo-400 text-sm">
+                            <input type="number" step="0.01" id="usedPayTime" placeholder="예: 4.5" class="w-full border border-indigo-200 rounded-lg px-2 py-2 outline-none bg-white text-indigo-700 font-bold focus:ring-2 focus:ring-indigo-400 text-sm">
                         </div>
                     </div>
                 </div>
@@ -391,8 +388,9 @@
                         </label>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
-                        <input type="number" step="0.5" inputmode="decimal" id="startTime1" placeholder="출근 (예: 9)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 outline-none text-center font-bold shadow-sm focus:ring-2 focus:ring-indigo-400" required>
-                        <input type="number" step="0.5" inputmode="decimal" id="endTime1" placeholder="퇴근 (예: 18.5)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 outline-none text-center font-bold shadow-sm focus:ring-2 focus:ring-indigo-400" required>
+                        <!-- ⭐ 시간 입력칸에 required 속성 제거 (입력 안 해도 저장되게끔) -->
+                        <input type="number" step="0.5" inputmode="decimal" id="startTime1" placeholder="출근 (예: 9)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 outline-none text-center font-bold shadow-sm focus:ring-2 focus:ring-indigo-400">
+                        <input type="number" step="0.5" inputmode="decimal" id="endTime1" placeholder="퇴근 (예: 18.5)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 outline-none text-center font-bold shadow-sm focus:ring-2 focus:ring-indigo-400">
                     </div>
                 </div>
 
@@ -681,7 +679,7 @@
             } catch(e) { alert("설정 저장 실패"); }
         });
 
-        // ⭐ 설정된 기준일에 따라 실시간 잔여량 계산
+        // 실시간 잔여량 계산
         function updateBalances() {
             if (!userSettingsData[currentUser]) {
                 document.getElementById('topBalPay').innerText = "설정필요";
@@ -696,19 +694,18 @@
 
             Object.values(logsData).forEach(log => {
                 if (log.userId === currentUser && log.date >= baseDate) {
-                    // 휴가가 아닌 근무일은 보상시간 플러스
-                    if (!log.isLeaveDay) {
-                        const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday);
-                        currentPayTime += parseFloat(calc.totalPayTime || 0);
-                    }
-                    // 보상 및 연차 사용량 마이너스
+                    // 시간입력이 있으면 오버타임이 자동으로 계산되어 플러스
+                    const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday);
+                    currentPayTime += parseFloat(calc.totalPayTime || 0);
+                    
+                    // 보상 및 연차 사용량은 마이너스
                     if (log.usedPayTime) currentPayTime -= parseFloat(log.usedPayTime);
                     if (log.usedAnnualLeave) currentLeave -= parseFloat(log.usedAnnualLeave);
                 }
             });
 
             document.getElementById('topBalPay').innerText = currentPayTime.toFixed(2) + "h";
-            document.getElementById('topBalLeave').innerText = currentLeave.toFixed(2) + "일"; // 소수점 표기
+            document.getElementById('topBalLeave').innerText = currentLeave.toFixed(2) + "일"; 
         }
 
         function renderCalendar() {
@@ -728,7 +725,6 @@
                 const monthStr = String(currentMonth + 1).padStart(2, '0'); const dayStr = String(day).padStart(2, '0');
                 const dateKey = `${currentYear}-${monthStr}-${dayStr}`; 
                 const logKey = `${currentUser}_${dateKey}`; 
-                // 기존 전체휴무(isOff) 코드는 무시
                 const log = (logsData[logKey] && !logsData[logKey].isOff) ? logsData[logKey] : null;
                 const memoInfo = memosData[logKey]; 
 
@@ -743,23 +739,7 @@
                 let cellBgClass = 'bg-white border border-slate-200 hover:border-indigo-400 hover:shadow-md';
                 let contentHTML = ``;
 
-                // ⭐ 휴가/휴무 모드로 입력된 날이면 초록색 전용 칸으로 예쁘게 띄워줌
-                if (log && log.isLeaveDay) {
-                    cellBgClass = 'bg-emerald-50/70 border border-emerald-200 hover:border-emerald-400 hover:shadow-md'; 
-                    let usages = [];
-                    if(log.usedPayTime && parseFloat(log.usedPayTime) > 0) usages.push(`보상 -${log.usedPayTime}h`);
-                    if(log.usedAnnualLeave && parseFloat(log.usedAnnualLeave) > 0) usages.push(`연차 -${log.usedAnnualLeave}일`);
-                    const memoLogHTML = log.memo ? `<div class="text-[11px] font-bold text-slate-500 text-center whitespace-normal break-keep leading-snug px-0.5 mt-auto pt-1" title="${log.memo}">${log.memo}</div>` : '';
-
-                    contentHTML = `
-                        <div class="flex flex-col gap-0.5 mt-1 flex-1 justify-center items-center">
-                            <div class="text-[13px] font-extrabold text-emerald-600 text-center tracking-wider leading-snug my-0.5">🏖️ 휴가/휴무</div>
-                            ${usages.map(u => `<div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/80 rounded px-1.5 py-0.5 mt-0.5 border border-emerald-200">${u}</div>`).join('')}
-                            ${memoLogHTML}
-                        </div>
-                    `;
-
-                } else if (log && !log.isLeaveDay) {
+                if (log) {
                     let sType = log.scheduleType === 'linked' ? log.parentType : log.scheduleType;
                     if (sType === 'day') {
                         cellBgClass = 'bg-[radial-gradient(circle,_#bfdbfe_0%,_#eff6ff_100%)] shadow-sm hover:shadow-md'; 
@@ -769,6 +749,9 @@
                         cellBgClass = 'bg-[radial-gradient(circle,_#fdba74_0%,_#fff7ed_100%)] shadow-sm hover:shadow-md'; 
                     } else if (sType === 'seoul') {
                         cellBgClass = 'bg-[radial-gradient(circle,_#e2e8f0_0%,_#f8fafc_100%)] shadow-sm hover:shadow-md'; 
+                    } else if (sType === 'leave' || log.isLeaveDay) {
+                        // 휴무일은 살짝 옅은 초록 그라데이션으로 원본 형식을 유지
+                        cellBgClass = 'bg-[radial-gradient(circle,_#dcfce7_0%,_#f0fdf4_100%)] shadow-sm hover:shadow-md'; 
                     }
 
                     const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
@@ -777,7 +760,17 @@
                     if (allowance > 0) allowanceHTML = `<div class="text-[11px] font-bold text-emerald-600 text-center tracking-tight leading-snug">${allowance.toLocaleString()}원</div>`;
                     else if (log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) allowanceHTML = `<div class="text-[11px] font-bold text-slate-500 text-center tracking-tight leading-snug">서울당일</div>`;
 
-                    const vehicleHTML = log.vehicle ? `<div class="text-[13px] font-extrabold text-blue-700 text-center tracking-wider leading-snug">${log.vehicle}</div>` : '';
+                    // ⭐ 보상/연차 사용내역을 차량번호 옆에 괄호로 붙이기 (원래 레이아웃 유지)
+                    let usageBadge = [];
+                    if (log.usedPayTime && parseFloat(log.usedPayTime) > 0) usageBadge.push(`보상-${log.usedPayTime}h`);
+                    if (log.usedAnnualLeave && parseFloat(log.usedAnnualLeave) > 0) usageBadge.push(`연차-${log.usedAnnualLeave}일`);
+                    let usageStr = '';
+                    if (usageBadge.length > 0) {
+                        usageStr = `<span class="text-[10px] text-rose-500 font-extrabold ml-1 bg-rose-50 px-1 rounded-sm border border-rose-200 inline-block tracking-tighter shrink-0">(${usageBadge.join(', ')})</span>`;
+                    }
+                    
+                    // 차량 HTML 구성 (사용내역 뱃지를 옆에 쏙!)
+                    const vehicleHTML = log.vehicle ? `<div class="text-[13px] font-extrabold text-blue-700 text-center tracking-wider leading-snug flex items-center justify-center flex-wrap px-0.5">${log.vehicle}${usageStr}</div>` : '';
                     
                     let d1Name = log.driver1 ? log.driver1.trim() : ""; let d2Name = log.driver2 ? log.driver2.trim() : ""; let preName = log.preDriver ? log.preDriver.trim() : "";
                     let d1Txt = log.driver1; if (preName && d1Name === preName) { d1Txt = `<span class="underline decoration-rose-500 decoration-2 underline-offset-2">${log.driver1}</span>`; }
@@ -785,12 +778,10 @@
                     
                     const driverComboHTML = `<div class="text-[13px] font-bold text-slate-800 truncate text-center leading-snug">${d1Txt}${d2Txt}</div>`;
                     const payColor = log.isHoliday ? 'text-rose-500' : 'text-amber-600';
-                    const overtimeHTML = `<div class="text-[11px] font-bold ${payColor} text-center leading-snug">${calc.totalPayTime}h</div>`;
+                    
+                    // 시간이 비어있으면 아예 0h조차 렌더링하지 않음 (온종일 휴무의 깔끔함을 위해)
+                    const overtimeHTML = (log.startTime || log.endTime) ? `<div class="text-[11px] font-bold ${payColor} text-center leading-snug">${calc.totalPayTime}h</div>` : '';
                     const memoLogHTML = log.memo ? `<div class="text-[11px] font-semibold text-slate-500 text-center whitespace-normal break-keep leading-snug px-0.5 mt-auto pt-1" title="${log.memo}">${log.memo}</div>` : '';
-
-                    let usedBadgeHTML = '';
-                    if (log.usedPayTime && parseFloat(log.usedPayTime) > 0) usedBadgeHTML += `<div class="text-[10px] font-bold text-indigo-700 bg-indigo-100/80 rounded px-1 text-center mt-0.5 border border-indigo-200">보상 -${log.usedPayTime}h</div>`;
-                    if (log.usedAnnualLeave && parseFloat(log.usedAnnualLeave) > 0) usedBadgeHTML += `<div class="text-[10px] font-bold text-emerald-700 bg-emerald-100/80 rounded px-1 text-center mt-0.5 border border-emerald-200">연차 -${log.usedAnnualLeave}일</div>`;
 
                     contentHTML = `
                         <div class="flex flex-col gap-0.5 mt-1 flex-1">
@@ -799,7 +790,6 @@
                             ${overtimeHTML}
                             ${allowanceHTML}
                             ${memoLogHTML}
-                            ${usedBadgeHTML}
                         </div>
                     `;
                 }
@@ -835,39 +825,19 @@
                 tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 font-medium">이번 달 운행 내역이 없습니다.</td></tr>`;
             } else {
                 monthLogs.forEach(log => {
-                    const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
-                    
-                    // ⭐ 휴무일 데이터 표기 방식
-                    if (log.isLeaveDay) {
-                        let extraMemo = log.memo || '-';
-                        let usages = [];
-                        if(log.usedPayTime && parseFloat(log.usedPayTime) > 0) usages.push(`[보상사용: ${log.usedPayTime}h]`);
-                        if(log.usedAnnualLeave && parseFloat(log.usedAnnualLeave) > 0) usages.push(`[연차사용: ${log.usedAnnualLeave}일]`);
-                        if(usages.length > 0) {
-                            if (extraMemo === '-') extraMemo = usages.join(" "); else extraMemo += " " + usages.join(" ");
-                        }
-
-                        tbody.innerHTML += `
-                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors bg-emerald-50/30">
-                                <td class="p-3 text-center font-bold text-slate-700">${log.date.split('-')[2]}일 <span class="text-xs text-slate-400 font-normal">(${dayStr})</span></td>
-                                <td class="p-3 text-center text-slate-400 font-bold">-</td>
-                                <td class="p-3 text-center text-emerald-600 font-extrabold">🏖️ 휴가/휴무</td>
-                                <td class="p-3 text-center text-xs font-bold text-slate-400">-</td>
-                                <td class="p-3 text-center font-extrabold text-slate-400">-</td>
-                                <td class="p-3 text-right font-extrabold text-slate-400">-</td>
-                                <td class="p-3 pr-4 text-left text-emerald-700 text-xs truncate max-w-xs font-bold">${extraMemo}</td>
-                            </tr>
-                        `;
-                        return;
-                    }
-
                     const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
                     totalHours += parseFloat(calc.totalPayTime || 0); totalAllowance += allowance;
 
+                    const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
+                    
                     let scheduleTxt = "당일";
                     if(log.scheduleType === '1night' || (log.scheduleType === 'linked' && log.parentType === '1night')) scheduleTxt = "1박"; 
                     else if(log.scheduleType === '2night' || (log.scheduleType === 'linked' && log.parentType === '2night')) scheduleTxt = "2박";
                     else if(log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) scheduleTxt = "서울당일";
+                    else if(log.scheduleType === 'leave' || log.isLeaveDay) scheduleTxt = "휴무/연차";
+
+                    let timeStr = "-";
+                    if (log.startTime || log.endTime) timeStr = `${formatTime(log.startTime)}~${formatTime(log.endTime)}`;
 
                     let extraMemo = log.memo || '-';
                     let usages = [];
@@ -882,7 +852,7 @@
                             <td class="p-3 text-center font-bold text-slate-700">${log.date.split('-')[2]}일 <span class="text-xs text-slate-400 font-normal">(${dayStr})</span></td>
                             <td class="p-3 text-center text-slate-700 font-bold">${log.vehicle || '-'}</td>
                             <td class="p-3 text-center text-slate-600 font-bold">${scheduleTxt}</td>
-                            <td class="p-3 text-center text-xs font-bold text-slate-600 bg-slate-50/50">${formatTime(log.startTime)}~${formatTime(log.endTime)}</td>
+                            <td class="p-3 text-center text-xs font-bold text-slate-600 bg-slate-50/50">${timeStr}</td>
                             <td class="p-3 text-center font-extrabold ${log.isHoliday ? 'text-rose-500' : 'text-blue-600'}">${calc.totalPayTime}h</td>
                             <td class="p-3 text-right font-extrabold text-emerald-600">${allowance > 0 ? allowance.toLocaleString()+'원' : '-'}</td>
                             <td class="p-3 pr-4 text-left text-slate-500 text-xs truncate max-w-xs font-medium">${extraMemo}</td>
@@ -913,29 +883,6 @@
                 monthLogs.forEach(log => {
                     const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
                     
-                    if (log.isLeaveDay) {
-                        let extraMemo = log.memo || '-';
-                        let usages = [];
-                        if(log.usedPayTime && parseFloat(log.usedPayTime) > 0) usages.push(`[보상사용: ${log.usedPayTime}h]`);
-                        if(log.usedAnnualLeave && parseFloat(log.usedAnnualLeave) > 0) usages.push(`[연차사용: ${log.usedAnnualLeave}일]`);
-                        if(usages.length > 0) { if (extraMemo === '-') extraMemo = usages.join(" "); else extraMemo += " " + usages.join(" "); }
-
-                        tbody.innerHTML += `
-                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors bg-emerald-50/30">
-                                <td class="p-3 text-center font-bold text-slate-700">${log.date.split('-')[2]}일 <span class="text-xs text-slate-400 font-normal">(${dayStr})</span></td>
-                                <td class="p-3 text-center text-indigo-700 font-extrabold">${log.userId}</td>
-                                <td class="p-3 text-center text-slate-400 font-bold">-</td>
-                                <td class="p-3 text-center text-emerald-600 font-extrabold">🏖️ 휴가/휴무</td>
-                                <td class="p-3 text-center text-slate-400 font-semibold">-</td>
-                                <td class="p-3 text-center text-xs font-bold text-slate-400">-</td>
-                                <td class="p-3 text-center font-extrabold text-slate-400">-</td>
-                                <td class="p-3 text-right font-extrabold text-slate-400">-</td>
-                                <td class="p-3 pr-4 text-left text-emerald-700 text-xs truncate max-w-xs font-bold">${extraMemo}</td>
-                            </tr>
-                        `;
-                        return;
-                    }
-
                     const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
                     totalHours += parseFloat(calc.totalPayTime || 0); totalAllowance += allowance;
                     
@@ -943,6 +890,10 @@
                     if(log.scheduleType === '1night' || (log.scheduleType === 'linked' && log.parentType === '1night')) scheduleTxt = "1박"; 
                     else if(log.scheduleType === '2night' || (log.scheduleType === 'linked' && log.parentType === '2night')) scheduleTxt = "2박";
                     else if(log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) scheduleTxt = "서울당일";
+                    else if(log.scheduleType === 'leave' || log.isLeaveDay) scheduleTxt = "휴무/연차";
+
+                    let timeStr = "-";
+                    if (log.startTime || log.endTime) timeStr = `${formatTime(log.startTime)}~${formatTime(log.endTime)}`;
 
                     const extraDrivers = [log.driver2 ? `동승:${log.driver2}` : null, log.preDriver ? `선:${log.preDriver}` : null].filter(Boolean).join(' / ') || "-";
 
@@ -951,8 +902,7 @@
                     if(log.usedPayTime && parseFloat(log.usedPayTime) > 0) usages.push(`[보상: ${log.usedPayTime}h]`);
                     if(log.usedAnnualLeave && parseFloat(log.usedAnnualLeave) > 0) usages.push(`[연차: ${log.usedAnnualLeave}일]`);
                     if(usages.length > 0) {
-                        if (extraMemo === '-') extraMemo = usages.join(" ");
-                        else extraMemo += " " + usages.join(" ");
+                        if (extraMemo === '-') extraMemo = usages.join(" "); else extraMemo += " " + usages.join(" ");
                     }
 
                     tbody.innerHTML += `
@@ -962,7 +912,7 @@
                             <td class="p-3 text-center text-slate-700 font-bold">${log.vehicle || '-'}</td>
                             <td class="p-3 text-center text-slate-600 font-bold">${scheduleTxt}</td>
                             <td class="p-3 text-center text-slate-500 text-xs font-semibold">${extraDrivers}</td>
-                            <td class="p-3 text-center text-xs font-bold text-slate-600 bg-slate-50/50">${formatTime(log.startTime)}~${formatTime(log.endTime)}</td>
+                            <td class="p-3 text-center text-xs font-bold text-slate-600 bg-slate-50/50">${timeStr}</td>
                             <td class="p-3 text-center font-extrabold ${log.isHoliday ? 'text-rose-500' : 'text-blue-600'}">${calc.totalPayTime}h</td>
                             <td class="p-3 text-right font-extrabold text-emerald-600">${allowance > 0 ? allowance.toLocaleString()+'원' : '-'}</td>
                             <td class="p-3 pr-4 text-left text-slate-500 text-xs truncate max-w-xs font-medium">${extraMemo}</td>
@@ -1069,28 +1019,15 @@
                 tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400 font-medium">이번 달 운행 내역이 없습니다.</td></tr>`;
             } else {
                 sortedKeys.forEach(key => {
-                    const log = logsData[key]; 
-                    
-                    if (log.isLeaveDay) {
-                        const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
-                        tbody.innerHTML += `
-                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors bg-emerald-50/30">
-                                <td class="p-3 text-center font-bold text-slate-700">${log.date.split('-')[2]}일 <span class="text-xs font-normal text-slate-400">(${dayStr})</span></td>
-                                <td class="p-3 text-center text-slate-400">-</td>
-                                <td class="p-3 text-center text-emerald-600 font-bold tracking-tighter">🏖️ 휴무/휴가</td>
-                                <td class="p-3 text-center font-extrabold text-slate-400">-</td>
-                                <td class="p-3 pr-4 text-right font-extrabold text-slate-400">-</td>
-                            </tr>
-                        `;
-                        return;
-                    }
-
-                    const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
+                    const log = logsData[key]; const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
                     totalHours += parseFloat(calc.totalPayTime || 0); totalAllowance += allowance;
 
                     const extraDrivers = [log.driver2 ? log.driver2 : null, log.preDriver ? `선: ${log.preDriver}` : null].filter(Boolean).join(', ');
                     const dateObj = new Date(log.date); const dayStr = ["일","월","화","수","목","금","토"][dateObj.getDay()];
                     
+                    let timeStr = "-";
+                    if (log.startTime || log.endTime) timeStr = `${formatTime(log.startTime)}~${formatTime(log.endTime)}`;
+
                     let allowanceStr = "-";
                     if(allowance > 0) allowanceStr = `<span class="text-emerald-500 mr-0.5">💰</span>${allowance.toLocaleString()}원`;
                     else if(log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) allowanceStr = '서울당일';
@@ -1101,7 +1038,7 @@
                         <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                             <td class="p-3 text-center font-bold text-slate-700">${log.date.split('-')[2]}일 <span class="text-xs font-normal text-slate-400">(${dayStr})</span></td>
                             <td class="p-3 text-center text-slate-700 font-bold">${vehicleAndDrivers}</td>
-                            <td class="p-3 text-center text-xs text-slate-600 font-bold tracking-tighter bg-slate-50/50">${formatTime(log.startTime)}~${formatTime(log.endTime)}</td>
+                            <td class="p-3 text-center text-xs text-slate-600 font-bold tracking-tighter bg-slate-50/50">${timeStr}</td>
                             <td class="p-3 text-center font-extrabold ${log.isHoliday ? 'text-rose-500' : 'text-blue-600'}">${calc.totalPayTime}h</td>
                             <td class="p-3 pr-4 text-right font-extrabold text-emerald-600 flex items-center justify-end gap-1">${allowanceStr}</td>
                         </tr>
@@ -1119,7 +1056,7 @@
             Object.keys(logsData).forEach(key => {
                 if(!key.startsWith(currentUser + "_")) return; 
                 const log = logsData[key]; 
-                if(log.isOff || log.isLeaveDay) return; 
+                if(log.isOff) return; 
                 
                 const monthKey = log.date.substring(0, 7); 
                 if(!monthlyStats[monthKey]) monthlyStats[monthKey] = { hours: 0, allowance: 0 };
@@ -1146,38 +1083,7 @@
             }
         }
 
-        // ⭐ 휴가/휴무 (출근안함) 체크 시 다른 입력칸들을 완전히 끄는 로직
-        document.getElementById('isLeaveDay').addEventListener('change', function(e) {
-            const isLeave = e.target.checked;
-            
-            // 필수 입력 해제
-            document.getElementById('vehicle').required = !isLeave;
-            document.getElementById('startTime1').required = !isLeave;
-            document.getElementById('endTime1').required = !isLeave;
-
-            // 회색으로 비활성화
-            const toDisable = ['scheduleType', 'vehicle', 'driver2', 'preDriver'];
-            toDisable.forEach(id => {
-                const el = document.getElementById(id);
-                if(el) el.disabled = isLeave;
-            });
-
-            if(isLeave) {
-                // 시간 입력 박스 통째로 숨기기
-                document.getElementById('day1Box').classList.add('hidden');
-                document.getElementById('day2Box').classList.add('hidden');
-                document.getElementById('day3Box').classList.add('hidden');
-                document.getElementById('scheduleType').value = 'none';
-                document.getElementById('vehicle').value = '';
-            } else {
-                document.getElementById('day1Box').classList.remove('hidden');
-                document.getElementById('scheduleType').dispatchEvent(new Event('change'));
-            }
-        });
-
         document.getElementById('scheduleType').addEventListener('change', function(e) {
-            if(document.getElementById('isLeaveDay').checked) return; // 휴무면 스킵
-            
             const val = e.target.value; const day2 = document.getElementById('day2Box'); const day3 = document.getElementById('day3Box');
             if (val === '1night') {
                 day2.classList.remove('hidden'); day3.classList.add('hidden');
@@ -1203,12 +1109,8 @@
             ['1', '2', '3'].forEach(num => { document.getElementById(`startTime${num}`).value = ""; document.getElementById(`endTime${num}`).value = ""; document.getElementById(`isHoliday${num}`).checked = false; });
             document.getElementById('day2Box').classList.add('hidden'); document.getElementById('day3Box').classList.add('hidden');
             
-            // 모달 열 때 초기화
-            document.getElementById('isLeaveDay').checked = false;
-            document.getElementById('isLeaveDay').dispatchEvent(new Event('change'));
-
-            document.getElementById('startTime1').required = true;
-            document.getElementById('endTime1').required = true;
+            document.getElementById('startTime1').required = false;
+            document.getElementById('endTime1').required = false;
             document.getElementById('vehicle').value = ""; 
 
             document.getElementById('usedAnnualLeave').value = "";
@@ -1233,13 +1135,15 @@
             if (logsData[logKey] && !logsData[logKey].isOff) { 
                 const data = logsData[logKey];
 
-                // ⭐ 휴무일 데이터 불러오기 세팅
+                // ⭐ 구버전 데이터(isLeaveDay) 호환성 처리: 휴무일로 자동 세팅
                 if (data.isLeaveDay) {
-                    document.getElementById('isLeaveDay').checked = true;
-                    document.getElementById('isLeaveDay').dispatchEvent(new Event('change'));
+                    document.getElementById('scheduleType').value = 'leave';
+                    document.getElementById('vehicle').value = '운행없음';
+                } else {
+                    document.getElementById('scheduleType').value = data.scheduleType || "none";
+                    document.getElementById('vehicle').value = data.vehicle || "";
                 }
 
-                document.getElementById('vehicle').value = data.vehicle || "";
                 document.getElementById('driver2').value = data.driver2 || ""; 
                 document.getElementById('preDriver').value = data.preDriver || "";
                 document.getElementById('startTime1').value = data.startTime || ""; 
@@ -1254,9 +1158,8 @@
                 if(cleanMemo === "(1일차)" || cleanMemo === "(2일차)" || cleanMemo === "(3일차)") cleanMemo = "";
                 document.getElementById('memo').value = cleanMemo; 
 
-                document.getElementById('scheduleType').value = data.scheduleType || "none";
-
                 if(data.scheduleType === 'linked') document.getElementById('scheduleType').disabled = true;
+                else document.getElementById('scheduleType').disabled = false;
 
                 if (data.scheduleType === '1night' || data.scheduleType === '2night') {
                     document.getElementById('scheduleType').dispatchEvent(new Event('change'));
@@ -1267,6 +1170,8 @@
                         if (day3Data) { document.getElementById('startTime3').value = day3Data.startTime || ""; document.getElementById('endTime3').value = day3Data.endTime || ""; document.getElementById('isHoliday3').checked = day3Data.isHoliday || false; }
                     }
                 }
+            } else {
+                document.getElementById('scheduleType').disabled = false;
             }
             document.getElementById('logModal').classList.remove('hidden');
         }
@@ -1306,15 +1211,11 @@
         document.getElementById('logForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const isLeave = document.getElementById('isLeaveDay').checked;
             const scheduleType = document.getElementById('scheduleType').value;
-            const vehicle = document.getElementById('vehicle').value;
+            if (scheduleType === 'none') { alert("운행 일정을 선택해주세요!"); return; }
 
-            // 출근날인데 입력 안한 경우 체크
-            if (!isLeave) {
-                if (scheduleType === 'none') { alert("운행 일정을 선택해주세요!"); return; }
-                if (vehicle === '') { alert("운행 차량을 선택해주세요!"); return; }
-            }
+            const vehicle = document.getElementById('vehicle').value;
+            if (vehicle === '') { alert("운행 차량을 선택해주세요! (출근안한 날은 '운행없음' 선택)"); return; }
 
             const btn = document.getElementById('saveBtn'); btn.disabled = true; btn.innerText = "저장 중...";
             const driver2 = document.getElementById('driver2').value;
@@ -1335,18 +1236,7 @@
             try {
                 const savePromises = [];
 
-                // ⭐ 휴가/휴무로 저장하는 경우
-                if (isLeave) {
-                    savePromises.push(setDoc(doc(db, "drivingLogsMulti", key1), { 
-                        userId: currentUser, date: date1, isLeaveDay: true, 
-                        memo: cleanMemo, usedAnnualLeave: uLeave, usedPayTime: uPay, updatedAt: new Date() 
-                    }));
-                    // 휴무로 바꿨으므로 예전에 있던 2일차 3일차 데이터는 깔끔하게 지워줌
-                    if (logsData[key3] && logsData[key3].parentDate === date1) savePromises.push(deleteDoc(doc(db, "drivingLogsMulti", key3))); 
-                    if (logsData[key2] && logsData[key2].parentDate === date1) savePromises.push(deleteDoc(doc(db, "drivingLogsMulti", key2))); 
-                } 
-                // 기존 출근 로직
-                else if (scheduleType === 'linked') {
+                if (scheduleType === 'linked') {
                     savePromises.push(setDoc(doc(db, "drivingLogsMulti", key1), { userId: currentUser, date: date1, scheduleType: 'linked', parentType: currentParentType, vehicle: vehicle, driver1: currentUser, driver2, preDriver, startTime: document.getElementById('startTime1').value, endTime: document.getElementById('endTime1').value, isHoliday: document.getElementById('isHoliday1').checked, memo: cleanMemo, usedAnnualLeave: uLeave, usedPayTime: uPay, updatedAt: new Date() }));
                 } else {
                     let memoDay1 = cleanMemo;
