@@ -52,7 +52,6 @@
                     <span id="welcomeUserName" class="text-indigo-600 font-extrabold text-sm mb-1 block"></span>
                     <h1 id="calendarMonthTitle" class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">2026년 8월 운행 달력</h1>
                     <div id="balanceBadges" class="flex justify-center md:justify-start gap-2 mt-2">
-                        <!-- ⭐ 연차를 빼고 보상잔여만 직관적으로 표시 -->
                         <span class="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg text-sm font-extrabold border border-indigo-200 shadow-sm">내 보상잔여: <span id="topBalPay" class="text-base ml-1">0.0h</span></span>
                     </div>
                 </div>
@@ -261,7 +260,6 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">기준일 보유 보상(시간)</label>
-                    <!-- ⭐ step="0.01" 로 소수점 둘째자리 지원 -->
                     <input type="number" step="0.01" id="setBasePay" placeholder="예: 45.25" class="w-full border border-slate-300 rounded-xl px-3 py-3 outline-none text-sm font-bold text-indigo-600 focus:ring-2 focus:ring-slate-400" required>
                 </div>
                 <p class="text-xs text-slate-500 mt-2">※ 위 기준일 이후에 달력에 기록되는 모든 보상시간 획득 및 사용내역이 실시간으로 합산됩니다.</p>
@@ -318,94 +316,103 @@
             
             <form id="logForm" class="space-y-4">
                 
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">운행 일정 (비용 정산)</label>
-                    <select id="scheduleType" class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 font-bold transition-all text-slate-700">
-                        <option value="none">일정 선택 안함 (보상만 사용할 때)</option>
-                        <option value="seoul">서울당일 (정산 0원)</option>
-                        <option value="day">당일 (일비 12,500원)</option>
-                        <option value="1night">1박 (하루당 37,500원)</option>
-                        <option value="2night">2박 (하루당 37,500원)</option>
-                        <option value="leave">휴무 (출근안함, 0원)</option>
-                        <option value="linked" hidden>연계 일정 (이전 날짜에서 이어짐)</option>
-                    </select>
+                <!-- ⭐ 새로 추가된 휴무/보상 전용 스위치 -->
+                <div class="mb-2">
+                    <label class="flex items-center gap-2.5 text-sm font-bold text-emerald-700 bg-emerald-50 px-4 py-3.5 rounded-xl border border-emerald-200 cursor-pointer shadow-sm hover:bg-emerald-100 transition-colors">
+                        <input type="checkbox" id="isLeaveDay" class="accent-emerald-600 w-5 h-5 rounded"> 🏖️ 휴무 또는 보상만 사용 (체크 시 일정/차량 입력 숨김)
+                    </label>
                 </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+                <!-- ⭐ 출근 시에만 보이는 영역 (체크하면 통째로 숨겨짐) -->
+                <div id="workInputs" class="space-y-4 block">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">차량 (필수)</label>
-                        <select id="vehicle" class="w-full border border-slate-300 rounded-xl px-2 py-2.5 outline-none bg-slate-50 text-slate-700 font-bold focus:ring-2 focus:ring-indigo-500 transition-all text-sm">
-                            <!-- ⭐ 쉬는날엔 차량선택 안해도 넘어갑니다 -->
-                            <option value="">차량선택 (휴무 시 생략)</option>
-                            <option value="운행없음">운행없음 (휴무)</option>
-                            <option value="1호차">1호차</option>
-                            <option value="2호차">2호차</option>
-                            <option value="3호차">3호차</option>
-                            <option value="11호차">11호차</option>
-                            <option value="12호차">12호차</option>
-                            <option value="13호차">13호차</option>
-                            <option value="14호차">14호차</option>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">운행 일정 (비용 정산)</label>
+                        <!-- 글씨 깔끔하게 정리 완료 -->
+                        <select id="scheduleType" class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 font-bold transition-all text-slate-700">
+                            <option value="none">일정 선택 안함</option>
+                            <option value="seoul">서울당일 (정산 0원)</option>
+                            <option value="day">당일 (일비 12,500원)</option>
+                            <option value="1night">1박 (하루당 37,500원)</option>
+                            <option value="2night">2박 (하루당 37,500원)</option>
+                            <option value="linked" hidden>연계 일정</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">운전원 (필수)</label>
-                        <input type="text" id="driver1" class="w-full border border-slate-300 rounded-xl px-2 py-2.5 outline-none bg-slate-100 text-slate-500 font-bold cursor-not-allowed text-sm" readonly>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">차량 (필수)</label>
+                            <select id="vehicle" class="w-full border border-slate-300 rounded-xl px-2 py-2.5 outline-none bg-slate-50 text-slate-700 font-bold focus:ring-2 focus:ring-indigo-500 transition-all text-sm">
+                                <option value="">차량선택</option>
+                                <option value="1호차">1호차</option>
+                                <option value="2호차">2호차</option>
+                                <option value="3호차">3호차</option>
+                                <option value="11호차">11호차</option>
+                                <option value="12호차">12호차</option>
+                                <option value="13호차">13호차</option>
+                                <option value="14호차">14호차</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">운전원 (필수)</label>
+                            <input type="text" id="driver1" class="w-full border border-slate-300 rounded-xl px-2 py-2.5 outline-none bg-slate-100 text-slate-500 font-bold cursor-not-allowed text-sm" readonly>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">동승 운전원</label>
+                            <input type="text" id="driver2" placeholder="이름 (선택)" class="w-full border border-slate-300 rounded-xl px-2 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 transition-all font-medium text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">선운행</label>
+                            <input type="text" id="preDriver" placeholder="이름 (선택)" class="w-full border border-slate-300 rounded-xl px-2 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 transition-all font-medium text-sm">
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">동승 운전원</label>
-                        <input type="text" id="driver2" placeholder="이름 (선택)" class="w-full border border-slate-300 rounded-xl px-2 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 transition-all font-medium text-sm">
+
+                    <div id="day1Box" class="bg-indigo-50/50 border border-indigo-100 p-4 rounded-2xl">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="font-bold text-sm text-indigo-900" id="day1Label">1일차 시간 (당일)</span>
+                            <label class="flex items-center gap-1.5 text-xs font-bold text-rose-600 bg-white px-3 py-1.5 rounded-lg border border-rose-100 cursor-pointer shadow-sm hover:bg-rose-50 transition-colors">
+                                <input type="checkbox" id="isHoliday1" class="accent-rose-500 w-4 h-4 rounded"> 휴일적용
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <input type="number" step="0.5" inputmode="decimal" id="startTime1" placeholder="출근 (예: 9)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 outline-none text-center font-bold shadow-sm focus:ring-2 focus:ring-indigo-400">
+                            <input type="number" step="0.5" inputmode="decimal" id="endTime1" placeholder="퇴근 (예: 18.5)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 outline-none text-center font-bold shadow-sm focus:ring-2 focus:ring-indigo-400">
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">선운행</label>
-                        <input type="text" id="preDriver" placeholder="이름 (선택)" class="w-full border border-slate-300 rounded-xl px-2 py-2.5 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 transition-all font-medium text-sm">
+
+                    <div id="day2Box" class="bg-sky-50/50 border border-sky-100 p-4 rounded-2xl hidden">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="font-bold text-sm text-sky-900" id="day2Label">2일차 시간</span>
+                            <label class="flex items-center gap-1.5 text-xs font-bold text-rose-600 bg-white px-3 py-1.5 rounded-lg border border-rose-100 cursor-pointer shadow-sm hover:bg-rose-50 transition-colors">
+                                <input type="checkbox" id="isHoliday2" class="accent-rose-500 w-4 h-4 rounded"> 휴일적용
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <input type="number" step="0.5" inputmode="decimal" id="startTime2" placeholder="출근 (예: 9)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 outline-none text-center font-bold shadow-sm focus:ring-2 focus:ring-sky-400">
+                            <input type="number" step="0.5" inputmode="decimal" id="endTime2" placeholder="퇴근 (예: 18.5)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 outline-none text-center font-bold shadow-sm focus:ring-2 focus:ring-sky-400">
+                        </div>
                     </div>
-                    
-                    <!-- ⭐ 오직 보상시간 사용 인풋만 깔끔하게 남김 -->
-                    <div class="col-span-2 md:col-span-4 mt-1 pt-2 border-t border-slate-100 flex justify-center">
+
+                    <div id="day3Box" class="bg-violet-50/50 border border-violet-100 p-4 rounded-2xl hidden">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="font-bold text-sm text-violet-900" id="day3Label">3일차 시간</span>
+                            <label class="flex items-center gap-1.5 text-xs font-bold text-rose-600 bg-white px-3 py-1.5 rounded-lg border border-rose-100 cursor-pointer shadow-sm hover:bg-rose-50 transition-colors">
+                                <input type="checkbox" id="isHoliday3" class="accent-rose-500 w-4 h-4 rounded"> 휴일적용
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <input type="number" step="0.5" inputmode="decimal" id="startTime3" placeholder="출근 (예: 9)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 outline-none text-center font-bold shadow-sm focus:ring-2 focus:ring-violet-400">
+                            <input type="number" step="0.5" inputmode="decimal" id="endTime3" placeholder="퇴근 (예: 18.5)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 outline-none text-center font-bold shadow-sm focus:ring-2 focus:ring-violet-400">
+                        </div>
+                    </div>
+                </div> <!-- workInputs 끝 -->
+
+                <!-- ⭐ 하단 공통 영역 (보상시간 사용 / 비고) -->
+                <div class="grid grid-cols-1 gap-2 pt-3 border-t border-slate-100 mt-2">
+                    <div class="flex justify-center w-full">
                         <div class="bg-indigo-50/50 p-3 rounded-xl border border-indigo-100 w-full md:w-1/2 shadow-sm">
                             <label class="block text-[11px] font-extrabold text-indigo-700 mb-1.5 text-center">➖ 보상시간 사용 (시간)</label>
                             <input type="number" step="0.01" id="usedPayTime" placeholder="예: 4.5" class="w-full border border-indigo-200 rounded-lg px-3 py-2 outline-none text-center bg-white text-indigo-700 font-bold focus:ring-2 focus:ring-indigo-400">
                         </div>
-                    </div>
-                </div>
-
-                <div id="day1Box" class="bg-indigo-50/50 border border-indigo-100 p-4 rounded-2xl">
-                    <div class="flex justify-between items-center mb-3">
-                        <span class="font-bold text-sm text-indigo-900" id="day1Label">1일차 시간 (당일)</span>
-                        <label class="flex items-center gap-1.5 text-xs font-bold text-rose-600 bg-white px-3 py-1.5 rounded-lg border border-rose-100 cursor-pointer shadow-sm hover:bg-rose-50 transition-colors">
-                            <input type="checkbox" id="isHoliday1" class="accent-rose-500 w-4 h-4 rounded"> 휴일적용
-                        </label>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <!-- ⭐ 쉬는 날은 시간을 적지 않아도 통과되게 설정 -->
-                        <input type="number" step="0.5" inputmode="decimal" id="startTime1" placeholder="출근 (예: 9)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 outline-none text-center font-bold shadow-sm focus:ring-2 focus:ring-indigo-400">
-                        <input type="number" step="0.5" inputmode="decimal" id="endTime1" placeholder="퇴근 (예: 18.5)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 outline-none text-center font-bold shadow-sm focus:ring-2 focus:ring-indigo-400">
-                    </div>
-                </div>
-
-                <div id="day2Box" class="bg-sky-50/50 border border-sky-100 p-4 rounded-2xl hidden">
-                    <div class="flex justify-between items-center mb-3">
-                        <span class="font-bold text-sm text-sky-900" id="day2Label">2일차 시간</span>
-                        <label class="flex items-center gap-1.5 text-xs font-bold text-rose-600 bg-white px-3 py-1.5 rounded-lg border border-rose-100 cursor-pointer shadow-sm hover:bg-rose-50 transition-colors">
-                            <input type="checkbox" id="isHoliday2" class="accent-rose-500 w-4 h-4 rounded"> 휴일적용
-                        </label>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <input type="number" step="0.5" inputmode="decimal" id="startTime2" placeholder="출근 (예: 9)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 outline-none text-center font-bold shadow-sm focus:ring-2 focus:ring-sky-400">
-                        <input type="number" step="0.5" inputmode="decimal" id="endTime2" placeholder="퇴근 (예: 18.5)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 outline-none text-center font-bold shadow-sm focus:ring-2 focus:ring-sky-400">
-                    </div>
-                </div>
-
-                <div id="day3Box" class="bg-violet-50/50 border border-violet-100 p-4 rounded-2xl hidden">
-                    <div class="flex justify-between items-center mb-3">
-                        <span class="font-bold text-sm text-violet-900" id="day3Label">3일차 시간</span>
-                        <label class="flex items-center gap-1.5 text-xs font-bold text-rose-600 bg-white px-3 py-1.5 rounded-lg border border-rose-100 cursor-pointer shadow-sm hover:bg-rose-50 transition-colors">
-                            <input type="checkbox" id="isHoliday3" class="accent-rose-500 w-4 h-4 rounded"> 휴일적용
-                        </label>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <input type="number" step="0.5" inputmode="decimal" id="startTime3" placeholder="출근 (예: 9)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 outline-none text-center font-bold shadow-sm focus:ring-2 focus:ring-violet-400">
-                        <input type="number" step="0.5" inputmode="decimal" id="endTime3" placeholder="퇴근 (예: 18.5)" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 outline-none text-center font-bold shadow-sm focus:ring-2 focus:ring-violet-400">
                     </div>
                 </div>
 
@@ -738,14 +745,13 @@
                     if (allowance > 0) allowanceHTML = `<div class="text-[11px] font-bold text-emerald-600 text-center tracking-tight leading-snug">${allowance.toLocaleString()}원</div>`;
                     else if (log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) allowanceHTML = `<div class="text-[11px] font-bold text-slate-500 text-center tracking-tight leading-snug">서울당일</div>`;
 
-                    // ⭐ 차량 번호 옆에 보상사용 뱃지 찰떡같이 붙이기
                     let usageStr = '';
                     if (log.usedPayTime && parseFloat(log.usedPayTime) > 0) {
                         usageStr = `<span class="text-[10px] text-rose-500 font-extrabold ml-1 bg-rose-50 px-1 rounded-sm border border-rose-200 inline-block tracking-tighter shrink-0">(보상-${log.usedPayTime}h)</span>`;
                     }
                     
                     let vText = log.vehicle || "";
-                    if (!vText && (log.scheduleType === 'leave' || log.scheduleType === 'none')) vText = "휴무";
+                    if (!vText && (log.scheduleType === 'leave' || log.isLeaveDay)) vText = "휴무";
                     
                     const vehicleHTML = (vText || usageStr) ? `<div class="text-[13px] font-extrabold text-blue-700 text-center tracking-wider leading-snug flex items-center justify-center flex-wrap px-0.5 mt-0.5">${vText}${usageStr}</div>` : '';
                     
@@ -809,7 +815,7 @@
                     if(log.scheduleType === '1night' || (log.scheduleType === 'linked' && log.parentType === '1night')) scheduleTxt = "1박"; 
                     else if(log.scheduleType === '2night' || (log.scheduleType === 'linked' && log.parentType === '2night')) scheduleTxt = "2박";
                     else if(log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) scheduleTxt = "서울당일";
-                    else if(log.scheduleType === 'leave') scheduleTxt = "휴무";
+                    else if(log.scheduleType === 'leave' || log.isLeaveDay) scheduleTxt = "휴무";
                     else if(log.scheduleType === 'none') scheduleTxt = "-";
 
                     let timeStr = "-";
@@ -865,7 +871,7 @@
                     if(log.scheduleType === '1night' || (log.scheduleType === 'linked' && log.parentType === '1night')) scheduleTxt = "1박"; 
                     else if(log.scheduleType === '2night' || (log.scheduleType === 'linked' && log.parentType === '2night')) scheduleTxt = "2박";
                     else if(log.scheduleType === 'seoul' || (log.scheduleType === 'linked' && log.parentType === 'seoul')) scheduleTxt = "서울당일";
-                    else if(log.scheduleType === 'leave') scheduleTxt = "휴무";
+                    else if(log.scheduleType === 'leave' || log.isLeaveDay) scheduleTxt = "휴무";
                     else if(log.scheduleType === 'none') scheduleTxt = "-";
 
                     let timeStr = "-";
@@ -1058,20 +1064,42 @@
             }
         }
 
+        // ⭐ 휴무/보상 체크박스 끄고 켜기 (입력칸 숨김 마법!)
+        document.getElementById('isLeaveDay').addEventListener('change', function(e) {
+            const isLeave = e.target.checked;
+            const workInputs = document.getElementById('workInputs');
+            
+            if(isLeave) {
+                workInputs.classList.add('hidden'); // 출근 입력칸들 싹 다 숨기기
+                // 값 초기화 (저장 안되게)
+                document.getElementById('scheduleType').value = 'none';
+                document.getElementById('vehicle').value = '';
+                document.getElementById('driver2').value = '';
+                document.getElementById('preDriver').value = '';
+                document.getElementById('startTime1').value = '';
+                document.getElementById('endTime1').value = '';
+                document.getElementById('startTime1').required = false;
+                document.getElementById('endTime1').required = false;
+                document.getElementById('vehicle').required = false;
+            } else {
+                workInputs.classList.remove('hidden'); // 다시 보여주기
+                document.getElementById('startTime1').required = false; // 기본은 false (시간입력 안해도 저장되게)
+                document.getElementById('endTime1').required = false;
+                document.getElementById('vehicle').required = true; // 차량은 필수
+                document.getElementById('scheduleType').dispatchEvent(new Event('change'));
+            }
+        });
+
         document.getElementById('scheduleType').addEventListener('change', function(e) {
+            if(document.getElementById('isLeaveDay').checked) return; 
+            
             const val = e.target.value; const day2 = document.getElementById('day2Box'); const day3 = document.getElementById('day3Box');
             if (val === '1night') {
                 day2.classList.remove('hidden'); day3.classList.add('hidden');
-                document.getElementById('startTime2').required = true; document.getElementById('endTime2').required = true;
-                document.getElementById('startTime3').required = false; document.getElementById('endTime3').required = false;
             } else if (val === '2night') {
                 day2.classList.remove('hidden'); day3.classList.remove('hidden');
-                document.getElementById('startTime2').required = true; document.getElementById('endTime2').required = true;
-                document.getElementById('startTime3').required = true; document.getElementById('endTime3').required = true;
             } else {
                 day2.classList.add('hidden'); day3.classList.add('hidden');
-                document.getElementById('startTime2').required = false; document.getElementById('endTime2').required = false;
-                document.getElementById('startTime3').required = false; document.getElementById('endTime3').required = false;
             }
         });
 
@@ -1086,8 +1114,13 @@
             
             document.getElementById('startTime1').required = false;
             document.getElementById('endTime1').required = false;
+            document.getElementById('vehicle').required = true;
             document.getElementById('vehicle').value = ""; 
             document.getElementById('usedPayTime').value = "";
+
+            // 모달 열 때 스위치 초기화
+            document.getElementById('isLeaveDay').checked = false;
+            document.getElementById('isLeaveDay').dispatchEvent(new Event('change'));
 
             const logKey = `${currentUser}_${dateStr}`;
             const delBtn = document.getElementById('deleteBtn');
@@ -1109,8 +1142,8 @@
                 const data = logsData[logKey];
 
                 if (data.isLeaveDay) {
-                    document.getElementById('scheduleType').value = 'leave';
-                    document.getElementById('vehicle').value = '운행없음';
+                    document.getElementById('isLeaveDay').checked = true;
+                    document.getElementById('isLeaveDay').dispatchEvent(new Event('change'));
                 } else {
                     document.getElementById('scheduleType').value = data.scheduleType || "none";
                     document.getElementById('vehicle').value = data.vehicle || "";
@@ -1182,22 +1215,24 @@
         document.getElementById('logForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            const isLeave = document.getElementById('isLeaveDay').checked;
             const scheduleType = document.getElementById('scheduleType').value;
             const vehicle = document.getElementById('vehicle').value;
             const uPay = document.getElementById('usedPayTime').value;
 
-            // ⭐ 휴무, 보상만 쓸 땐 차량입력 해제하는 똑똑한 유효성 검사!
-            const isRestDay = (scheduleType === 'leave' || scheduleType === 'none');
-            
-            if (isRestDay) {
+            // ⭐ 똑똑해진 유효성 검사 (체크박스 안눌렀을때만 차량 요구)
+            if (!isLeave) {
                 if (scheduleType === 'none' && (!uPay || parseFloat(uPay) <= 0)) {
-                    alert("운행 일정을 선택하거나, 보상시간을 입력해주세요!");
-                    return;
+                    alert("운행 일정을 선택해주세요! (출근안한 날은 맨 위 '휴무' 스위치를 켜주세요)"); return;
+                }
+                if (vehicle === '') {
+                    alert("운행 차량을 선택해주세요! (출근안한 날은 맨 위 '휴무' 스위치를 켜주세요)"); return;
                 }
             } else {
-                if (vehicle === '') {
-                    alert("운행 차량을 선택해주세요! (휴무일엔 일정에서 '휴무'를 선택하세요)"); 
-                    return;
+                // 체크박스 눌렀는데 보상도 안 적고 비고도 안 적으면 경고
+                const rawMemo = document.getElementById('memo').value;
+                if ((!uPay || parseFloat(uPay) <= 0) && rawMemo.trim() === '') {
+                    alert("휴무/보상 사용 내역이나 비고를 입력해주세요!"); return;
                 }
             }
 
@@ -1217,7 +1252,15 @@
             try {
                 const savePromises = [];
 
-                if (scheduleType === 'linked') {
+                if (isLeave) {
+                    savePromises.push(setDoc(doc(db, "drivingLogsMulti", key1), { 
+                        userId: currentUser, date: date1, isLeaveDay: true, 
+                        memo: cleanMemo, usedPayTime: uPay, updatedAt: new Date() 
+                    }));
+                    if (logsData[key3] && logsData[key3].parentDate === date1) savePromises.push(deleteDoc(doc(db, "drivingLogsMulti", key3))); 
+                    if (logsData[key2] && logsData[key2].parentDate === date1) savePromises.push(deleteDoc(doc(db, "drivingLogsMulti", key2))); 
+                } 
+                else if (scheduleType === 'linked') {
                     savePromises.push(setDoc(doc(db, "drivingLogsMulti", key1), { userId: currentUser, date: date1, scheduleType: 'linked', parentType: currentParentType, vehicle: vehicle, driver1: currentUser, driver2, preDriver, startTime: document.getElementById('startTime1').value, endTime: document.getElementById('endTime1').value, isHoliday: document.getElementById('isHoliday1').checked, memo: cleanMemo, usedPayTime: uPay, updatedAt: new Date() }));
                 } else {
                     let memoDay1 = cleanMemo;
