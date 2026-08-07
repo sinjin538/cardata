@@ -1,0 +1,6 @@
+body { font-family: 'Pretendard', sans-serif; -webkit-tap-highlight-color: transparent; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+input[type="text"], input[type="password"], input[type="number"], input[type="date"], select { font-size: 16px !important; }
