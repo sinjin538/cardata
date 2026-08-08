@@ -2,13 +2,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDfVycUkONZs-RCBHqwzFweS-5avrWUhVc",
-    authDomain: "park-management-2055a.firebaseapp.com",
-    projectId: "park-management-2055a",
-    storageBucket: "park-management-2055a.firebasestorage.app",
-    messagingSenderId: "1014430922351",
-    appId: "1:1014430922351:web:7d162fa105efe839bf3f9a",
-    measurementId: "G-Z334DHWHP6"
+    apiKey: "AIzaSyDzbd2alWmXrcFamThickLGjSpT1Er2bsM",
+    authDomain: "jang-e9208.firebaseapp.com",
+    projectId: "jang-e9208",
+    storageBucket: "jang-e9208.firebasestorage.app",
+    messagingSenderId: "184552683534",
+    appId: "1:184552683534:web:8930a89250ec19dc4f245f",
+    measurementId: "G-MXF21Q39FM"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -338,7 +338,7 @@ document.getElementById('logForm').addEventListener('submit', async function(e) 
         });
     } else {
         await setDoc(doc(db, "drivingLogsMulti", key1), { 
-            userId: currentUser, date: selectedDateStr, scheduleType: scheduleType, vehicle: vehicle, driver1: currentUser, driver2: document.getElementById('driver2').value, preDriver: document.getElementById('preDriver').value, startTime: document.getElementById('startTime1').value, endTime: document.getElementById('endTime1'].value, usedPayTime: uPay, memo: rawMemo, updatedAt: new Date() 
+            userId: currentUser, date: selectedDateStr, scheduleType: scheduleType, vehicle: vehicle, driver1: currentUser, driver2: document.getElementById('driver2').value, preDriver: document.getElementById('preDriver').value, startTime: document.getElementById('startTime1').value, endTime: document.getElementById('endTime1').value, usedPayTime: uPay, memo: rawMemo, updatedAt: new Date() 
         });
     }
     closeModal();
