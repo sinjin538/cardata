@@ -2,13 +2,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDzbd2alWmXrcFamThickLGjSpT1Er2bsM",
-    authDomain: "jang-e9208.firebaseapp.com",
-    projectId: "jang-e9208",
-    storageBucket: "jang-e9208.firebasestorage.app",
-    messagingSenderId: "184552683534",
-    appId: "1:184552683534:web:8930a89250ec19dc4f245f",
-    measurementId: "G-MXF21Q39FM"
+    apiKey: "AIzaSyC3vETKSStfMQ6IylW64h5snWJl1hc1FwY",
+    authDomain: "jang-seoul.firebaseapp.com",
+    projectId: "jang-seoul",
+    storageBucket: "jang-seoul.firebasestorage.app",
+    messagingSenderId: "916714748195",
+    appId: "1:916714748195:web:2cd71e8f1bf7173b137496",
+    measurementId: "G-QSXPTY6ZFK"
 };
 
 const app = initializeApp(firebaseConfig);
