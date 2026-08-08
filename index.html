@@ -2,84 +2,94 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>배차 관리 시스템 V13 (파일 분리됨)</title>
-    <!-- 💡 CSS 파일 연결 -->
+    <title>배차 관리 통합 시스템</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <!-- 수정된 배차판 헤더 영역 -->
-    <div class="header-area">
-        <h1>월간 배차 관리 V13 <span style="font-size:14px; color:#1976d2;">(☁️ 파이어베이스 연동 & 파일 분리)</span></h1>
+<body style="background: #fdfdfd; margin: 0; padding: 20px;">
+
+    <!-- 🔒 로그인 화면 (배차판 대문) -->
+    <div id="loginView" style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:80vh;">
+        <div style="background:white; padding:40px; border-radius:20px; box-shadow:0 10px 30px rgba(0,0,0,0.1); width:100%; max-width:350px; text-align:center;">
+            <h2 style="margin-top:0; color:#333; font-size:24px;">통합 시스템 로그인</h2>
+            <p style="color:#666; font-size:14px; margin-bottom:20px;">배차판 및 운행일지 접속</p>
+
+            <div id="loginBox">
+                <input type="text" id="loginName" placeholder="이름 (예: 박기준)" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #ddd; border-radius:10px; font-weight:bold; box-sizing:border-box;">
+                <input type="password" id="loginPwd" placeholder="비밀번호" style="width:100%; padding:12px; margin-bottom:20px; border:1px solid #ddd; border-radius:10px; font-weight:bold; box-sizing:border-box;" onkeypress="if(event.key==='Enter') handleLogin()">
+                <button onclick="handleLogin()" style="width:100%; padding:14px; background:#4CAF50; color:white; border:none; border-radius:10px; font-weight:bold; font-size:16px; cursor:pointer;">입장하기</button>
+                <p style="margin-top:20px; font-size:13px; color:#1976d2; cursor:pointer; font-weight:bold;" onclick="toggleAuth(true)">회원가입 (처음 오신 분)</p>
+            </div>
+
+            <div id="signupBox" style="display:none;">
+                <p style="color:#d32f2f; font-size:12px; font-weight:bold; margin-bottom:15px;">지정된 운전원만 가입 가능합니다.</p>
+                <input type="text" id="signupName" placeholder="본인 이름" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #ddd; border-radius:10px; font-weight:bold; box-sizing:border-box;">
+                <input type="password" id="signupPwd" placeholder="새 비밀번호 (6자리 이상)" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #ddd; border-radius:10px; font-weight:bold; box-sizing:border-box;">
+                <input type="password" id="signupPwdConfirm" placeholder="비밀번호 확인" style="width:100%; padding:12px; margin-bottom:20px; border:1px solid #ddd; border-radius:10px; font-weight:bold; box-sizing:border-box;">
+                <button onclick="handleSignup()" style="width:100%; padding:14px; background:#333; color:white; border:none; border-radius:10px; font-weight:bold; font-size:16px; cursor:pointer;">가입 완료</button>
+                <p style="margin-top:20px; font-size:13px; color:#666; cursor:pointer; font-weight:bold;" onclick="toggleAuth(false)">뒤로 가기</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🚌 메인 배차판 화면 (로그인 성공 시 나타남) -->
+    <div id="mainApp" style="display:none;">
+        <div class="header-area">
+            <h1>월간 배차 관리 <span style="font-size:14px; color:#1976d2;" id="welcomeUserName"></span></h1>
+            <div>
+                <button class="btn-setting" style="background:#2196F3; margin-right:5px;" onclick="goToDrivingLog()">📝 내 운행일지 가기</button>
+                <button class="btn-setting hidden" id="adminSettingBtn" onclick="openDriverModal()" style="margin-right:5px;">⚙️ 운전원 설정</button>
+                <button class="btn-setting" style="background:#f44336;" onclick="handleLogout()">로그아웃</button>
+            </div>
+        </div>
         
-        <!-- 버튼 2개를 묶어줍니다 -->
-        <div>
-            <!-- 💡 운행일지(log.html)로 넘어가는 버튼 -->
-            <button class="btn-setting" style="background: #2196F3; margin-right: 5px;" onclick="location.href='log.html'">📝 운행일지 가기</button>
-            
-            <button class="btn-setting" onclick="openDriverModal()">⚙️ 운전원 설정</button>
+        <div class="calendar-nav">
+            <button onclick="changeMonth(-1)">◀ 이전 달</button>
+            <h2 id="monthYearDisplay"></h2>
+            <button onclick="changeMonth(1)">다음 달 ▶</button>
         </div>
-    </div>
-    
-    <div class="calendar-nav">
-        <button onclick="changeMonth(-1)">◀ 이전 달</button>
-        <h2 id="monthYearDisplay"></h2>
-        <button onclick="changeMonth(1)">다음 달 ▶</button>
-    </div>
 
-    <p style="text-align: center; margin-top: 5px;">현재 화면 마지막 배차 다음 대기자: <strong id="currentTurn" style="color:#d32f2f; font-size: 18px;"></strong></p>
-    
-    <!-- 달력 영역 -->
-    <div id="calendar"></div>
+        <p style="text-align: center; margin-top: 5px;">현재 화면 마지막 배차 다음 대기자: <strong id="currentTurn" style="color:#d32f2f; font-size: 18px;"></strong></p>
+        
+        <div id="calendar"></div>
 
-    <!-- 📝 하단 상세 내역 표 영역 -->
-    <div id="detailArea" style="margin-top: 40px;">
-        <h3 style="border-bottom: 2px solid #333; padding-bottom: 5px;">📝 이번 달 배차 상세 내역</h3>
-        <table class="detail-table">
-            <thead>
-                <tr>
-                    <th style="width: 10%;">날짜</th>
-                    <th style="width: 15%;">일정</th>
-                    <th style="width: 10%;">차량</th>
-                    <th style="width: 15%;">운전원</th>
-                    <th style="width: 25%;">출발지</th>
-                    <th style="width: 25%;">목적지</th>
-                </tr>
-            </thead>
-            <tbody id="detailTableBody">
-                <!-- 자바스크립트로 내역이 채워짐 -->
-            </tbody>
-        </table>
-    </div>
+        <div id="detailArea" style="margin-top: 40px;">
+            <h3 style="border-bottom: 2px solid #333; padding-bottom: 5px;">📝 이번 달 배차 상세 내역</h3>
+            <table class="detail-table">
+                <thead>
+                    <tr>
+                        <th style="width: 10%;">날짜</th><th style="width: 15%;">일정</th><th style="width: 10%;">차량</th><th style="width: 15%;">운전원</th><th style="width: 25%;">출발지</th><th style="width: 25%;">목적지</th>
+                    </tr>
+                </thead>
+                <tbody id="detailTableBody"></tbody>
+            </table>
+        </div>
 
-    <!-- 🚌 배차 모달 -->
-    <div id="modalOverlay" class="modal-overlay">
-        <div id="modalContent" class="modal-content">
-            <button class="close-btn" onclick="closeModal()">×</button>
-            <h2 id="modalDate"></h2>
-            
-            <div class="form-group"><label>일정 선택:</label><select id="scheduleSelect"><option value="당일">당일</option><option value="당일(서울)">당일 (서울)</option><option value="1박">1박 (2일 소요)</option><option value="2박">2박 (3일 소요)</option><option value="시티투어">시티투어</option><option value="성묘지원">성묘지원</option></select></div>
-            <div class="form-group"><label>차량 선택:</label><select id="vehicleSelect" onchange="toggleBusOptions()"><option value="">차량을 선택하세요</option></select></div>
-            <div id="busOptions" class="form-group hidden"><label><input type="checkbox" id="soloDrive"> <strong>버스 1인 예외 운행</strong></label></div>
-            
-            <div class="form-group"><label>출발지:</label><input type="text" id="departureInput" placeholder="예: 남양주시청"></div>
-            <div class="form-group"><label>목적지:</label><input type="text" id="destinationInput" placeholder="예: 서울역"></div>
+        <!-- 배차 모달 -->
+        <div id="modalOverlay" class="modal-overlay">
+            <div id="modalContent" class="modal-content">
+                <button class="close-btn" onclick="closeModal()">×</button>
+                <h2 id="modalDate"></h2>
+                <div class="form-group"><label>일정 선택:</label><select id="scheduleSelect"><option value="당일">당일</option><option value="당일(서울)">당일 (서울)</option><option value="1박">1박 (2일 소요)</option><option value="2박">2박 (3일 소요)</option><option value="시티투어">시티투어</option><option value="성묘지원">성묘지원</option></select></div>
+                <div class="form-group"><label>차량 선택:</label><select id="vehicleSelect" onchange="toggleBusOptions()"><option value="">차량을 선택하세요</option></select></div>
+                <div id="busOptions" class="form-group hidden"><label><input type="checkbox" id="soloDrive"> <strong>버스 1인 예외 운행</strong></label></div>
+                <div class="form-group"><label>출발지:</label><input type="text" id="departureInput" placeholder="예: 남양주시청"></div>
+                <div class="form-group"><label>목적지:</label><input type="text" id="destinationInput" placeholder="예: 서울역"></div>
+                <div class="button-group"><button id="deleteBtn" class="btn btn-delete hidden" onclick="deleteCurrentDispatch()">삭제</button><button class="btn btn-save" onclick="saveDispatch()">배차 저장</button></div>
+            </div>
+        </div>
 
-            <div class="button-group"><button id="deleteBtn" class="btn btn-delete hidden" onclick="deleteCurrentDispatch()">삭제</button><button class="btn btn-save" onclick="saveDispatch()">배차 저장</button></div>
+        <!-- 운전원 설정 모달 -->
+        <div id="driverModalOverlay" class="modal-overlay">
+            <div id="driverModalContent" class="modal-content" style="width: 400px;">
+                <button class="close-btn" onclick="closeDriverModal()">×</button>
+                <h2>운전원 순번 및 명단 설정</h2>
+                <div class="form-group"><label><strong>적용 시작일 (날짜 선택):</strong></label><input type="date" id="rosterDateInput" onchange="loadRosterForDate()"></div>
+                <div class="form-group"><label><strong>운전원 명단 (엔터로 구분)</strong></label><textarea id="driverListText" rows="12"></textarea></div>
+                <div class="button-group"><button class="btn btn-reset" onclick="resetRoster()">설정 취소</button><button class="btn btn-save" onclick="saveRoster()">명단 저장</button></div>
+            </div>
         </div>
     </div>
 
-    <!-- 👥 운전원 설정 모달 -->
-    <div id="driverModalOverlay" class="modal-overlay">
-        <div id="driverModalContent" class="modal-content" style="width: 400px;">
-            <button class="close-btn" onclick="closeDriverModal()">×</button>
-            <h2>운전원 순번 및 명단 설정</h2>
-            <div class="form-group"><label><strong>적용 시작일 (날짜 선택):</strong></label><input type="date" id="rosterDateInput" onchange="loadRosterForDate()"></div>
-            <div class="form-group"><label><strong>운전원 명단 (엔터로 구분)</strong></label><textarea id="driverListText" rows="12"></textarea></div>
-            <div class="button-group"><button class="btn btn-reset" onclick="resetRoster()">설정 취소</button><button class="btn btn-save" onclick="saveRoster()">명단 저장</button></div>
-        </div>
-    </div>
-
-    <!-- 💡 파이어베이스 라이브러리 및 커스텀 JS 파일 연결 -->
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     <script src="script.js"></script>
