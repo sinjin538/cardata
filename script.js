@@ -1,4 +1,3 @@
-// 🔥 옆 창에서 확인한 새로운 파이어베이스 설정(carpro 프로젝트)
 const firebaseConfig = {
     apiKey: "AIzaSyAC-4qsyKMuGp6o583agoFructJKiX67Oo",
     authDomain: "carpro-97259.firebaseapp.com",
@@ -11,6 +10,75 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+// 💡 1. 통합 로그인 시스템 로직
+const ALLOWED_NAMES = ["이상헌", "이명순", "김탁", "변석현", "강철규", "한상훈", "문인식", "함동한", "박기준"];
+const ADMIN_NAME = "박기준";
+
+window.toggleAuth = function(isSignup) {
+    document.getElementById('loginBox').style.display = isSignup ? 'none' : 'block';
+    document.getElementById('signupBox').style.display = isSignup ? 'block' : 'none';
+}
+
+window.handleSignup = async function() {
+    const name = document.getElementById('signupName').value.trim();
+    const pwd = document.getElementById('signupPwd').value;
+    const pwdConfirm = document.getElementById('signupPwdConfirm').value;
+
+    if(!name || !pwd || !pwdConfirm) return alert("모든 칸을 입력해주세요.");
+    if(!ALLOWED_NAMES.includes(name)) return alert("등록된 운전원 이름이 아닙니다.");
+    if(pwd !== pwdConfirm) return alert("비밀번호가 일치하지 않습니다.");
+    if(pwd.length < 6) return alert("비밀번호는 6자리 이상 설정해주세요.");
+
+    try {
+        const docRef = db.collection("drivingUsersAuth").doc(name);
+        const docSnap = await docRef.get();
+        if(docSnap.exists) {
+            alert("이미 가입된 이름입니다. 로그인을 진행해주세요.");
+            toggleAuth(false); return;
+        }
+        await docRef.set({ password: pwd, createdAt: new Date() });
+        alert("회원가입 완료! 로그인해주세요.");
+        document.getElementById('loginName').value = name;
+        toggleAuth(false);
+    } catch (error) { alert("가입 중 오류가 발생했습니다."); }
+}
+
+window.handleLogin = async function() {
+    const name = document.getElementById('loginName').value.trim();
+    const pwd = document.getElementById('loginPwd').value;
+    if(!name || !pwd) return alert("이름과 비밀번호를 입력해주세요.");
+
+    try {
+        const docRef = db.collection("drivingUsersAuth").doc(name);
+        const docSnap = await docRef.get();
+
+        if(!docSnap.exists) return alert("가입되지 않은 이름입니다.");
+        if(docSnap.data().password !== pwd) return alert("비밀번호가 틀렸습니다.");
+
+        // 로그인 성공! (브라우저에 기록 저장)
+        localStorage.setItem("loggedInUser", name);
+        showMainApp(name);
+    } catch(e) { alert("로그인 오류가 발생했습니다."); }
+}
+
+function showMainApp(name) {
+    document.getElementById('loginView').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    document.getElementById('welcomeUserName').innerText = `👤 ${name}님 접속중`;
+    if(name === ADMIN_NAME) document.getElementById('adminSettingBtn').classList.remove('hidden');
+    renderCalendarUI(); 
+}
+
+window.handleLogout = function() {
+    localStorage.removeItem("loggedInUser"); // 기록 지우기
+    location.reload();
+}
+
+window.goToDrivingLog = function() {
+    location.href = "log.html"; // 운행일지 창으로 이동!
+}
+
+// 기초 데이터
 let vehicles = [
     { id: '1호', type: 'bus' }, { id: '2호', type: 'bus' }, { id: '3호', type: 'bus' },
     { id: '11호', type: 'solati' }, { id: '12호', type: 'solati' }, { id: '13호', type: 'solati' }, { id: '14호', type: 'solati' }
@@ -23,14 +91,20 @@ let allDispatches = [];
 let editingId = null;
 let selectedDateStr = '';
 let currentViewDate = new Date(); 
+let offDaysData = {}; // 운행일지 휴무 데이터
 
 function formatDate(year, month, day) { return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`; }
 function parseDate(dateStr) { let p = dateStr.split('-'); return new Date(p[0], p[1]-1, p[2]); }
 function stripDriverNumber(name) { return name.replace(/^\d+,\s*/, '').trim(); }
 
-window.onload = () => { populateVehicles(); };
+window.onload = () => { 
+    populateVehicles(); 
+    // 사이트 켰을 때 이미 로그인 기록이 있으면 바로 입장!
+    const savedUser = localStorage.getItem("loggedInUser");
+    if(savedUser) { showMainApp(savedUser); }
+};
 
-// 파이어베이스 리스너
+// 파이어베이스 데이터 수신
 db.collection('DispatchSystem').doc('MainData').onSnapshot((doc) => {
     if (doc.exists) {
         const data = doc.data();
@@ -40,7 +114,19 @@ db.collection('DispatchSystem').doc('MainData').onSnapshot((doc) => {
         rosterHistory = { '2024-01-01': ['1,박기준', '2,변석현', '3,이명순', '4,김탁', '5,한상훈', '6,문인식', '7,황덕일', '8,강철규', '9,이상헌'] };
         saveToFirebase();
     }
-    renderCalendarUI(); 
+    if (document.getElementById('mainApp').style.display === 'block') renderCalendarUI(); 
+});
+
+db.collection('drivingLogsMulti').onSnapshot((snapshot) => {
+    offDaysData = {};
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.isLeaveDay) {
+            if (!offDaysData[data.date]) offDaysData[data.date] = [];
+            offDaysData[data.date].push(data.userId);
+        }
+    });
+    if (document.getElementById('mainApp').style.display === 'block') renderCalendarUI(); 
 });
 
 function saveToFirebase() {
@@ -269,22 +355,32 @@ function drawCalendar(renderData, y, m, lastDate) {
         if (!dispatchDiv) continue;
         dispatchDiv.innerHTML = '';
         
-        if(!renderData[dateStr]) continue;
+        if(renderData[dateStr]) {
+            renderData[dateStr].forEach(d => {
+                let className = `dispatch-item type-${d.type}`;
+                if (d.schedule === '1박') className += ' schedule-1night';
+                else if (d.schedule === '2박') className += ' schedule-2nights';
 
-        renderData[dateStr].forEach(d => {
-            let className = `dispatch-item type-${d.type}`;
-            if (d.schedule === '1박') className += ' schedule-1night';
-            else if (d.schedule === '2박') className += ' schedule-2nights';
+                let displayNames = d.assigned.map(name => stripDriverNumber(name)).join(', ');
 
-            let displayNames = d.assigned.map(name => stripDriverNumber(name)).join(', ');
+                dispatchDiv.innerHTML += `
+                    <div class="${className}" onclick="openEditModal(${d.id})" title="클릭하여 수정">
+                        <div style="margin-bottom:3px;"><span class="schedule-badge">${d.schedule}</span> <strong>${d.vehicleId}</strong></div>
+                        <div><span style="font-weight:bold; color:#d32f2f;">${displayNames}</span></div>
+                    </div>
+                `;
+            });
+        }
 
+        // 💡 2. 운행일지에서 등록된 휴무를 달력 맨 아래 표시!
+        if (offDaysData[dateStr] && offDaysData[dateStr].length > 0) {
+            let offNames = [...new Set(offDaysData[dateStr].map(name => stripDriverNumber(name)))].join(', ');
             dispatchDiv.innerHTML += `
-                <div class="${className}" onclick="openEditModal(${d.id})" title="클릭하여 수정">
-                    <div style="margin-bottom:3px;"><span class="schedule-badge">${d.schedule}</span> <strong>${d.vehicleId}</strong></div>
-                    <div><span style="font-weight:bold; color:#d32f2f;">${displayNames}</span></div>
+                <div style="margin-top: 5px; color: #d32f2f; font-size: 11px; font-weight: bold; background: #ffebee; padding: 4px; border-radius: 4px; text-align: center; border: 1px dashed #ffcdd2; cursor: default;" onclick="event.stopPropagation()">
+                    🏝️ 휴무: ${offNames}
                 </div>
             `;
-        });
+        }
     }
 }
 
@@ -305,23 +401,10 @@ function renderDetailTable(renderData, y, m, lastDate) {
             
             let tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${dateStr}</td>
-                <td>${d.schedule}</td>
-                <td><strong>${d.vehicleId}</strong></td>
-                <td style="font-weight:bold; color:#d32f2f;">${displayNames}</td>
-                <td style="color:#555;">${dep}</td>
-                <td style="color:#555;">${dest}</td>
+                <td>${dateStr}</td><td>${d.schedule}</td><td><strong>${d.vehicleId}</strong></td><td style="font-weight:bold; color:#d32f2f;">${displayNames}</td><td style="color:#555;">${dep}</td><td style="color:#555;">${dest}</td>
             `;
             tbody.appendChild(tr);
         });
     }
-
-    if (!hasData) {
-        tbody.innerHTML = `<tr><td colspan="6" style="padding:20px; color:#888;">이번 달 배차 내역이 없습니다.</td></tr>`;
-    }
-}
-
-// 💡 4. 운행일지 페이지 이동 함수 (HTML 버튼과 연결됨)
-function goToDrivingLog() {
-    window.location.href = "log.html"; // 실제 운행일지 파일 이름으로 변경해주세요!
+    if (!hasData) tbody.innerHTML = `<tr><td colspan="6" style="padding:20px; color:#888;">이번 달 배차 내역이 없습니다.</td></tr>`;
 }
