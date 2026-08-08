@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>배차 관리 시스템 V13 (파일 분리됨)</title>
+    <!-- 💡 CSS 파일 연결 -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 수정된 배차판 헤더 영역 -->
+    <div class="header-area">
+        <h1>월간 배차 관리 V13 <span style="font-size:14px; color:#1976d2;">(☁️ 파이어베이스 연동 & 파일 분리)</span></h1>
+        
+        <!-- 버튼 2개를 묶어줍니다 -->
+        <div>
+            <!-- 💡 운행일지(log.html)로 넘어가는 버튼 -->
+            <button class="btn-setting" style="background: #2196F3; margin-right: 5px;" onclick="location.href='log.html'">📝 운행일지 가기</button>
+            
+            <button class="btn-setting" onclick="openDriverModal()">⚙️ 운전원 설정</button>
+        </div>
+    </div>
+    
+    <div class="calendar-nav">
+        <button onclick="changeMonth(-1)">◀ 이전 달</button>
+        <h2 id="monthYearDisplay"></h2>
+        <button onclick="changeMonth(1)">다음 달 ▶</button>
+    </div>
+
+    <p style="text-align: center; margin-top: 5px;">현재 화면 마지막 배차 다음 대기자: <strong id="currentTurn" style="color:#d32f2f; font-size: 18px;"></strong></p>
+    
+    <!-- 달력 영역 -->
+    <div id="calendar"></div>
+
+    <!-- 📝 하단 상세 내역 표 영역 -->
+    <div id="detailArea" style="margin-top: 40px;">
+        <h3 style="border-bottom: 2px solid #333; padding-bottom: 5px;">📝 이번 달 배차 상세 내역</h3>
+        <table class="detail-table">
+            <thead>
+                <tr>
+                    <th style="width: 10%;">날짜</th>
+                    <th style="width: 15%;">일정</th>
+                    <th style="width: 10%;">차량</th>
+                    <th style="width: 15%;">운전원</th>
+                    <th style="width: 25%;">출발지</th>
+                    <th style="width: 25%;">목적지</th>
+                </tr>
+            </thead>
+            <tbody id="detailTableBody">
+                <!-- 자바스크립트로 내역이 채워짐 -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 🚌 배차 모달 -->
+    <div id="modalOverlay" class="modal-overlay">
+        <div id="modalContent" class="modal-content">
+            <button class="close-btn" onclick="closeModal()">×</button>
+            <h2 id="modalDate"></h2>
+            
+            <div class="form-group"><label>일정 선택:</label><select id="scheduleSelect"><option value="당일">당일</option><option value="당일(서울)">당일 (서울)</option><option value="1박">1박 (2일 소요)</option><option value="2박">2박 (3일 소요)</option><option value="시티투어">시티투어</option><option value="성묘지원">성묘지원</option></select></div>
+            <div class="form-group"><label>차량 선택:</label><select id="vehicleSelect" onchange="toggleBusOptions()"><option value="">차량을 선택하세요</option></select></div>
+            <div id="busOptions" class="form-group hidden"><label><input type="checkbox" id="soloDrive"> <strong>버스 1인 예외 운행</strong></label></div>
+            
+            <div class="form-group"><label>출발지:</label><input type="text" id="departureInput" placeholder="예: 남양주시청"></div>
+            <div class="form-group"><label>목적지:</label><input type="text" id="destinationInput" placeholder="예: 서울역"></div>
+
+            <div class="button-group"><button id="deleteBtn" class="btn btn-delete hidden" onclick="deleteCurrentDispatch()">삭제</button><button class="btn btn-save" onclick="saveDispatch()">배차 저장</button></div>
+        </div>
+    </div>
+
+    <!-- 👥 운전원 설정 모달 -->
+    <div id="driverModalOverlay" class="modal-overlay">
+        <div id="driverModalContent" class="modal-content" style="width: 400px;">
+            <button class="close-btn" onclick="closeDriverModal()">×</button>
+            <h2>운전원 순번 및 명단 설정</h2>
+            <div class="form-group"><label><strong>적용 시작일 (날짜 선택):</strong></label><input type="date" id="rosterDateInput" onchange="loadRosterForDate()"></div>
+            <div class="form-group"><label><strong>운전원 명단 (엔터로 구분)</strong></label><textarea id="driverListText" rows="12"></textarea></div>
+            <div class="button-group"><button class="btn btn-reset" onclick="resetRoster()">설정 취소</button><button class="btn btn-save" onclick="saveRoster()">명단 저장</button></div>
+        </div>
+    </div>
+
+    <!-- 💡 파이어베이스 라이브러리 및 커스텀 JS 파일 연결 -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
