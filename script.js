@@ -1,11 +1,11 @@
 const firebaseConfig = {
-    apiKey: "AIzaSyC3vETKSStfMQ6IylW64h5snWJl1hc1FwY",
-    authDomain: "jang-seoul.firebaseapp.com",
-    projectId: "jang-seoul",
-    storageBucket: "jang-seoul.firebasestorage.app",
-    messagingSenderId: "916714748195",
-    appId: "1:1014430922351:web:2cd71e8f1bf7173b137496",
-    measurementId: "G-QSXPTY6ZFK"
+    apiKey: "AIzaSyAC-4qsyKMuGp6o583agoFructJKiX67Oo",
+    authDomain: "carpro-97259.firebaseapp.com",
+    projectId: "carpro-97259",
+    storageBucket: "carpro-97259.firebasestorage.app",
+    messagingSenderId: "565637957634",
+    appId: "1:565637957634:web:dca9222b84f1d9955e3f1b",
+    measurementId: "G-JWL5TQWCB2"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
@@ -92,7 +92,7 @@ let editingId = null;
 let selectedDateStr = '';
 let currentViewDate = new Date(); 
 let offDaysData = {}; 
-let selectedFilterDate = ''; // 특정 날짜 클릭 시 상세 내역 필터링 (초기엔 전체 표시)
+let selectedFilterDate = ''; 
 
 function formatDate(year, month, day) { return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`; }
 function parseDate(dateStr) { let p = dateStr.split('-'); return new Date(p[0], p[1]-1, p[2]); }
@@ -102,6 +102,7 @@ window.onload = () => {
     populateVehicles(); 
     const savedUser = localStorage.getItem("loggedInUser");
     if(savedUser) { 
+        loggedInUserRole = savedUser;
         showMainApp(savedUser); 
     } else {
         document.getElementById('loginView').style.display = 'flex';
@@ -277,13 +278,12 @@ function renderCalendarUI() {
             <div id="dispatch-${currentStr}" style="flex: 1; display: flex; flex-direction: column;"></div>
         `;
         
-        // 💡 날짜 클릭 시 해당 날짜만 하단 상세 테이블에 필터링. 관리자일 때만 배차 모달 오픈
         dayDiv.onclick = (e) => { 
             if(e.target.closest('.dispatch-item')) return; 
-            selectedFilterDate = (selectedFilterDate === currentStr) ? '' : currentStr; // 두 번 누르면 전체 해제
+            selectedFilterDate = (selectedFilterDate === currentStr) ? '' : currentStr;
             recalculateEngine(); 
             
-            if (loggedInUserRole !== ADMIN_NAME) return; // 일반 운전원은 상세 보기만 필터링
+            if (loggedInUserRole !== ADMIN_NAME) return; // 일반 운전원은 상세 보기 필터만 작동
             openModal(currentStr); 
         };
         calendar.appendChild(dayDiv);
