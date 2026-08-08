@@ -13,6 +13,8 @@ const db = firebase.firestore();
 const ALLOWED_NAMES = ["박기준", "변석현", "이명순", "김탁", "한상훈", "문인식", "황덕일", "강철규", "이상헌"];
 const ADMIN_NAME = "박기준";
 
+let loggedInUserRole = "";
+
 window.toggleAuth = function(isSignup) {
     document.getElementById('loginBox').style.display = isSignup ? 'none' : 'block';
     document.getElementById('signupBox').style.display = isSignup ? 'block' : 'none';
@@ -60,6 +62,7 @@ window.handleLogin = async function() {
 }
 
 function showMainApp(name) {
+    loggedInUserRole = name;
     document.getElementById('loginView').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
     document.getElementById('welcomeUserName').innerText = `👤 ${name}님 접속중`;
@@ -77,8 +80,8 @@ window.goToDrivingLog = function() {
 }
 
 let vehicles = [
-    { id: '1호', type: 'bus' }, { id: '2호', type: 'bus' }, { id: '3호', type: 'bus' },
-    { id: '11호', type: 'solati' }, { id: '12호', type: 'solati' }, { id: '13호', type: 'solati' }, { id: '14호', type: 'solati' }
+    { id: '1호차', type: 'bus' }, { id: '2호차', type: 'bus' }, { id: '3호차', type: 'bus' },
+    { id: '11호차', type: 'solati' }, { id: '12호차', type: 'solati' }, { id: '13호차', type: 'solati' }, { id: '14호차', type: 'solati' }
 ];
 
 const KOREAN_HOLIDAYS = { '2024-01-01': '신정', '2024-02-09': '설날', '2024-02-10': '설날', '2024-02-11': '설날', '2024-02-12': '대체공휴일', '2024-03-01': '삼일절', '2024-05-05': '어린이날', '2024-05-06': '대체공휴일', '2024-05-15': '부처님오신날', '2024-06-06': '현충일', '2024-08-15': '광복절', '2024-09-16': '추석', '2024-09-17': '추석', '2024-09-18': '추석', '2024-10-03': '개천절', '2024-10-09': '한글날', '2024-12-25': '크리스마스', '2025-01-01': '신정', '2025-01-28': '설날', '2025-01-29': '설날', '2025-01-30': '설날', '2025-03-01': '삼일절', '2025-03-03': '대체공휴일', '2025-05-05': '어린이날/부처님오신날', '2025-05-06': '대체공휴일', '2025-06-06': '현충일', '2025-08-15': '광복절', '2025-10-03': '개천절', '2025-10-05': '추석', '2025-10-06': '추석', '2025-10-07': '추석', '2025-10-08': '대체공휴일', '2025-10-09': '한글날', '2025-12-25': '크리스마스', '2026-01-01': '신정', '2026-02-16': '설날', '2026-02-17': '설날', '2026-02-18': '설날', '2026-03-01': '삼일절', '2026-03-02': '대체공휴일', '2026-05-05': '어린이날', '2026-05-24': '부처님오신날', '2026-05-25': '대체공휴일', '2026-06-06': '현충일', '2026-08-15': '광복절', '2026-08-17': '대체공휴일', '2026-09-24': '추석', '2026-09-25': '추석', '2026-09-26': '추석', '2026-10-03': '개천절', '2026-10-05': '대체공휴일', '2026-10-09': '한글날', '2026-12-25': '크리스마스' };
@@ -98,6 +101,7 @@ window.onload = () => {
     populateVehicles(); 
     const savedUser = localStorage.getItem("loggedInUser");
     if(savedUser) { 
+        loggedInUserRole = savedUser;
         showMainApp(savedUser); 
     } else {
         document.getElementById('loginView').style.display = 'flex';
@@ -155,7 +159,7 @@ function getCalculatedDriversForModal(targetDateStr, vId, isSoloVal) {
         let dayStr = formatDate(simDate.getFullYear(), simDate.getMonth()+1, simDate.getDate());
         if (rosterHistory[dayStr]) { activeDrivers = [...rosterHistory[dayStr]]; currentTurn = 0; }
 
-        let todaysDispatches = allDispatches.filter(d => d.startDay === dayStr && d.startDay !== selectedDateStr);
+        let todaysDispatches = allDispatches.filter(d => d.startDay === dayStr && d.startDay !== selectedDateStr && !d.isCanceled);
         todaysDispatches.forEach(d => {
             const vObj = vehicles.find(v => v.id === d.vehicleId);
             let needed = (vObj && vObj.type === 'bus' && !d.isSolo) ? 2 : 1;
@@ -322,8 +326,12 @@ function openModal(dateStr) {
     if(document.getElementById('kmInput')) document.getElementById('kmInput').value = '';
     document.getElementById('soloDrive').checked = false;
     document.getElementById('deleteBtn').classList.add('hidden');
+    
+    // 💡 모달창 내 취소 관련 버튼 처리 (추가 모달에서는 숨김)
+    if(document.getElementById('cancelBtn')) document.getElementById('cancelBtn').classList.add('hidden');
+
     toggleBusOptions();
-    document.getElementById('assignedDriversContainer').innerHTML = '<span style="color:#888; font-size:13px;">차량을 선택하면 운전원이 표시됩니다.</span>';
+    document.getElementById('assignedDriversContainer').innerHTML = '<span style="color:#888; font-size:13px;">차량을 먼저 선택하면 운전원이 표시됩니다.</span>';
     document.getElementById('modalOverlay').style.display = 'block';
 }
 
@@ -339,6 +347,22 @@ function openEditModal(id) {
     if(document.getElementById('kmInput')) document.getElementById('kmInput').value = dispatch.km || '';
     document.getElementById('soloDrive').checked = dispatch.isSolo;
     document.getElementById('deleteBtn').classList.remove('hidden');
+    
+    // 💡 수정 모달창에 '배차 취소' 버튼 노출 및 취소 상태에 따른 텍스트 토글
+    let cancelBtn = document.getElementById('cancelBtn');
+    if (!cancelBtn) {
+        // 버튼이 아직 HTML에 없다면 삭제 버튼 옆에 동적으로 생성해줌
+        const btnContainer = document.getElementById('deleteBtn').parentNode;
+        cancelBtn = document.createElement('button');
+        cancelBtn.id = 'cancelBtn';
+        cancelBtn.type = 'button';
+        cancelBtn.style.cssText = 'background: #f59e0b; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;';
+        cancelBtn.onclick = toggleCancelDispatch;
+        btnContainer.insertBefore(cancelBtn, document.getElementById('deleteBtn'));
+    }
+    cancelBtn.classList.remove('hidden');
+    cancelBtn.innerText = dispatch.isCanceled ? '취소 복구' : '배차 취소';
+
     toggleBusOptions();
     updateDriverPreview();
     document.getElementById('modalOverlay').style.display = 'block';
@@ -369,9 +393,20 @@ function saveDispatch() {
         target.vehicleId = vId; target.schedule = scheduleVal; target.isSolo = isSoloVal;
         target.departure = depVal; target.destination = destVal; target.km = kmVal; target.preDriver = preDriverVal;
     } else {
-        allDispatches.push({ id: Date.now(), startDay: selectedDateStr, vehicleId: vId, schedule: scheduleVal, isSolo: isSoloVal, departure: depVal, destination: destVal, km: kmVal, preDriver: preDriverVal, assigned: currentCalculatedAssigned });
+        allDispatches.push({ id: Date.now(), startDay: selectedDateStr, vehicleId: vId, schedule: scheduleVal, isSolo: isSoloVal, departure: depVal, destination: destVal, km: kmVal, preDriver: preDriverVal, assigned: currentCalculatedAssigned, isCanceled: false });
     }
     closeModal(); saveToFirebase(); 
+}
+
+// 💡 배차 취소 / 복구 토글 함수
+function toggleCancelDispatch() {
+    if (!editingId) return;
+    let target = allDispatches.find(d => d.id === editingId);
+    if (target) {
+        target.isCanceled = !target.isCanceled;
+        closeModal();
+        saveToFirebase();
+    }
 }
 
 function deleteCurrentDispatch() {
@@ -381,15 +416,12 @@ function deleteCurrentDispatch() {
     }
 }
 
-// 💡 km가 짧을수록 우선순위가 높도록 정렬 점수 부여
 function getSortScore(dispatch) {
+    if (dispatch.isCanceled) return 999999; // 취소된 건은 항상 맨 아래로
     const v = vehicles.find(v => v.id === dispatch.vehicleId);
     let score = v.type === 'solati' ? 10000 : 0; 
-    
-    // km 입력값이 있으면 km순으로 정렬되도록 가중치 부여 (km가 짧을수록 위로)
     let km = dispatch.km || 0;
     score += km; 
-
     return score;
 }
 
@@ -438,17 +470,20 @@ function recalculateEngine() {
                 let assignedDriver = activeDrivers[currentTurn];
                 assigned.push(assignedDriver);
 
-                let duration = (d.schedule === '1박') ? 1 : (d.schedule === '2박') ? 2 : 0;
-                if(duration > 0) {
-                    let busyDateObj = parseDate(dayStr);
-                    busyDateObj.setDate(busyDateObj.getDate() + duration);
-                    driverBusyUntil[assignedDriver] = formatDate(busyDateObj.getFullYear(), busyDateObj.getMonth()+1, busyDateObj.getDate());
+                // 취소된 배차는 운전원 근무 상태(busy)에 영향을 주지 않음
+                if (!d.isCanceled) {
+                    let duration = (d.schedule === '1박') ? 1 : (d.schedule === '2박') ? 2 : 0;
+                    if(duration > 0) {
+                        let busyDateObj = parseDate(dayStr);
+                        busyDateObj.setDate(busyDateObj.getDate() + duration);
+                        driverBusyUntil[assignedDriver] = formatDate(busyDateObj.getFullYear(), busyDateObj.getMonth()+1, busyDateObj.getDate());
+                    }
                 }
                 currentTurn = (currentTurn + 1) % activeDrivers.length; 
             }
             d.assigned = assigned;
 
-            let totalDays = (d.schedule === '1박') ? 2 : (d.schedule === '2박') ? 3 : 1;
+            let totalDays = d.isCanceled ? 1 : ((d.schedule === '1박') ? 2 : (d.schedule === '2박') ? 3 : 1);
             for(let offset = 0; offset < totalDays; offset++) {
                 let targetDateObj = parseDate(dayStr);
                 targetDateObj.setDate(targetDateObj.getDate() + offset);
@@ -458,7 +493,7 @@ function recalculateEngine() {
                     if (!renderData[targetStr]) renderData[targetStr] = [];
                     renderData[targetStr].push({ 
                         id: d.id, vehicleId: d.vehicleId, schedule: d.schedule, 
-                        assigned: assigned, type: v.type, departure: d.departure, destination: d.destination, preDriver: d.preDriver 
+                        assigned: assigned, type: v.type, departure: d.departure, destination: d.destination, preDriver: d.preDriver, isCanceled: d.isCanceled 
                     });
                 }
             }
@@ -495,11 +530,27 @@ function drawCalendar(renderData, y, m, lastDate) {
         if(renderData[dateStr]) {
             renderData[dateStr].forEach(d => {
                 let className = `dispatch-item type-${d.type}`;
-                
-                // 💡 일정별 조그마한 뱃지 색상 및 당일 배경색 조금 더 진하게 조정
                 let badgeBg = '#3b82f6';
-                if (d.schedule === '당일') { badgeBg = '#2563eb'; className += ' schedule-day-dark'; }
-                else if (d.schedule === '당일(서울)') { badgeBg = '#475569'; }
+                
+                // 💡 취소된 배차일 경우 색상을 빼고 전체에 취소선 적용 스타일 지정
+                if (d.isCanceled) {
+                    dispatchDiv.innerHTML += `
+                        <div class="${className}" onclick="openEditModal(${d.id})" title="클릭하여 수정 (취소된 배차)" style="padding: 4px 6px; margin-bottom: 3px; border-radius: 6px; font-size: 12px; display: flex; align-items: center; justify-content: space-between; background: #f1f5f9; border: 1px dashed #cbd5e1; text-decoration: line-through; color: #94a3b8;">
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <span style="background: #94a3b8; color: white; padding: 1px 4px; border-radius: 4px; font-size: 10px; font-weight: bold;">취소</span>
+                                <strong>${d.vehicleId}</strong>
+                            </div>
+                            <div style="font-weight: bold;">${d.assigned.map(stripDriverNumber).join(', ')}</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                if (d.schedule === '당일') {
+                    if (d.type === 'bus') { badgeBg = '#15803d'; className += ' schedule-bus-day'; }
+                    else { badgeBg = '#1d4ed8'; className += ' schedule-day-dark'; }
+                }
+                else if (d.schedule === '당일(서울)') { badgeBg = '#60a5fa'; }
                 else if (d.schedule === '1박') { badgeBg = '#ca8a04'; className += ' schedule-1night'; }
                 else if (d.schedule === '2박') { badgeBg = '#c2410c'; className += ' schedule-2nights'; }
 
@@ -511,7 +562,6 @@ function drawCalendar(renderData, y, m, lastDate) {
                     return clean;
                 }).join(', ');
 
-                // 💡 차량호차 옆에 운전원 이름을 나란히 배치하도록 수정
                 dispatchDiv.innerHTML += `
                     <div class="${className}" onclick="openEditModal(${d.id})" title="클릭하여 수정" style="padding: 4px 6px; margin-bottom: 3px; border-radius: 6px; font-size: 12px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                         <div style="display: flex; align-items: center; gap: 4px;">
@@ -555,10 +605,16 @@ function renderDetailTable(renderData, y, m, lastDate) {
             let dest = d.destination || '-';
             
             let tr = document.createElement('tr');
+            if (d.isCanceled) {
+                tr.style.textDecoration = 'line-through';
+                tr.style.color = '#94a3b8';
+                tr.style.background = '#f8fafc';
+            }
+
             tr.innerHTML = `
-                <td>${dateStr}</td><td>${d.schedule}</td><td><strong>${d.vehicleId}</strong></td><td style="font-weight:bold; color:#d32f2f;">${displayNames}</td><td style="color:#555;">${dep}</td><td style="color:#555;">${dest}</td>
+                <td>${dateStr}</td><td>${d.isCanceled ? '취소됨' : d.schedule}</td><td><strong>${d.vehicleId}</strong></td><td style="font-weight:bold;">${displayNames}</td><td style="color:#555;">${dep}</td><td style="color:#555;">${dest}</td>
             `;
-            tbody.appendChild(tr);
+            tbody.getElementsByTagName ? tbody.appendChild(tr) : null;
         });
     }
     if (!hasData) tbody.innerHTML = `<tr><td colspan="6" style="padding:20px; color:#888;">이번 달 배차 내역이 없습니다.</td></tr>`;
