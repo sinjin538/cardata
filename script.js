@@ -1,16 +1,15 @@
 const firebaseConfig = {
-    apiKey: "AIzaSyAC-4qsyKMuGp6o583agoFructJKiX67Oo",
-    authDomain: "carpro-97259.firebaseapp.com",
-    projectId: "carpro-97259",
-    storageBucket: "carpro-97259.firebasestorage.app",
-    messagingSenderId: "565637957634",
-    appId: "1:565637957634:web:dca9222b84f1d9955e3f1b",
-    measurementId: "G-JWL5TQWCB2"
+    apiKey: "AIzaSyDfVycUkONZs-RCBHqwzFweS-5avrWUhVc",
+    authDomain: "park-management-2055a.firebaseapp.com",
+    projectId: "park-management-2055a",
+    storageBucket: "park-management-2055a.firebasestorage.app",
+    messagingSenderId: "1014430922351",
+    appId: "1:1014430922351:web:7d162fa105efe839bf3f9a",
+    measurementId: "G-Z334DHWHP6"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// 💡 허용된 운전원 명단 반영
 const ALLOWED_NAMES = ["박기준", "변석현", "이명순", "김탁", "한상훈", "문인식", "황덕일", "강철규", "이상헌"];
 const ADMIN_NAME = "박기준";
 
@@ -101,7 +100,6 @@ window.onload = () => {
     if(savedUser) { 
         showMainApp(savedUser); 
     } else {
-        // 로그인 기록이 없으면 확실하게 대문(로그인 화면)을 띄움
         document.getElementById('loginView').style.display = 'flex';
         document.getElementById('mainApp').style.display = 'none';
     }
