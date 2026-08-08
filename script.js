@@ -10,7 +10,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-const ALLOWED_NAMES = ["박기준", "변석현", "이명순", "김탁", "한상훈", "문인식", "황덕일", "강철규", "이상헌", "admin"];
+const ALLOWED_NAMES = ["박기준", "변석현", "이명순", "김탁", "한상훈", "문인식", "황덕일", "강철규", "이상헌"];
 const ADMIN_NAME = "박기준";
 
 window.toggleAuth = function(isSignup) {
@@ -24,7 +24,7 @@ window.handleSignup = async function() {
     const pwdConfirm = document.getElementById('signupPwdConfirm').value;
 
     if(!name || !pwd || !pwdConfirm) return alert("모든 칸을 입력해주세요.");
-    if(!ALLOWED_NAMES.includes(name)) return alert(`등록된 이름이 아닙니다.\n(허용: ${ALLOWED_NAMES.join(', ')})`);
+    if(!ALLOWED_NAMES.includes(name)) return alert(`등록된 운전원 이름이 아닙니다.\n(허용: ${ALLOWED_NAMES.join(', ')})`);
     if(pwd !== pwdConfirm) return alert("비밀번호가 일치하지 않습니다.");
     if(pwd.length < 6) return alert("비밀번호는 6자리 이상 설정해주세요.");
 
@@ -63,11 +63,7 @@ function showMainApp(name) {
     document.getElementById('loginView').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
     document.getElementById('welcomeUserName').innerText = `👤 ${name}님 접속중`;
-    
-    // 💡 박기준 또는 admin이 로그인하면 설정/관리 버튼 노출
-    if(name === ADMIN_NAME || name === "admin") {
-        document.getElementById('adminSettingBtn').classList.remove('hidden');
-    }
+    if(name === ADMIN_NAME) document.getElementById('adminSettingBtn').classList.remove('hidden');
     renderCalendarUI(); 
 }
 
