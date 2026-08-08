@@ -2,13 +2,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyAC-4qsyKMuGp6o583agoFructJKiX67Oo",
-    authDomain: "carpro-97259.firebaseapp.com",
-    projectId: "carpro-97259",
-    storageBucket: "carpro-97259.firebasestorage.app",
-    messagingSenderId: "565637957634",
-    appId: "1:565637957634:web:dca9222b84f1d9955e3f1b",
-    measurementId: "G-JWL5TQWCB2"
+    apiKey: "AIzaSyDfVycUkONZs-RCBHqwzFweS-5avrWUhVc",
+    authDomain: "park-management-2055a.firebaseapp.com",
+    projectId: "park-management-2055a",
+    storageBucket: "park-management-2055a.firebasestorage.app",
+    messagingSenderId: "1014430922351",
+    appId: "1:1014430922351:web:7d162fa105efe839bf3f9a",
+    measurementId: "G-Z334DHWHP6"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -28,7 +28,6 @@ let dispatchData = [];
 
 function stripDriverNumber(name) { return name.replace(/^\d+,\s*/, '').trim(); }
 
-// 💡 보안: 로그인 기록이 없으면 배차판(index.html)으로 강제 이동
 const savedUser = localStorage.getItem("loggedInUser");
 if (!savedUser) {
     alert("로그인이 필요합니다.");
@@ -196,7 +195,6 @@ function renderCalendar() {
                 const allowance = calculateAllowance(log);
                 let allowanceHTML = allowance > 0 ? `<div class="text-[11px] font-bold text-emerald-600 text-center">${allowance.toLocaleString()}원</div>` : '';
                 
-                // 💡 차량/일정 없이 보상시간만 쓴 경우 (7일째처럼 이름 없이 시간만 노출)
                 if (sType === 'none' && !log.vehicle && log.usedPayTime) {
                     contentHTML = `
                         <div class="flex flex-col gap-0.5 mt-0.5 flex-1 justify-center items-center">
@@ -205,7 +203,6 @@ function renderCalendar() {
                         </div>
                     `;
                 } else {
-                    // 💡 운행 기록이 있을 때 차량 이름 옆에 [-2h] 딱 붙이기
                     let usedPayHTML = '';
                     if (log.usedPayTime && parseFloat(log.usedPayTime) > 0) {
                         usedPayHTML = `<span class="text-[11px] text-rose-500 font-extrabold ml-1 tracking-tighter shrink-0">[-${log.usedPayTime}h]</span>`;
@@ -341,7 +338,7 @@ document.getElementById('logForm').addEventListener('submit', async function(e) 
         });
     } else {
         await setDoc(doc(db, "drivingLogsMulti", key1), { 
-            userId: currentUser, date: selectedDateStr, scheduleType: scheduleType, vehicle: vehicle, driver1: currentUser, driver2: document.getElementById('driver2').value, preDriver: document.getElementById('preDriver').value, startTime: document.getElementById('startTime1').value, endTime: document.getElementById('endTime1').value, usedPayTime: uPay, memo: rawMemo, updatedAt: new Date() 
+            userId: currentUser, date: selectedDateStr, scheduleType: scheduleType, vehicle: vehicle, driver1: currentUser, driver2: document.getElementById('driver2').value, preDriver: document.getElementById('preDriver').value, startTime: document.getElementById('startTime1').value, endTime: document.getElementById('endTime1'].value, usedPayTime: uPay, memo: rawMemo, updatedAt: new Date() 
         });
     }
     closeModal();
