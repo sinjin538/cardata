@@ -7,7 +7,7 @@ const firebaseConfig = {
     projectId: "jang-seoul",
     storageBucket: "jang-seoul.firebasestorage.app",
     messagingSenderId: "916714748195",
-    appId: "1:916714748195:web:2cd71e8f1bf7173b137496",
+    appId: "1:1014430922351:web:2cd71e8f1bf7173b137496",
     measurementId: "G-QSXPTY6ZFK"
 };
 
@@ -22,7 +22,6 @@ let selectedDateStr = "";
 let currentUser = "";
 let isAdmin = false;
 let logsData = {}; 
-let memosData = {}; 
 let userSettingsData = {}; 
 let dispatchData = [];
 
@@ -71,15 +70,6 @@ onSnapshot(collection(db, "userSettingsProfile"), (snapshot) => {
     }
 });
 
-function formatTime(timeStr) {
-    if (!timeStr) return "";
-    const val = parseFloat(timeStr);
-    if (isNaN(val)) return timeStr;
-    const h = Math.floor(val);
-    const m = (val - h) * 60;
-    return `${h}:${m === 0 ? '00' : m}`;
-}
-
 window.toggleAdminMode = function() {
     history.pushState({ page: 'admin' }, null, ''); 
     document.getElementById('userView').classList.add('hidden'); 
@@ -94,13 +84,6 @@ window.changeMonth = function(direction) {
     currentMonth += direction;
     if (currentMonth > 11) { currentMonth = 0; currentYear++; } else if (currentMonth < 0) { currentMonth = 11; currentYear--; }
     if (!document.getElementById('adminView').classList.contains('hidden')) renderAdminTable(); else renderCalendar();
-}
-
-function addDays(dateStr, days) {
-    const parts = dateStr.split('-'); const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-    d.setDate(d.getDate() + days);
-    const outY = d.getFullYear(); const outM = String(d.getMonth() + 1).padStart(2, '0'); const outD = String(d.getDate()).padStart(2, '0');
-    return `${outY}-${outM}-${outD}`;
 }
 
 const holidaysMap = { "01-01": "신정", "03-01": "삼일절", "05-05": "어린이날", "06-06": "현충일", "08-15": "광복절", "10-03": "개천절", "10-09": "한글날", "12-25": "성탄절" };
