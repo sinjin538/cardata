@@ -327,11 +327,11 @@ function openModal(dateStr) {
     document.getElementById('soloDrive').checked = false;
     document.getElementById('deleteBtn').classList.add('hidden');
     
-    // 💡 모달창 내 취소 관련 버튼 처리 (추가 모달에서는 숨김)
-    if(document.getElementById('cancelBtn')) document.getElementById('cancelBtn').classList.add('hidden');
+    let cancelBtn = document.getElementById('cancelBtn');
+    if (cancelBtn) cancelBtn.classList.add('hidden');
 
     toggleBusOptions();
-    document.getElementById('assignedDriversContainer').innerHTML = '<span style="color:#888; font-size:13px;">차량을 먼저 선택하면 운전원이 표시됩니다.</span>';
+    document.getElementById('assignedDriversContainer').innerHTML = '<span style="color:#888; font-size:13px;">차량을 선택하면 운전원이 표시됩니다.</span>';
     document.getElementById('modalOverlay').style.display = 'block';
 }
 
@@ -348,10 +348,8 @@ function openEditModal(id) {
     document.getElementById('soloDrive').checked = dispatch.isSolo;
     document.getElementById('deleteBtn').classList.remove('hidden');
     
-    // 💡 수정 모달창에 '배차 취소' 버튼 노출 및 취소 상태에 따른 텍스트 토글
     let cancelBtn = document.getElementById('cancelBtn');
     if (!cancelBtn) {
-        // 버튼이 아직 HTML에 없다면 삭제 버튼 옆에 동적으로 생성해줌
         const btnContainer = document.getElementById('deleteBtn').parentNode;
         cancelBtn = document.createElement('button');
         cancelBtn.id = 'cancelBtn';
@@ -398,7 +396,6 @@ function saveDispatch() {
     closeModal(); saveToFirebase(); 
 }
 
-// 💡 배차 취소 / 복구 토글 함수
 function toggleCancelDispatch() {
     if (!editingId) return;
     let target = allDispatches.find(d => d.id === editingId);
@@ -417,7 +414,7 @@ function deleteCurrentDispatch() {
 }
 
 function getSortScore(dispatch) {
-    if (dispatch.isCanceled) return 999999; // 취소된 건은 항상 맨 아래로
+    if (dispatch.isCanceled) return 999999;
     const v = vehicles.find(v => v.id === dispatch.vehicleId);
     let score = v.type === 'solati' ? 10000 : 0; 
     let km = dispatch.km || 0;
@@ -470,7 +467,6 @@ function recalculateEngine() {
                 let assignedDriver = activeDrivers[currentTurn];
                 assigned.push(assignedDriver);
 
-                // 취소된 배차는 운전원 근무 상태(busy)에 영향을 주지 않음
                 if (!d.isCanceled) {
                     let duration = (d.schedule === '1박') ? 1 : (d.schedule === '2박') ? 2 : 0;
                     if(duration > 0) {
@@ -530,9 +526,7 @@ function drawCalendar(renderData, y, m, lastDate) {
         if(renderData[dateStr]) {
             renderData[dateStr].forEach(d => {
                 let className = `dispatch-item type-${d.type}`;
-                let badgeBg = '#3b82f6';
                 
-                // 💡 취소된 배차일 경우 색상을 빼고 전체에 취소선 적용 스타일 지정
                 if (d.isCanceled) {
                     dispatchDiv.innerHTML += `
                         <div class="${className}" onclick="openEditModal(${d.id})" title="클릭하여 수정 (취소된 배차)" style="padding: 4px 6px; margin-bottom: 3px; border-radius: 6px; font-size: 12px; display: flex; align-items: center; justify-content: space-between; background: #f1f5f9; border: 1px dashed #cbd5e1; text-decoration: line-through; color: #94a3b8;">
@@ -546,6 +540,7 @@ function drawCalendar(renderData, y, m, lastDate) {
                     return;
                 }
 
+                let badgeBg = '#3b82f6';
                 if (d.schedule === '당일') {
                     if (d.type === 'bus') { badgeBg = '#15803d'; className += ' schedule-bus-day'; }
                     else { badgeBg = '#1d4ed8'; className += ' schedule-day-dark'; }
@@ -614,7 +609,7 @@ function renderDetailTable(renderData, y, m, lastDate) {
             tr.innerHTML = `
                 <td>${dateStr}</td><td>${d.isCanceled ? '취소됨' : d.schedule}</td><td><strong>${d.vehicleId}</strong></td><td style="font-weight:bold;">${displayNames}</td><td style="color:#555;">${dep}</td><td style="color:#555;">${dest}</td>
             `;
-            tbody.getElementsByTagName ? tbody.appendChild(tr) : null;
+            tbody.appendChild(tr);
         });
     }
     if (!hasData) tbody.innerHTML = `<tr><td colspan="6" style="padding:20px; color:#888;">이번 달 배차 내역이 없습니다.</td></tr>`;
