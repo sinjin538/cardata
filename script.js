@@ -1,17 +1,20 @@
 const firebaseConfig = {
-    apiKey: "AIzaSyC3vETKSStfMQ6IylW64h5snWJl1hc1FwY",
-    authDomain: "jang-seoul.firebaseapp.com",
-    projectId: "jang-seoul",
-    storageBucket: "jang-seoul.firebasestorage.app",
-    messagingSenderId: "916714748195",
-    appId: "1:1014430922351:web:2cd71e8f1bf7173b137496",
-    measurementId: "G-QSXPTY6ZFK"
+    apiKey: "AIzaSyAC-4qsyKMuGp6o583agoFructJKiX67Oo",
+    authDomain: "carpro-97259.firebaseapp.com",
+    projectId: "carpro-97259",
+    storageBucket: "carpro-97259.firebasestorage.app",
+    messagingSenderId: "565637957634",
+    appId: "1:565637957634:web:dca9222b84f1d9955e3f1b",
+    measurementId: "G-JWL5TQWCB2"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-const ALLOWED_NAMES = ["박기준", "변석현", "이명순", "김탁", "한상훈", "문인식", "황덕일", "강철규", "이상헌"];
-const ADMIN_NAME = "박기준";
+// 💡 지정 운전원 목록에 'admin' 추가
+const ALLOWED_NAMES = ["박기준", "변석현", "이명순", "김탁", "한상훈", "문인식", "황덕일", "강철규", "이상헌", "admin"];
+const ADMIN_NAMES = ["박기준", "admin"]; // 💡 관리자 권한을 가질 계정들
+
+let loggedInUserRole = "";
 
 window.toggleAuth = function(isSignup) {
     document.getElementById('loginBox').style.display = isSignup ? 'none' : 'block';
@@ -24,7 +27,7 @@ window.handleSignup = async function() {
     const pwdConfirm = document.getElementById('signupPwdConfirm').value;
 
     if(!name || !pwd || !pwdConfirm) return alert("모든 칸을 입력해주세요.");
-    if(!ALLOWED_NAMES.includes(name)) return alert(`등록된 운전원 이름이 아닙니다.\n(허용: ${ALLOWED_NAMES.join(', ')})`);
+    if(!ALLOWED_NAMES.includes(name)) return alert(`등록된 이름이 아닙니다.\n(허용: ${ALLOWED_NAMES.join(', ')})`);
     if(pwd !== pwdConfirm) return alert("비밀번호가 일치하지 않습니다.");
     if(pwd.length < 6) return alert("비밀번호는 6자리 이상 설정해주세요.");
 
@@ -60,10 +63,11 @@ window.handleLogin = async function() {
 }
 
 function showMainApp(name) {
+    loggedInUserRole = name;
     document.getElementById('loginView').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
     document.getElementById('welcomeUserName').innerText = `👤 ${name}님 접속중`;
-    if(name === ADMIN_NAME) document.getElementById('adminSettingBtn').classList.remove('hidden');
+    if(ADMIN_NAMES.includes(name)) document.getElementById('adminSettingBtn').classList.remove('hidden');
     renderCalendarUI(); 
 }
 
@@ -77,8 +81,8 @@ window.goToDrivingLog = function() {
 }
 
 let vehicles = [
-    { id: '1호', type: 'bus' }, { id: '2호', type: 'bus' }, { id: '3호', type: 'bus' },
-    { id: '11호', type: 'solati' }, { id: '12호', type: 'solati' }, { id: '13호', type: 'solati' }, { id: '14호', type: 'solati' }
+    { id: '1호차', type: 'bus' }, { id: '2호차', type: 'bus' }, { id: '3호차', type: 'bus' },
+    { id: '11호차', type: 'solati' }, { id: '12호차', type: 'solati' }, { id: '13호차', type: 'solati' }, { id: '14호차', type: 'solati' }
 ];
 
 const KOREAN_HOLIDAYS = { '2024-01-01': '신정', '2024-02-09': '설날', '2024-02-10': '설날', '2024-02-11': '설날', '2024-02-12': '대체공휴일', '2024-03-01': '삼일절', '2024-05-05': '어린이날', '2024-05-06': '대체공휴일', '2024-05-15': '부처님오신날', '2024-06-06': '현충일', '2024-08-15': '광복절', '2024-09-16': '추석', '2024-09-17': '추석', '2024-09-18': '추석', '2024-10-03': '개천절', '2024-10-09': '한글날', '2024-12-25': '크리스마스', '2025-01-01': '신정', '2025-01-28': '설날', '2025-01-29': '설날', '2025-01-30': '설날', '2025-03-01': '삼일절', '2025-03-03': '대체공휴일', '2025-05-05': '어린이날/부처님오신날', '2025-05-06': '대체공휴일', '2025-06-06': '현충일', '2025-08-15': '광복절', '2025-10-03': '개천절', '2025-10-05': '추석', '2025-10-06': '추석', '2025-10-07': '추석', '2025-10-08': '대체공휴일', '2025-10-09': '한글날', '2025-12-25': '크리스마스', '2026-01-01': '신정', '2026-02-16': '설날', '2026-02-17': '설날', '2026-02-18': '설날', '2026-03-01': '삼일절', '2026-03-02': '대체공휴일', '2026-05-05': '어린이날', '2026-05-24': '부처님오신날', '2026-05-25': '대체공휴일', '2026-06-06': '현충일', '2026-08-15': '광복절', '2026-08-17': '대체공휴일', '2026-09-24': '추석', '2026-09-25': '추석', '2026-09-26': '추석', '2026-10-03': '개천절', '2026-10-05': '대체공휴일', '2026-10-09': '한글날', '2026-12-25': '크리스마스' };
@@ -98,6 +102,7 @@ window.onload = () => {
     populateVehicles(); 
     const savedUser = localStorage.getItem("loggedInUser");
     if(savedUser) { 
+        loggedInUserRole = savedUser;
         showMainApp(savedUser); 
     } else {
         document.getElementById('loginView').style.display = 'flex';
@@ -138,106 +143,6 @@ function saveToFirebase() {
 function changeMonth(offset) {
     currentViewDate.setMonth(currentViewDate.getMonth() + offset);
     renderCalendarUI();
-}
-
-function getCalculatedDriversForModal(targetDateStr, vId, isSoloVal) {
-    let currentTurn = 0; 
-    let driverBusyUntil = {}; 
-    let activeDrivers = []; 
-    let firstHistoryDate = Object.keys(rosterHistory).sort()[0];
-    if (!firstHistoryDate) return [];
-
-    let simDate = parseDate(firstHistoryDate);
-    let targetObj = parseDate(targetDateStr);
-
-    let assigned = [];
-    while (simDate <= targetObj) {
-        let dayStr = formatDate(simDate.getFullYear(), simDate.getMonth()+1, simDate.getDate());
-        if (rosterHistory[dayStr]) { activeDrivers = [...rosterHistory[dayStr]]; currentTurn = 0; }
-
-        let todaysDispatches = allDispatches.filter(d => d.startDay === dayStr && d.startDay !== selectedDateStr);
-        todaysDispatches.forEach(d => {
-            const vObj = vehicles.find(v => v.id === d.vehicleId);
-            let needed = (vObj && vObj.type === 'bus' && !d.isSolo) ? 2 : 1;
-            for (let i = 0; i < needed; i++) {
-                let loopSafe = 0;
-                while (
-                    (driverBusyUntil[activeDrivers[currentTurn]] >= dayStr || 
-                    (offDaysData[dayStr] && offDaysData[dayStr].includes(stripDriverNumber(activeDrivers[currentTurn])))) && 
-                    loopSafe < activeDrivers.length
-                ) {
-                    currentTurn = (currentTurn + 1) % activeDrivers.length;
-                    loopSafe++;
-                }
-                let driver = activeDrivers[currentTurn];
-                let duration = (d.schedule === '1박') ? 1 : (d.schedule === '2박') ? 2 : 0;
-                if(duration > 0) {
-                    let bObj = parseDate(dayStr); bObj.setDate(bObj.getDate() + duration);
-                    driverBusyUntil[driver] = formatDate(bObj.getFullYear(), bObj.getMonth()+1, bObj.getDate());
-                }
-                currentTurn = (currentTurn + 1) % activeDrivers.length;
-            }
-        });
-
-        if (dayStr === targetDateStr) {
-            const vObj = vehicles.find(v => v.id === vId);
-            let needed = (vObj && vObj.type === 'bus' && !isSoloVal) ? 2 : 1;
-            for (let i = 0; i < needed; i++) {
-                let loopSafe = 0;
-                while (
-                    (driverBusyUntil[activeDrivers[currentTurn]] >= dayStr || 
-                    (offDaysData[dayStr] && offDaysData[dayStr].includes(stripDriverNumber(activeDrivers[currentTurn])))) && 
-                    loopSafe < activeDrivers.length
-                ) {
-                    currentTurn = (currentTurn + 1) % activeDrivers.length;
-                    loopSafe++;
-                }
-                assigned.push(activeDrivers[currentTurn]);
-                currentTurn = (currentTurn + 1) % activeDrivers.length;
-            }
-            break;
-        }
-        simDate.setDate(simDate.getDate() + 1);
-    }
-    return assigned;
-}
-
-let currentCalculatedAssigned = [];
-
-function updateDriverPreview() {
-    const vId = document.getElementById('vehicleSelect').value;
-    const isSoloVal = document.getElementById('soloDrive').checked;
-    const container = document.getElementById('assignedDriversContainer');
-    
-    if(!vId) { container.innerHTML = '<span style="color:#888; font-size:13px;">차량을 먼저 선택해주세요.</span>'; return; }
-
-    if (editingId) {
-        const dispatch = allDispatches.find(d => d.id === editingId);
-        currentCalculatedAssigned = dispatch.assigned || [];
-    } else {
-        currentCalculatedAssigned = getCalculatedDriversForModal(selectedDateStr, vId, isSoloVal);
-    }
-
-    let html = '';
-    currentCalculatedAssigned.forEach((dName, idx) => {
-        let cleanName = stripDriverNumber(dName);
-        let checked = (editingId && allDispatches.find(d => d.id === editingId).preDriver === cleanName) ? 'checked' : '';
-        html += `
-            <div style="display:flex; align-items:center; justify-content:space-between; background:#f9f9f9; padding:8px 12px; border-radius:8px; margin-bottom:5px; border:1px solid #eee;">
-                <strong>운전원 ${idx+1}: ${cleanName}</strong>
-                <label style="cursor:pointer; font-size:13px; color:#d32f2f; font-weight:bold;">
-                    <input type="checkbox" class="pre-driver-chk" value="${cleanName}" ${checked} onclick="handlePreDriverCheck(this)"> 선운행 지정
-                </label>
-            </div>
-        `;
-    });
-    container.innerHTML = html;
-}
-
-window.handlePreDriverCheck = function(elem) {
-    if (elem.checked) {
-        document.querySelectorAll('.pre-driver-chk').forEach(chk => { if(chk !== elem) chk.checked = false; });
-    }
 }
 
 function renderCalendarUI() {
@@ -319,11 +224,9 @@ function openModal(dateStr) {
     document.getElementById('vehicleSelect').value = '';
     document.getElementById('departureInput').value = ''; 
     document.getElementById('destinationInput').value = '';
-    if(document.getElementById('kmInput')) document.getElementById('kmInput').value = '';
     document.getElementById('soloDrive').checked = false;
     document.getElementById('deleteBtn').classList.add('hidden');
     toggleBusOptions();
-    document.getElementById('assignedDriversContainer').innerHTML = '<span style="color:#888; font-size:13px;">차량을 선택하면 운전원이 표시됩니다.</span>';
     document.getElementById('modalOverlay').style.display = 'block';
 }
 
@@ -336,11 +239,9 @@ function openEditModal(id) {
     document.getElementById('vehicleSelect').value = dispatch.vehicleId;
     document.getElementById('departureInput').value = dispatch.departure || ''; 
     document.getElementById('destinationInput').value = dispatch.destination || '';
-    if(document.getElementById('kmInput')) document.getElementById('kmInput').value = dispatch.km || '';
     document.getElementById('soloDrive').checked = dispatch.isSolo;
     document.getElementById('deleteBtn').classList.remove('hidden');
     toggleBusOptions();
-    updateDriverPreview();
     document.getElementById('modalOverlay').style.display = 'block';
 }
 
@@ -348,7 +249,6 @@ function closeModal() { document.getElementById('modalOverlay').style.display = 
 function toggleBusOptions() {
     const vId = document.getElementById('vehicleSelect').value;
     document.getElementById('busOptions').className = (vehicles.find(v => v.id === vId)?.type === 'bus') ? 'form-group' : 'form-group hidden';
-    updateDriverPreview();
 }
 
 function saveDispatch() {
@@ -358,18 +258,13 @@ function saveDispatch() {
     const isSoloVal = document.getElementById('soloDrive').checked;
     const depVal = document.getElementById('departureInput').value; 
     const destVal = document.getElementById('destinationInput').value;
-    const kmVal = document.getElementById('kmInput') ? parseFloat(document.getElementById('kmInput').value) || 0 : 0;
-
-    let preDriverVal = '';
-    const checkedChk = document.querySelector('.pre-driver-chk:checked');
-    if (checkedChk) preDriverVal = checkedChk.value;
 
     if (editingId) {
         let target = allDispatches.find(d => d.id === editingId);
         target.vehicleId = vId; target.schedule = scheduleVal; target.isSolo = isSoloVal;
-        target.departure = depVal; target.destination = destVal; target.km = kmVal; target.preDriver = preDriverVal;
+        target.departure = depVal; target.destination = destVal;
     } else {
-        allDispatches.push({ id: Date.now(), startDay: selectedDateStr, vehicleId: vId, schedule: scheduleVal, isSolo: isSoloVal, departure: depVal, destination: destVal, km: kmVal, preDriver: preDriverVal, assigned: currentCalculatedAssigned });
+        allDispatches.push({ id: Date.now(), startDay: selectedDateStr, vehicleId: vId, schedule: scheduleVal, isSolo: isSoloVal, departure: depVal, destination: destVal });
     }
     closeModal(); saveToFirebase(); 
 }
@@ -381,15 +276,11 @@ function deleteCurrentDispatch() {
     }
 }
 
-// 💡 km가 짧을수록 우선순위가 높도록 정렬 점수 부여
 function getSortScore(dispatch) {
     const v = vehicles.find(v => v.id === dispatch.vehicleId);
     let score = v.type === 'solati' ? 10000 : 0; 
-    
-    // km 입력값이 있으면 km순으로 정렬되도록 가중치 부여 (km가 짧을수록 위로)
-    let km = dispatch.km || 0;
-    score += km; 
-
+    if (dispatch.schedule.includes('당일')) score += 100; else if (dispatch.schedule === '1박') score += 200; else if (dispatch.schedule === '2박') score += 300; else score += 400;
+    if (dispatch.vehicleId === '3호') score += 1; else if (dispatch.vehicleId === '1호') score += 2; else if (dispatch.vehicleId === '2호') score += 3;
     return score;
 }
 
@@ -446,7 +337,6 @@ function recalculateEngine() {
                 }
                 currentTurn = (currentTurn + 1) % activeDrivers.length; 
             }
-            d.assigned = assigned;
 
             let totalDays = (d.schedule === '1박') ? 2 : (d.schedule === '2박') ? 3 : 1;
             for(let offset = 0; offset < totalDays; offset++) {
@@ -458,7 +348,7 @@ function recalculateEngine() {
                     if (!renderData[targetStr]) renderData[targetStr] = [];
                     renderData[targetStr].push({ 
                         id: d.id, vehicleId: d.vehicleId, schedule: d.schedule, 
-                        assigned: assigned, type: v.type, departure: d.departure, destination: d.destination, preDriver: d.preDriver 
+                        assigned: assigned, type: v.type, departure: d.departure, destination: d.destination 
                     });
                 }
             }
@@ -468,9 +358,9 @@ function recalculateEngine() {
 
     drawCalendar(renderData, year, month, lastDateOfView.getDate());
     renderDetailTable(renderData, year, month, lastDateOfView.getDate()); 
-
+    
     if (activeDrivers.length > 0) {
-        let nextIndex = (currentTurn) % activeDrivers.length;
+        let nextIndex = currentTurn % activeDrivers.length;
         let todayStrForNext = formatDate(new Date().getFullYear(), new Date().getMonth()+1, new Date().getDate());
         let loopCount = 0;
         while (
@@ -495,30 +385,15 @@ function drawCalendar(renderData, y, m, lastDate) {
         if(renderData[dateStr]) {
             renderData[dateStr].forEach(d => {
                 let className = `dispatch-item type-${d.type}`;
-                
-                // 💡 일정별 조그마한 뱃지 색상 및 당일 배경색 조금 더 진하게 조정
-                let badgeBg = '#3b82f6';
-                if (d.schedule === '당일') { badgeBg = '#2563eb'; className += ' schedule-day-dark'; }
-                else if (d.schedule === '당일(서울)') { badgeBg = '#475569'; }
-                else if (d.schedule === '1박') { badgeBg = '#ca8a04'; className += ' schedule-1night'; }
-                else if (d.schedule === '2박') { badgeBg = '#c2410c'; className += ' schedule-2nights'; }
+                if (d.schedule === '1박') className += ' schedule-1night';
+                else if (d.schedule === '2박') className += ' schedule-2nights';
 
-                let namesHtml = d.assigned.map(fullName => {
-                    let clean = stripDriverNumber(fullName);
-                    if (d.preDriver && clean === d.preDriver) {
-                        return `<span style="border-bottom: 2px solid #d32f2f; font-weight: bold; color: #d32f2f;">${clean}</span>`;
-                    }
-                    return clean;
-                }).join(', ');
+                let displayNames = d.assigned.map(name => stripDriverNumber(name)).join(', ');
 
-                // 💡 차량호차 옆에 운전원 이름을 나란히 배치하도록 수정
                 dispatchDiv.innerHTML += `
-                    <div class="${className}" onclick="openEditModal(${d.id})" title="클릭하여 수정" style="padding: 4px 6px; margin-bottom: 3px; border-radius: 6px; font-size: 12px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                        <div style="display: flex; align-items: center; gap: 4px;">
-                            <span style="background: ${badgeBg}; color: white; padding: 1px 4px; border-radius: 4px; font-size: 10px; font-weight: bold;">${d.schedule}</span>
-                            <strong>${d.vehicleId}</strong>
-                        </div>
-                        <div style="font-weight: bold; color: #1e293b;">${namesHtml}</div>
+                    <div class="${className}" onclick="openEditModal(${d.id})" title="클릭하여 수정">
+                        <div style="margin-bottom:3px;"><span class="schedule-badge">${d.schedule}</span> <strong>${d.vehicleId}</strong></div>
+                        <div><span style="font-weight:bold; color:#d32f2f;">${displayNames}</span></div>
                     </div>
                 `;
             });
@@ -546,11 +421,7 @@ function renderDetailTable(renderData, y, m, lastDate) {
         
         hasData = true;
         renderData[dateStr].forEach(d => {
-            let displayNames = d.assigned.map(name => {
-                let clean = stripDriverNumber(name);
-                return (d.preDriver && clean === d.preDriver) ? `<u>${clean}(선)</u>` : clean;
-            }).join(', ');
-
+            let displayNames = d.assigned.map(name => stripDriverNumber(name)).join(', ');
             let dep = d.departure || '-';
             let dest = d.destination || '-';
             
