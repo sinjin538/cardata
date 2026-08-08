@@ -28,9 +28,10 @@ let dispatchData = [];
 
 function stripDriverNumber(name) { return name.replace(/^\d+,\s*/, '').trim(); }
 
+// 💡 보안: 로그인 기록이 없으면 배차판(index.html)으로 강제 이동
 const savedUser = localStorage.getItem("loggedInUser");
 if (!savedUser) {
-    alert("로그인이 필요합니다. 배차판 메인에서 로그인해주세요.");
+    alert("로그인이 필요합니다.");
     window.location.href = "index.html"; 
 } else {
     currentUser = savedUser;
@@ -181,7 +182,6 @@ function renderCalendar() {
         let cellBgClass = 'bg-white hover:shadow-md'; let contentHTML = ``;
 
         if (log) {
-            // 진짜 휴무 버튼을 눌러 등록된 경우만
             if (log.isLeaveDay) {
                 contentHTML = `<div class="flex items-center justify-center flex-1 h-full pb-2"><span class="text-rose-500 font-extrabold text-sm md:text-base bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-200 shadow-sm animate-pulse">🏝️ 휴무</span></div>`;
             } else {
@@ -190,40 +190,50 @@ function renderCalendar() {
                 else if (sType === '1night') cellBgClass = 'bg-[radial-gradient(circle,_#fde047_0%,_#fefce8_100%)]'; 
                 else if (sType === '2night') cellBgClass = 'bg-[radial-gradient(circle,_#fdba74_0%,_#fff7ed_100%)]'; 
                 else if (sType === 'seoul') cellBgClass = 'bg-[radial-gradient(circle,_#e2e8f0_0%,_#f8fafc_100%)]'; 
-                else cellBgClass = 'bg-white'; // 일정 없이 보상/메모만 쓴 경우
+                else cellBgClass = 'bg-white'; 
 
-                const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
+                const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); 
+                const allowance = calculateAllowance(log);
                 let allowanceHTML = allowance > 0 ? `<div class="text-[11px] font-bold text-emerald-600 text-center">${allowance.toLocaleString()}원</div>` : '';
                 
-                // 💡 추가됨: 보상 사용 (-2h 등) 달력 표시
-                let usageStr = '';
-                if (log.usedPayTime && parseFloat(log.usedPayTime) > 0) {
-                    usageStr = `<div class="text-[12px] font-extrabold text-rose-500 text-center mt-1 px-1 bg-rose-50 rounded-md border border-rose-100 shadow-sm w-fit mx-auto">보상사용: -${log.usedPayTime}h</div>`;
-                }
+                // 💡 차량/일정 없이 보상시간만 쓴 경우 (7일째처럼 이름 없이 시간만 노출)
+                if (sType === 'none' && !log.vehicle && log.usedPayTime) {
+                    contentHTML = `
+                        <div class="flex flex-col gap-0.5 mt-0.5 flex-1 justify-center items-center">
+                            <span class="text-[12px] font-extrabold text-rose-500 tracking-tight">보상사용: -${log.usedPayTime}h</span>
+                            ${log.memo ? `<div class="text-[11px] font-semibold text-slate-500 text-center whitespace-normal break-keep mt-1">${log.memo}</div>` : ''}
+                        </div>
+                    `;
+                } else {
+                    // 💡 운행 기록이 있을 때 차량 이름 옆에 [-2h] 딱 붙이기
+                    let usedPayHTML = '';
+                    if (log.usedPayTime && parseFloat(log.usedPayTime) > 0) {
+                        usedPayHTML = `<span class="text-[11px] text-rose-500 font-extrabold ml-1 tracking-tighter shrink-0">[-${log.usedPayTime}h]</span>`;
+                    }
 
-                let d1Name = log.driver1 ? log.driver1.trim() : ""; 
-                let d2Name = log.driver2 ? log.driver2.trim() : ""; 
-                let preName = log.preDriver ? log.preDriver.trim() : "";
-                
-                let d1Txt = log.driver1 || ""; 
-                if (preName && d1Name === preName) d1Txt = `<span class="underline decoration-rose-500 decoration-2">${log.driver1}</span>`; 
-                let d2Txt = ""; 
-                if (log.driver2) { 
-                    if (preName && d2Name === preName) d2Txt = `, <span class="underline decoration-rose-500 decoration-2">${log.driver2}</span>`; 
-                    else d2Txt = `, ${log.driver2}`; 
-                }
-                let driverComboHTML = (d1Txt || d2Txt) ? `<div class="text-[13px] font-bold text-slate-800 truncate text-center">${d1Txt}${d2Txt}</div>` : '';
+                    let d1Name = log.driver1 ? log.driver1.trim() : ""; 
+                    let d2Name = log.driver2 ? log.driver2.trim() : ""; 
+                    let preName = log.preDriver ? log.preDriver.trim() : "";
+                    
+                    let d1Txt = log.driver1 || ""; 
+                    if (preName && d1Name === preName) d1Txt = `<span class="underline decoration-rose-500 decoration-2">${log.driver1}</span>`; 
+                    let d2Txt = ""; 
+                    if (log.driver2) { 
+                        if (preName && d2Name === preName) d2Txt = `, <span class="underline decoration-rose-500 decoration-2">${log.driver2}</span>`; 
+                        else d2Txt = `, ${log.driver2}`; 
+                    }
+                    let driverComboHTML = (d1Txt || d2Txt) ? `<div class="text-[13px] font-bold text-slate-800 truncate text-center">${d1Txt}${d2Txt}</div>` : '';
 
-                contentHTML = `
-                    <div class="flex flex-col gap-0.5 mt-0.5 flex-1 justify-center">
-                        ${log.vehicle ? `<div class="text-[13px] font-extrabold text-blue-700 text-center">${log.vehicle}</div>` : ''}
-                        ${driverComboHTML}
-                        ${(log.startTime || log.endTime) ? `<div class="text-[11px] font-bold ${log.isHoliday ? 'text-rose-500' : 'text-amber-600'} text-center">${calc.totalPayTime}h</div>` : ''}
-                        ${allowanceHTML}
-                        ${usageStr}
-                        ${log.memo ? `<div class="text-[11px] font-semibold text-slate-500 text-center whitespace-normal break-keep px-0.5 mt-auto pt-1">${log.memo}</div>` : ''}
-                    </div>
-                `;
+                    contentHTML = `
+                        <div class="flex flex-col gap-0.5 mt-0.5 flex-1 justify-center">
+                            ${(log.vehicle || usedPayHTML) ? `<div class="text-[13px] font-extrabold text-blue-700 text-center flex items-center justify-center flex-wrap">${log.vehicle || ""}${usedPayHTML}</div>` : ''}
+                            ${driverComboHTML}
+                            ${(log.startTime || log.endTime) ? `<div class="text-[11px] font-bold ${log.isHoliday ? 'text-rose-500' : 'text-amber-600'} text-center">${calc.totalPayTime}h</div>` : ''}
+                            ${allowanceHTML}
+                            ${log.memo ? `<div class="text-[11px] font-semibold text-slate-500 text-center whitespace-normal break-keep px-0.5 mt-auto pt-1">${log.memo}</div>` : ''}
+                        </div>
+                    `;
+                }
             }
         }
 
@@ -249,7 +259,7 @@ function renderUserTable() {
         tbody.innerHTML += `<tr class="border-b hover:bg-slate-50"><td class="p-3 text-center font-bold">${log.date.split('-')[2]}일</td><td class="p-3 text-center">${log.vehicle || '-'}</td><td class="p-3 text-center font-bold text-slate-600">${scheduleTxt}</td><td class="p-3 text-center text-xs">${log.startTime ? log.startTime+'~'+log.endTime : '-'}</td><td class="p-3 text-center text-blue-600 font-extrabold">${calculateOvertime(log.startTime, log.endTime, log.isHoliday).totalPayTime}h</td><td class="p-3 text-right text-emerald-600 font-extrabold">${calculateAllowance(log)}원</td><td class="p-3 text-left text-xs">${log.memo || '-'} ${log.usedPayTime ? `[-${log.usedPayTime}h]` : ''}</td></tr>`;
     });
 }
-function renderAdminTable() {} // 관리자 테이블 생략 
+function renderAdminTable() {} 
 
 window.openModal = function(dateStr) {
     history.pushState({ page: 'modal' }, null, ''); selectedDateStr = dateStr;
@@ -297,7 +307,7 @@ window.setOffDay = async function() {
         await setDoc(doc(db, "drivingLogsMulti", key1), { 
             userId: currentUser, 
             date: selectedDateStr, 
-            isLeaveDay: true, // 이 값이 켜져야 진짜 휴무로 인정
+            isLeaveDay: true, 
             scheduleType: '휴무',
             updatedAt: new Date() 
         });
@@ -323,11 +333,10 @@ document.getElementById('logForm').addEventListener('submit', async function(e) 
 
     const key1 = `${currentUser}_${selectedDateStr}`;
     
-    // 💡 수정됨: 저장버튼으로 일정 없이 보상시간만 넣었을 때는 isLeaveDay를 false로 저장함! (배차판에 안 뜨게)
     if (isLeave) {
         await setDoc(doc(db, "drivingLogsMulti", key1), { 
             userId: currentUser, date: selectedDateStr, 
-            isLeaveDay: false, // 진짜 휴무가 아님
+            isLeaveDay: false, 
             scheduleType: 'none', memo: rawMemo, usedPayTime: uPay, updatedAt: new Date() 
         });
     } else {
@@ -338,7 +347,7 @@ document.getElementById('logForm').addEventListener('submit', async function(e) 
     closeModal();
 });
 
-window.openSummaryModal = function(){} // 생략
-window.closeSummaryModal = function(){} // 생략
-window.openMemoModal = function(){} // 생략
-window.closeMemoModal = function(){} // 생략
+window.openSummaryModal = function(){} 
+window.closeSummaryModal = function(){} 
+window.openMemoModal = function(){} 
+window.closeMemoModal = function(){}
