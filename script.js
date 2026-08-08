@@ -10,7 +10,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-const ALLOWED_NAMES = ["이상헌", "이명순", "김탁", "변석현", "강철규", "한상훈", "문인식", "황덕일", "박기준"];
+// 💡 허용된 운전원 명단 반영
+const ALLOWED_NAMES = ["박기준", "변석현", "이명순", "김탁", "한상훈", "문인식", "황덕일", "강철규", "이상헌"];
 const ADMIN_NAME = "박기준";
 
 window.toggleAuth = function(isSignup) {
@@ -24,7 +25,7 @@ window.handleSignup = async function() {
     const pwdConfirm = document.getElementById('signupPwdConfirm').value;
 
     if(!name || !pwd || !pwdConfirm) return alert("모든 칸을 입력해주세요.");
-    if(!ALLOWED_NAMES.includes(name)) return alert("등록된 운전원 이름이 아닙니다.");
+    if(!ALLOWED_NAMES.includes(name)) return alert(`등록된 운전원 이름이 아닙니다.\n(허용: ${ALLOWED_NAMES.join(', ')})`);
     if(pwd !== pwdConfirm) return alert("비밀번호가 일치하지 않습니다.");
     if(pwd.length < 6) return alert("비밀번호는 6자리 이상 설정해주세요.");
 
@@ -51,7 +52,7 @@ window.handleLogin = async function() {
         const docRef = db.collection("drivingUsersAuth").doc(name);
         const docSnap = await docRef.get();
 
-        if(!docSnap.exists) return alert("가입되지 않은 이름입니다.");
+        if(!docSnap.exists) return alert("가입되지 않은 이름입니다. 회원가입을 먼저 진행해주세요.");
         if(docSnap.data().password !== pwd) return alert("비밀번호가 틀렸습니다.");
 
         localStorage.setItem("loggedInUser", name);
@@ -97,7 +98,13 @@ function stripDriverNumber(name) { return name.replace(/^\d+,\s*/, '').trim(); }
 window.onload = () => { 
     populateVehicles(); 
     const savedUser = localStorage.getItem("loggedInUser");
-    if(savedUser) { showMainApp(savedUser); }
+    if(savedUser) { 
+        showMainApp(savedUser); 
+    } else {
+        // 로그인 기록이 없으면 확실하게 대문(로그인 화면)을 띄움
+        document.getElementById('loginView').style.display = 'flex';
+        document.getElementById('mainApp').style.display = 'none';
+    }
 };
 
 db.collection('DispatchSystem').doc('MainData').onSnapshot((doc) => {
@@ -116,7 +123,6 @@ db.collection('drivingLogsMulti').onSnapshot((snapshot) => {
     offDaysData = {};
     snapshot.forEach(doc => {
         const data = doc.data();
-        // 💡 진짜 휴무버튼(isLeaveDay)을 눌렀을 때만 가져옴
         if (data.isLeaveDay) {
             if (!offDaysData[data.date]) offDaysData[data.date] = [];
             offDaysData[data.date].push(data.userId);
@@ -157,11 +163,11 @@ function renderCalendarUI() {
         let titleClass = (dayOfWeek === 0 || isHoliday) ? 'text-red' : (dayOfWeek === 6 ? 'text-blue' : '');
         let holidayText = isHoliday ? `<span class="holiday-name">${KOREAN_HOLIDAYS[currentStr]}</span>` : '';
 
-        // 💡 수정됨: 달력 한 칸(day)을 위아래로 꽉 채우는 Flex 레이아웃으로 변경 (휴무를 맨 아래 고정하기 위해)
         let dayDiv = document.createElement('div');
         dayDiv.className = 'day';
         dayDiv.style.display = 'flex';
         dayDiv.style.flexDirection = 'column';
+        dayDiv.style.height = '100%'; 
         
         dayDiv.innerHTML = `
             <div class="day-title ${titleClass}"><span>${i}일</span> ${holidayText}</div>
@@ -375,11 +381,10 @@ function drawCalendar(renderData, y, m, lastDate) {
             });
         }
 
-        // 💡 수정됨: margin-top: auto; 를 사용해서 달력 빈 공간 아래로 쫙 밀어버립니다!
         if (offDaysData[dateStr] && offDaysData[dateStr].length > 0) {
             let offNames = [...new Set(offDaysData[dateStr].map(name => stripDriverNumber(name)))].join(', ');
             dispatchDiv.innerHTML += `
-                <div style="margin-top: auto; color: #d32f2f; font-size: 11px; font-weight: bold; background: #ffebee; padding: 4px; border-radius: 4px; text-align: center; border: 1px dashed #ffcdd2; cursor: default;" onclick="event.stopPropagation()">
+                <div style="margin-top: auto; color: #d32f2f; font-size: 11px; font-weight: bold; background: #ffebee; padding: 4px; border-radius: 4px; text-align: center; border: 1px dashed #ffcdd2; cursor: default; width: 100%; box-sizing: border-box;" onclick="event.stopPropagation()">
                     🏝️ 휴무: ${offNames}
                 </div>
             `;
