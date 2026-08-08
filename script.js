@@ -92,7 +92,7 @@ let editingId = null;
 let selectedDateStr = '';
 let currentViewDate = new Date(); 
 let offDaysData = {}; 
-let selectedFilterDate = ''; // 💡 클릭한 특정 날짜 상세 내역 필터링용
+let selectedFilterDate = ''; // 특정 날짜 클릭 시 상세 내역 필터링 (초기엔 전체 표시)
 
 function formatDate(year, month, day) { return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`; }
 function parseDate(dateStr) { let p = dateStr.split('-'); return new Date(p[0], p[1]-1, p[2]); }
@@ -141,7 +141,7 @@ function saveToFirebase() {
 
 function changeMonth(offset) {
     currentViewDate.setMonth(currentViewDate.getMonth() + offset);
-    selectedFilterDate = ''; // 월 변경 시 상세 필터 초기화
+    selectedFilterDate = ''; 
     renderCalendarUI();
 }
 
@@ -277,16 +277,13 @@ function renderCalendarUI() {
             <div id="dispatch-${currentStr}" style="flex: 1; display: flex; flex-direction: column;"></div>
         `;
         
-        // 💡 날짜 클릭 시 해당 날짜의 상세 내역만 하단에 필터링되도록 설정 + 관리자가 아닐 때 배차 추가 모달 차단
+        // 💡 날짜 클릭 시 해당 날짜만 하단 상세 테이블에 필터링. 관리자일 때만 배차 모달 오픈
         dayDiv.onclick = (e) => { 
             if(e.target.closest('.dispatch-item')) return; 
-            selectedFilterDate = currentStr;
-            recalculateEngine(); // 상세 테이블 필터 갱신
+            selectedFilterDate = (selectedFilterDate === currentStr) ? '' : currentStr; // 두 번 누르면 전체 해제
+            recalculateEngine(); 
             
-            if (loggedInUserRole !== ADMIN_NAME) {
-                alert("배차 추가 및 수정은 관리자(박기준)만 가능합니다.");
-                return;
-            }
+            if (loggedInUserRole !== ADMIN_NAME) return; // 일반 운전원은 상세 보기만 필터링
             openModal(currentStr); 
         };
         calendar.appendChild(dayDiv);
@@ -517,14 +514,12 @@ function drawCalendar(renderData, y, m, lastDate) {
         if(renderData[dateStr]) {
             renderData[dateStr].forEach(d => {
                 let className = `dispatch-item type-${d.type}`;
-                
-                // 💡 당일(서울: 연한파랑), 일반당일(진한파랑), 버스당일(초록색) 등 색상 세분화 적용
                 let badgeBg = '#3b82f6';
                 if (d.schedule === '당일') {
-                    if (d.type === 'bus') { badgeBg = '#15803d'; className += ' schedule-bus-day'; } // 버스 당일: 초록색
-                    else { badgeBg = '#1d4ed8'; className += ' schedule-day-dark'; } // 일반 당일: 조금 더 진한 파랑
+                    if (d.type === 'bus') { badgeBg = '#15803d'; className += ' schedule-bus-day'; }
+                    else { badgeBg = '#1d4ed8'; className += ' schedule-day-dark'; }
                 }
-                else if (d.schedule === '당일(서울)') { badgeBg = '#60a5fa'; } // 당일(서울): 연한 파랑
+                else if (d.schedule === '당일(서울)') { badgeBg = '#60a5fa'; }
                 else if (d.schedule === '1박') { badgeBg = '#ca8a04'; className += ' schedule-1night'; }
                 else if (d.schedule === '2박') { badgeBg = '#c2410c'; className += ' schedule-2nights'; }
 
@@ -564,8 +559,6 @@ function renderDetailTable(renderData, y, m, lastDate) {
     tbody.innerHTML = '';
     
     let hasData = false;
-    
-    // 💡 날짜를 클릭했을 때 해당 날짜의 배차 내역만 필터링해서 표시
     let targetDates = selectedFilterDate ? [selectedFilterDate] : [];
     if (!selectedFilterDate) {
         for (let i = 1; i <= lastDate; i++) {
