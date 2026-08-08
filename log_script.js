@@ -28,11 +28,10 @@ let dispatchData = [];
 
 function stripDriverNumber(name) { return name.replace(/^\d+,\s*/, '').trim(); }
 
-// 💡 2. 가장 먼저 실행됨: 배차판에서 로그인하고 넘어온 건지 확인!
 const savedUser = localStorage.getItem("loggedInUser");
 if (!savedUser) {
     alert("로그인이 필요합니다. 배차판 메인에서 로그인해주세요.");
-    window.location.href = "index.html"; // 몰래 들어오면 대문으로 쫓아냄
+    window.location.href = "index.html"; 
 } else {
     currentUser = savedUser;
     isAdmin = (currentUser === ADMIN_NAME);
@@ -182,7 +181,7 @@ function renderCalendar() {
         let cellBgClass = 'bg-white hover:shadow-md'; let contentHTML = ``;
 
         if (log) {
-            // 휴무일 때의 디자인
+            // 진짜 휴무 버튼을 눌러 등록된 경우만
             if (log.isLeaveDay) {
                 contentHTML = `<div class="flex items-center justify-center flex-1 h-full pb-2"><span class="text-rose-500 font-extrabold text-sm md:text-base bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-200 shadow-sm animate-pulse">🏝️ 휴무</span></div>`;
             } else {
@@ -191,16 +190,38 @@ function renderCalendar() {
                 else if (sType === '1night') cellBgClass = 'bg-[radial-gradient(circle,_#fde047_0%,_#fefce8_100%)]'; 
                 else if (sType === '2night') cellBgClass = 'bg-[radial-gradient(circle,_#fdba74_0%,_#fff7ed_100%)]'; 
                 else if (sType === 'seoul') cellBgClass = 'bg-[radial-gradient(circle,_#e2e8f0_0%,_#f8fafc_100%)]'; 
+                else cellBgClass = 'bg-white'; // 일정 없이 보상/메모만 쓴 경우
 
                 const calc = calculateOvertime(log.startTime, log.endTime, log.isHoliday); const allowance = calculateAllowance(log);
                 let allowanceHTML = allowance > 0 ? `<div class="text-[11px] font-bold text-emerald-600 text-center">${allowance.toLocaleString()}원</div>` : '';
                 
+                // 💡 추가됨: 보상 사용 (-2h 등) 달력 표시
+                let usageStr = '';
+                if (log.usedPayTime && parseFloat(log.usedPayTime) > 0) {
+                    usageStr = `<div class="text-[12px] font-extrabold text-rose-500 text-center mt-1 px-1 bg-rose-50 rounded-md border border-rose-100 shadow-sm w-fit mx-auto">보상사용: -${log.usedPayTime}h</div>`;
+                }
+
+                let d1Name = log.driver1 ? log.driver1.trim() : ""; 
+                let d2Name = log.driver2 ? log.driver2.trim() : ""; 
+                let preName = log.preDriver ? log.preDriver.trim() : "";
+                
+                let d1Txt = log.driver1 || ""; 
+                if (preName && d1Name === preName) d1Txt = `<span class="underline decoration-rose-500 decoration-2">${log.driver1}</span>`; 
+                let d2Txt = ""; 
+                if (log.driver2) { 
+                    if (preName && d2Name === preName) d2Txt = `, <span class="underline decoration-rose-500 decoration-2">${log.driver2}</span>`; 
+                    else d2Txt = `, ${log.driver2}`; 
+                }
+                let driverComboHTML = (d1Txt || d2Txt) ? `<div class="text-[13px] font-bold text-slate-800 truncate text-center">${d1Txt}${d2Txt}</div>` : '';
+
                 contentHTML = `
-                    <div class="flex flex-col gap-0.5 mt-0.5 flex-1">
-                        <div class="text-[13px] font-extrabold text-blue-700 text-center">${log.vehicle || ""}</div>
-                        <div class="text-[13px] font-bold text-slate-800 text-center">${log.driver1 || ""}</div>
-                        <div class="text-[11px] font-bold ${log.isHoliday ? 'text-rose-500' : 'text-amber-600'} text-center">${calc.totalPayTime}h</div>
+                    <div class="flex flex-col gap-0.5 mt-0.5 flex-1 justify-center">
+                        ${log.vehicle ? `<div class="text-[13px] font-extrabold text-blue-700 text-center">${log.vehicle}</div>` : ''}
+                        ${driverComboHTML}
+                        ${(log.startTime || log.endTime) ? `<div class="text-[11px] font-bold ${log.isHoliday ? 'text-rose-500' : 'text-amber-600'} text-center">${calc.totalPayTime}h</div>` : ''}
                         ${allowanceHTML}
+                        ${usageStr}
+                        ${log.memo ? `<div class="text-[11px] font-semibold text-slate-500 text-center whitespace-normal break-keep px-0.5 mt-auto pt-1">${log.memo}</div>` : ''}
                     </div>
                 `;
             }
@@ -223,7 +244,9 @@ function renderUserTable() {
     if (monthLogs.length === 0) tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">내역이 없습니다.</td></tr>`;
     else monthLogs.forEach(log => {
         let scheduleTxt = log.isLeaveDay ? "휴무" : (log.scheduleType === '1night' ? '1박' : (log.scheduleType === '2night' ? '2박' : '당일'));
-        tbody.innerHTML += `<tr class="border-b hover:bg-slate-50"><td class="p-3 text-center font-bold">${log.date.split('-')[2]}일</td><td class="p-3 text-center">${log.vehicle || '-'}</td><td class="p-3 text-center font-bold text-slate-600">${scheduleTxt}</td><td class="p-3 text-center text-xs">${log.startTime ? log.startTime+'~'+log.endTime : '-'}</td><td class="p-3 text-center text-blue-600 font-extrabold">${calculateOvertime(log.startTime, log.endTime, log.isHoliday).totalPayTime}h</td><td class="p-3 text-right text-emerald-600 font-extrabold">${calculateAllowance(log)}원</td><td class="p-3 text-left text-xs">${log.memo || '-'}</td></tr>`;
+        if(!log.isLeaveDay && log.scheduleType === 'none') scheduleTxt = "-";
+
+        tbody.innerHTML += `<tr class="border-b hover:bg-slate-50"><td class="p-3 text-center font-bold">${log.date.split('-')[2]}일</td><td class="p-3 text-center">${log.vehicle || '-'}</td><td class="p-3 text-center font-bold text-slate-600">${scheduleTxt}</td><td class="p-3 text-center text-xs">${log.startTime ? log.startTime+'~'+log.endTime : '-'}</td><td class="p-3 text-center text-blue-600 font-extrabold">${calculateOvertime(log.startTime, log.endTime, log.isHoliday).totalPayTime}h</td><td class="p-3 text-right text-emerald-600 font-extrabold">${calculateAllowance(log)}원</td><td class="p-3 text-left text-xs">${log.memo || '-'} ${log.usedPayTime ? `[-${log.usedPayTime}h]` : ''}</td></tr>`;
     });
 }
 function renderAdminTable() {} // 관리자 테이블 생략 
@@ -241,8 +264,11 @@ window.openModal = function(dateStr) {
         document.getElementById('scheduleType').value = log.scheduleType || "none";
         document.getElementById('vehicle').value = log.vehicle || "";
         document.getElementById('driver1').value = log.driver1 || currentUser;
+        document.getElementById('driver2').value = log.driver2 || "";
+        document.getElementById('preDriver').value = log.preDriver || "";
         document.getElementById('startTime1').value = log.startTime || ""; 
         document.getElementById('endTime1').value = log.endTime || "";
+        document.getElementById('usedPayTime').value = log.usedPayTime || "";
         document.getElementById('memo').value = log.memo || ""; 
     } else {
         document.getElementById('driver1').value = currentUser;
@@ -250,6 +276,8 @@ window.openModal = function(dateStr) {
         if (myDispatch) {
             document.getElementById('scheduleType').value = myDispatch.schedule.includes('서울') ? "seoul" : (myDispatch.schedule === '1박' ? "1night" : (myDispatch.schedule === '2박' ? "2night" : "day"));
             document.getElementById('vehicle').value = myDispatch.vehicleId + '차';
+            const others = myDispatch.assigned.map(stripDriverNumber).filter(n => n !== currentUser);
+            if (others.length > 0) document.getElementById('driver2').value = others.join(', ');
             document.getElementById('memo').value = `[배차] ${myDispatch.departure || ''} ➔ ${myDispatch.destination || ''}`;
         }
     }
@@ -263,14 +291,13 @@ window.deleteLog = async function() {
     try { await deleteDoc(doc(db, "drivingLogsMulti", `${currentUser}_${selectedDateStr}`)); closeModal(); } catch (e) { alert("삭제 실패"); }
 }
 
-// 휴무 등록 로직
 window.setOffDay = async function() {
     const key1 = `${currentUser}_${selectedDateStr}`;
     try {
         await setDoc(doc(db, "drivingLogsMulti", key1), { 
             userId: currentUser, 
             date: selectedDateStr, 
-            isLeaveDay: true,
+            isLeaveDay: true, // 이 값이 켜져야 진짜 휴무로 인정
             scheduleType: '휴무',
             updatedAt: new Date() 
         });
@@ -280,9 +307,34 @@ window.setOffDay = async function() {
 
 document.getElementById('logForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    await setDoc(doc(db, "drivingLogsMulti", `${currentUser}_${selectedDateStr}`), { 
-        userId: currentUser, date: selectedDateStr, scheduleType: document.getElementById('scheduleType').value, vehicle: document.getElementById('vehicle').value, driver1: currentUser, startTime: document.getElementById('startTime1').value, endTime: document.getElementById('endTime1').value, memo: document.getElementById('memo').value, updatedAt: new Date() 
-    });
+    const scheduleType = document.getElementById('scheduleType').value;
+    const vehicle = document.getElementById('vehicle').value;
+    const uPay = document.getElementById('usedPayTime').value;
+    const rawMemo = document.getElementById('memo').value;
+
+    const isLeave = (scheduleType === 'none' && vehicle === '');
+
+    if (!isLeave) {
+        if (scheduleType !== 'none' && vehicle === '') return alert("운행 차량을 선택해주세요!");
+        if (scheduleType === 'none' && vehicle !== '') return alert("운행 일정을 선택해주세요!");
+    } else {
+        if ((!uPay || parseFloat(uPay) <= 0) && rawMemo.trim() === '') return alert("운행 정보나 보상 시간, 비고 중 하나는 입력해야 합니다.");
+    }
+
+    const key1 = `${currentUser}_${selectedDateStr}`;
+    
+    // 💡 수정됨: 저장버튼으로 일정 없이 보상시간만 넣었을 때는 isLeaveDay를 false로 저장함! (배차판에 안 뜨게)
+    if (isLeave) {
+        await setDoc(doc(db, "drivingLogsMulti", key1), { 
+            userId: currentUser, date: selectedDateStr, 
+            isLeaveDay: false, // 진짜 휴무가 아님
+            scheduleType: 'none', memo: rawMemo, usedPayTime: uPay, updatedAt: new Date() 
+        });
+    } else {
+        await setDoc(doc(db, "drivingLogsMulti", key1), { 
+            userId: currentUser, date: selectedDateStr, scheduleType: scheduleType, vehicle: vehicle, driver1: currentUser, driver2: document.getElementById('driver2').value, preDriver: document.getElementById('preDriver').value, startTime: document.getElementById('startTime1').value, endTime: document.getElementById('endTime1').value, usedPayTime: uPay, memo: rawMemo, updatedAt: new Date() 
+        });
+    }
     closeModal();
 });
 
