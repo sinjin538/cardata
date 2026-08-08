@@ -123,7 +123,7 @@ db.collection('drivingLogsMulti').onSnapshot((snapshot) => {
         const data = doc.data();
         if (data.isLeaveDay) {
             if (!offDaysData[data.date]) offDaysData[data.date] = [];
-            offDaysData[data.date].push(data.userId);
+            offDaysData[data.date].push(stripDriverNumber(data.userId));
         }
     });
     if (document.getElementById('mainApp').style.display === 'block') renderCalendarUI(); 
@@ -140,7 +140,6 @@ function changeMonth(offset) {
     renderCalendarUI();
 }
 
-// 💡 배차 모달에 운전원 2명과 선운행 체크박스 동적 생성 시뮬레이터 연동
 function getCalculatedDriversForModal(targetDateStr, vId, isSoloVal) {
     let currentTurn = 0; 
     let driverBusyUntil = {}; 
@@ -157,13 +156,18 @@ function getCalculatedDriversForModal(targetDateStr, vId, isSoloVal) {
         if (rosterHistory[dayStr]) { activeDrivers = [...rosterHistory[dayStr]]; currentTurn = 0; }
 
         let todaysDispatches = allDispatches.filter(d => d.startDay === dayStr && d.startDay !== selectedDateStr);
-        // 정렬 생략하고 순번대로 시뮬레이션
         todaysDispatches.forEach(d => {
             const vObj = vehicles.find(v => v.id === d.vehicleId);
             let needed = (vObj && vObj.type === 'bus' && !d.isSolo) ? 2 : 1;
             for (let i = 0; i < needed; i++) {
-                while (driverBusyUntil[activeDrivers[currentTurn]] >= dayStr) {
+                let loopSafe = 0;
+                while (
+                    (driverBusyUntil[activeDrivers[currentTurn]] >= dayStr || 
+                    (offDaysData[dayStr] && offDaysData[dayStr].includes(stripDriverNumber(activeDrivers[currentTurn])))) && 
+                    loopSafe < activeDrivers.length
+                ) {
                     currentTurn = (currentTurn + 1) % activeDrivers.length;
+                    loopSafe++;
                 }
                 let driver = activeDrivers[currentTurn];
                 let duration = (d.schedule === '1박') ? 1 : (d.schedule === '2박') ? 2 : 0;
@@ -179,8 +183,14 @@ function getCalculatedDriversForModal(targetDateStr, vId, isSoloVal) {
             const vObj = vehicles.find(v => v.id === vId);
             let needed = (vObj && vObj.type === 'bus' && !isSoloVal) ? 2 : 1;
             for (let i = 0; i < needed; i++) {
-                while (driverBusyUntil[activeDrivers[currentTrustNoChk = currentTurn]] >= dayStr) {
+                let loopSafe = 0;
+                while (
+                    (driverBusyUntil[activeDrivers[currentTurn]] >= dayStr || 
+                    (offDaysData[dayStr] && offDaysData[dayStr].includes(stripDriverNumber(activeDrivers[currentTurn])))) && 
+                    loopSafe < activeDrivers.length
+                ) {
                     currentTurn = (currentTurn + 1) % activeDrivers.length;
+                    loopSafe++;
                 }
                 assigned.push(activeDrivers[currentTurn]);
                 currentTurn = (currentTurn + 1) % activeDrivers.length;
@@ -393,6 +403,8 @@ function recalculateEngine() {
     let simDate = parseDate(firstHistoryDate);
     let endDateObj = parseDate(endSimulateStr);
 
+    let lastAssignedDriverForNext = "";
+
     while (simDate <= endDateObj) {
         let dayStr = formatDate(simDate.getFullYear(), simDate.getMonth()+1, simDate.getDate());
         
@@ -409,13 +421,18 @@ function recalculateEngine() {
 
             for (let i = 0; i < needed; i++) {
                 let loopSafe = 0;
-                while (driverBusyUntil[activeDrivers[currentTurn]] >= dayStr && loopSafe < activeDrivers.length) {
+                while (
+                    (driverBusyUntil[activeDrivers[currentTurn]] >= dayStr || 
+                    (offDaysData[dayStr] && offDaysData[dayStr].includes(stripDriverNumber(activeDrivers[currentTurn])))) && 
+                    loopSafe < activeDrivers.length
+                ) {
                     currentTurn = (currentTurn + 1) % activeDrivers.length;
                     loopSafe++;
                 }
                 
                 let assignedDriver = activeDrivers[currentTurn];
                 assigned.push(assignedDriver);
+                lastAssignedDriverForNext = assignedDriver;
 
                 let duration = (d.schedule === '1박') ? 1 : (d.schedule === '2박') ? 2 : 0;
                 if(duration > 0) {
@@ -425,7 +442,7 @@ function recalculateEngine() {
                 }
                 currentTurn = (currentTurn + 1) % activeDrivers.length; 
             }
-            d.assigned = assigned; // 실시간 배정된 명단 업데이트
+            d.assigned = assigned;
 
             let totalDays = (d.schedule === '1박') ? 2 : (d.schedule === '2박') ? 3 : 1;
             for(let offset = 0; offset < totalDays; offset++) {
@@ -447,9 +464,21 @@ function recalculateEngine() {
 
     drawCalendar(renderData, year, month, lastDateOfView.getDate());
     renderDetailTable(renderData, year, month, lastDateOfView.getDate()); 
-    
+
+    // 다음 대기자 계산 (휴무자 건너뛰기 적용)
     if (activeDrivers.length > 0) {
-        document.getElementById('currentTurn').innerText = stripDriverNumber(activeDrivers[currentTurn] || "");
+        let nextIndex = (currentTurn) % activeDrivers.length;
+        let todayStrForNext = formatDate(new Date().getFullYear(), new Date().getMonth()+1, new Date().getDate());
+        let loopCount = 0;
+        while (
+            offDaysData[todayStrForNext] && 
+            offDaysData[todayStrForNext].includes(stripDriverNumber(activeDrivers[nextIndex])) && 
+            loopCount < activeDrivers.length
+        ) {
+            nextIndex = (nextIndex + 1) % activeDrivers.length;
+            loopCount++;
+        }
+        document.getElementById('currentTurn').innerText = stripDriverNumber(activeDrivers[nextIndex] || "");
     }
 }
 
@@ -466,7 +495,6 @@ function drawCalendar(renderData, y, m, lastDate) {
                 if (d.schedule === '1박') className += ' schedule-1night';
                 else if (d.schedule === '2박') className += ' schedule-2nights';
 
-                // 💡 선운행인 사람 이름 밑에 빨간 밑줄 적용
                 let namesHtml = d.assigned.map(fullName => {
                     let clean = stripDriverNumber(fullName);
                     if (d.preDriver && clean === d.preDriver) {
@@ -484,11 +512,12 @@ function drawCalendar(renderData, y, m, lastDate) {
             });
         }
 
+        // 💡 휴무 표시 공간을 컴팩트하게 변경 (그림 제거, 한 줄 텍스트)
         if (offDaysData[dateStr] && offDaysData[dateStr].length > 0) {
             let offNames = [...new Set(offDaysData[dateStr].map(name => stripDriverNumber(name)))].join(', ');
             dispatchDiv.innerHTML += `
-                <div style="margin-top: auto; color: #d32f2f; font-size: 11px; font-weight: bold; background: #ffebee; padding: 4px; border-radius: 4px; text-align: center; border: 1px dashed #ffcdd2; cursor: default; width: 100%; box-sizing: border-box;" onclick="event.stopPropagation()">
-                    🏝️ 휴무: ${offNames}
+                <div style="margin-top: auto; color: #d32f2f; font-size: 10px; font-weight: bold; background: #fafafa; padding: 2px 4px; text-align: center; border-top: 1px dashed #eee; cursor: default; width: 100%; box-sizing: border-box;" onclick="event.stopPropagation()">
+                    휴무: ${offNames}
                 </div>
             `;
         }
