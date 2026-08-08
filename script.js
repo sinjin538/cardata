@@ -319,6 +319,7 @@ function openModal(dateStr) {
     document.getElementById('vehicleSelect').value = '';
     document.getElementById('departureInput').value = ''; 
     document.getElementById('destinationInput').value = '';
+    if(document.getElementById('kmInput')) document.getElementById('kmInput').value = '';
     document.getElementById('soloDrive').checked = false;
     document.getElementById('deleteBtn').classList.add('hidden');
     toggleBusOptions();
@@ -335,6 +336,7 @@ function openEditModal(id) {
     document.getElementById('vehicleSelect').value = dispatch.vehicleId;
     document.getElementById('departureInput').value = dispatch.departure || ''; 
     document.getElementById('destinationInput').value = dispatch.destination || '';
+    if(document.getElementById('kmInput')) document.getElementById('kmInput').value = dispatch.km || '';
     document.getElementById('soloDrive').checked = dispatch.isSolo;
     document.getElementById('deleteBtn').classList.remove('hidden');
     toggleBusOptions();
@@ -356,6 +358,7 @@ function saveDispatch() {
     const isSoloVal = document.getElementById('soloDrive').checked;
     const depVal = document.getElementById('departureInput').value; 
     const destVal = document.getElementById('destinationInput').value;
+    const kmVal = document.getElementById('kmInput') ? parseFloat(document.getElementById('kmInput').value) || 0 : 0;
 
     let preDriverVal = '';
     const checkedChk = document.querySelector('.pre-driver-chk:checked');
@@ -364,9 +367,9 @@ function saveDispatch() {
     if (editingId) {
         let target = allDispatches.find(d => d.id === editingId);
         target.vehicleId = vId; target.schedule = scheduleVal; target.isSolo = isSoloVal;
-        target.departure = depVal; target.destination = destVal; target.preDriver = preDriverVal;
+        target.departure = depVal; target.destination = destVal; target.km = kmVal; target.preDriver = preDriverVal;
     } else {
-        allDispatches.push({ id: Date.now(), startDay: selectedDateStr, vehicleId: vId, schedule: scheduleVal, isSolo: isSoloVal, departure: depVal, destination: destVal, preDriver: preDriverVal, assigned: currentCalculatedAssigned });
+        allDispatches.push({ id: Date.now(), startDay: selectedDateStr, vehicleId: vId, schedule: scheduleVal, isSolo: isSoloVal, departure: depVal, destination: destVal, km: kmVal, preDriver: preDriverVal, assigned: currentCalculatedAssigned });
     }
     closeModal(); saveToFirebase(); 
 }
@@ -378,11 +381,15 @@ function deleteCurrentDispatch() {
     }
 }
 
+// 💡 km가 짧을수록 우선순위가 높도록 정렬 점수 부여
 function getSortScore(dispatch) {
     const v = vehicles.find(v => v.id === dispatch.vehicleId);
     let score = v.type === 'solati' ? 10000 : 0; 
-    if (dispatch.schedule.includes('당일')) score += 100; else if (dispatch.schedule === '1박') score += 200; else if (dispatch.schedule === '2박') score += 300; else score += 400;
-    if (dispatch.vehicleId === '3호') score += 1; else if (dispatch.vehicleId === '1호') score += 2; else if (dispatch.vehicleId === '2호') score += 3;
+    
+    // km 입력값이 있으면 km순으로 정렬되도록 가중치 부여 (km가 짧을수록 위로)
+    let km = dispatch.km || 0;
+    score += km; 
+
     return score;
 }
 
@@ -402,8 +409,6 @@ function recalculateEngine() {
 
     let simDate = parseDate(firstHistoryDate);
     let endDateObj = parseDate(endSimulateStr);
-
-    let lastAssignedDriverForNext = "";
 
     while (simDate <= endDateObj) {
         let dayStr = formatDate(simDate.getFullYear(), simDate.getMonth()+1, simDate.getDate());
@@ -432,7 +437,6 @@ function recalculateEngine() {
                 
                 let assignedDriver = activeDrivers[currentTurn];
                 assigned.push(assignedDriver);
-                lastAssignedDriverForNext = assignedDriver;
 
                 let duration = (d.schedule === '1박') ? 1 : (d.schedule === '2박') ? 2 : 0;
                 if(duration > 0) {
@@ -465,7 +469,6 @@ function recalculateEngine() {
     drawCalendar(renderData, year, month, lastDateOfView.getDate());
     renderDetailTable(renderData, year, month, lastDateOfView.getDate()); 
 
-    // 다음 대기자 계산 (휴무자 건너뛰기 적용)
     if (activeDrivers.length > 0) {
         let nextIndex = (currentTurn) % activeDrivers.length;
         let todayStrForNext = formatDate(new Date().getFullYear(), new Date().getMonth()+1, new Date().getDate());
@@ -492,8 +495,13 @@ function drawCalendar(renderData, y, m, lastDate) {
         if(renderData[dateStr]) {
             renderData[dateStr].forEach(d => {
                 let className = `dispatch-item type-${d.type}`;
-                if (d.schedule === '1박') className += ' schedule-1night';
-                else if (d.schedule === '2박') className += ' schedule-2nights';
+                
+                // 💡 일정별 조그마한 뱃지 색상 및 당일 배경색 조금 더 진하게 조정
+                let badgeBg = '#3b82f6';
+                if (d.schedule === '당일') { badgeBg = '#2563eb'; className += ' schedule-day-dark'; }
+                else if (d.schedule === '당일(서울)') { badgeBg = '#475569'; }
+                else if (d.schedule === '1박') { badgeBg = '#ca8a04'; className += ' schedule-1night'; }
+                else if (d.schedule === '2박') { badgeBg = '#c2410c'; className += ' schedule-2nights'; }
 
                 let namesHtml = d.assigned.map(fullName => {
                     let clean = stripDriverNumber(fullName);
@@ -503,16 +511,19 @@ function drawCalendar(renderData, y, m, lastDate) {
                     return clean;
                 }).join(', ');
 
+                // 💡 차량호차 옆에 운전원 이름을 나란히 배치하도록 수정
                 dispatchDiv.innerHTML += `
-                    <div class="${className}" onclick="openEditModal(${d.id})" title="클릭하여 수정">
-                        <div style="margin-bottom:3px;"><span class="schedule-badge">${d.schedule}</span> <strong>${d.vehicleId}</strong></div>
-                        <div><span>${namesHtml}</span></div>
+                    <div class="${className}" onclick="openEditModal(${d.id})" title="클릭하여 수정" style="padding: 4px 6px; margin-bottom: 3px; border-radius: 6px; font-size: 12px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                        <div style="display: flex; align-items: center; gap: 4px;">
+                            <span style="background: ${badgeBg}; color: white; padding: 1px 4px; border-radius: 4px; font-size: 10px; font-weight: bold;">${d.schedule}</span>
+                            <strong>${d.vehicleId}</strong>
+                        </div>
+                        <div style="font-weight: bold; color: #1e293b;">${namesHtml}</div>
                     </div>
                 `;
             });
         }
 
-        // 💡 휴무 표시 공간을 컴팩트하게 변경 (그림 제거, 한 줄 텍스트)
         if (offDaysData[dateStr] && offDaysData[dateStr].length > 0) {
             let offNames = [...new Set(offDaysData[dateStr].map(name => stripDriverNumber(name)))].join(', ');
             dispatchDiv.innerHTML += `
