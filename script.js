@@ -10,11 +10,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// 💡 지정 운전원 목록에 'admin' 추가
 const ALLOWED_NAMES = ["박기준", "변석현", "이명순", "김탁", "한상훈", "문인식", "황덕일", "강철규", "이상헌", "admin"];
-const ADMIN_NAMES = ["박기준", "admin"]; // 💡 관리자 권한을 가질 계정들
-
-let loggedInUserRole = "";
+const ADMIN_NAME = "박기준";
 
 window.toggleAuth = function(isSignup) {
     document.getElementById('loginBox').style.display = isSignup ? 'none' : 'block';
@@ -63,11 +60,14 @@ window.handleLogin = async function() {
 }
 
 function showMainApp(name) {
-    loggedInUserRole = name;
     document.getElementById('loginView').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
     document.getElementById('welcomeUserName').innerText = `👤 ${name}님 접속중`;
-    if(ADMIN_NAMES.includes(name)) document.getElementById('adminSettingBtn').classList.remove('hidden');
+    
+    // 💡 박기준 또는 admin이 로그인하면 설정/관리 버튼 노출
+    if(name === ADMIN_NAME || name === "admin") {
+        document.getElementById('adminSettingBtn').classList.remove('hidden');
+    }
     renderCalendarUI(); 
 }
 
@@ -81,8 +81,8 @@ window.goToDrivingLog = function() {
 }
 
 let vehicles = [
-    { id: '1호차', type: 'bus' }, { id: '2호차', type: 'bus' }, { id: '3호차', type: 'bus' },
-    { id: '11호차', type: 'solati' }, { id: '12호차', type: 'solati' }, { id: '13호차', type: 'solati' }, { id: '14호차', type: 'solati' }
+    { id: '1호', type: 'bus' }, { id: '2호', type: 'bus' }, { id: '3호', type: 'bus' },
+    { id: '11호', type: 'solati' }, { id: '12호', type: 'solati' }, { id: '13호', type: 'solati' }, { id: '14호', type: 'solati' }
 ];
 
 const KOREAN_HOLIDAYS = { '2024-01-01': '신정', '2024-02-09': '설날', '2024-02-10': '설날', '2024-02-11': '설날', '2024-02-12': '대체공휴일', '2024-03-01': '삼일절', '2024-05-05': '어린이날', '2024-05-06': '대체공휴일', '2024-05-15': '부처님오신날', '2024-06-06': '현충일', '2024-08-15': '광복절', '2024-09-16': '추석', '2024-09-17': '추석', '2024-09-18': '추석', '2024-10-03': '개천절', '2024-10-09': '한글날', '2024-12-25': '크리스마스', '2025-01-01': '신정', '2025-01-28': '설날', '2025-01-29': '설날', '2025-01-30': '설날', '2025-03-01': '삼일절', '2025-03-03': '대체공휴일', '2025-05-05': '어린이날/부처님오신날', '2025-05-06': '대체공휴일', '2025-06-06': '현충일', '2025-08-15': '광복절', '2025-10-03': '개천절', '2025-10-05': '추석', '2025-10-06': '추석', '2025-10-07': '추석', '2025-10-08': '대체공휴일', '2025-10-09': '한글날', '2025-12-25': '크리스마스', '2026-01-01': '신정', '2026-02-16': '설날', '2026-02-17': '설날', '2026-02-18': '설날', '2026-03-01': '삼일절', '2026-03-02': '대체공휴일', '2026-05-05': '어린이날', '2026-05-24': '부처님오신날', '2026-05-25': '대체공휴일', '2026-06-06': '현충일', '2026-08-15': '광복절', '2026-08-17': '대체공휴일', '2026-09-24': '추석', '2026-09-25': '추석', '2026-09-26': '추석', '2026-10-03': '개천절', '2026-10-05': '대체공휴일', '2026-10-09': '한글날', '2026-12-25': '크리스마스' };
@@ -102,7 +102,6 @@ window.onload = () => {
     populateVehicles(); 
     const savedUser = localStorage.getItem("loggedInUser");
     if(savedUser) { 
-        loggedInUserRole = savedUser;
         showMainApp(savedUser); 
     } else {
         document.getElementById('loginView').style.display = 'flex';
