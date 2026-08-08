@@ -10,8 +10,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// 💡 1. 통합 로그인 시스템 로직
-const ALLOWED_NAMES = ["이상헌", "이명순", "김탁", "변석현", "강철규", "한상훈", "문인식", "함동한", "박기준"];
+const ALLOWED_NAMES = ["이상헌", "이명순", "김탁", "변석현", "강철규", "한상훈", "문인식", "황덕일", "박기준"];
 const ADMIN_NAME = "박기준";
 
 window.toggleAuth = function(isSignup) {
@@ -55,7 +54,6 @@ window.handleLogin = async function() {
         if(!docSnap.exists) return alert("가입되지 않은 이름입니다.");
         if(docSnap.data().password !== pwd) return alert("비밀번호가 틀렸습니다.");
 
-        // 로그인 성공! (브라우저에 기록 저장)
         localStorage.setItem("loggedInUser", name);
         showMainApp(name);
     } catch(e) { alert("로그인 오류가 발생했습니다."); }
@@ -70,15 +68,14 @@ function showMainApp(name) {
 }
 
 window.handleLogout = function() {
-    localStorage.removeItem("loggedInUser"); // 기록 지우기
+    localStorage.removeItem("loggedInUser");
     location.reload();
 }
 
 window.goToDrivingLog = function() {
-    location.href = "log.html"; // 운행일지 창으로 이동!
+    location.href = "log.html"; 
 }
 
-// 기초 데이터
 let vehicles = [
     { id: '1호', type: 'bus' }, { id: '2호', type: 'bus' }, { id: '3호', type: 'bus' },
     { id: '11호', type: 'solati' }, { id: '12호', type: 'solati' }, { id: '13호', type: 'solati' }, { id: '14호', type: 'solati' }
@@ -91,7 +88,7 @@ let allDispatches = [];
 let editingId = null;
 let selectedDateStr = '';
 let currentViewDate = new Date(); 
-let offDaysData = {}; // 운행일지 휴무 데이터
+let offDaysData = {}; 
 
 function formatDate(year, month, day) { return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`; }
 function parseDate(dateStr) { let p = dateStr.split('-'); return new Date(p[0], p[1]-1, p[2]); }
@@ -99,12 +96,10 @@ function stripDriverNumber(name) { return name.replace(/^\d+,\s*/, '').trim(); }
 
 window.onload = () => { 
     populateVehicles(); 
-    // 사이트 켰을 때 이미 로그인 기록이 있으면 바로 입장!
     const savedUser = localStorage.getItem("loggedInUser");
     if(savedUser) { showMainApp(savedUser); }
 };
 
-// 파이어베이스 데이터 수신
 db.collection('DispatchSystem').doc('MainData').onSnapshot((doc) => {
     if (doc.exists) {
         const data = doc.data();
@@ -121,6 +116,7 @@ db.collection('drivingLogsMulti').onSnapshot((snapshot) => {
     offDaysData = {};
     snapshot.forEach(doc => {
         const data = doc.data();
+        // 💡 진짜 휴무버튼(isLeaveDay)을 눌렀을 때만 가져옴
         if (data.isLeaveDay) {
             if (!offDaysData[data.date]) offDaysData[data.date] = [];
             offDaysData[data.date].push(data.userId);
@@ -161,9 +157,16 @@ function renderCalendarUI() {
         let titleClass = (dayOfWeek === 0 || isHoliday) ? 'text-red' : (dayOfWeek === 6 ? 'text-blue' : '');
         let holidayText = isHoliday ? `<span class="holiday-name">${KOREAN_HOLIDAYS[currentStr]}</span>` : '';
 
+        // 💡 수정됨: 달력 한 칸(day)을 위아래로 꽉 채우는 Flex 레이아웃으로 변경 (휴무를 맨 아래 고정하기 위해)
         let dayDiv = document.createElement('div');
         dayDiv.className = 'day';
-        dayDiv.innerHTML = `<div class="day-title ${titleClass}"><span>${i}일</span> ${holidayText}</div><div id="dispatch-${currentStr}"></div>`;
+        dayDiv.style.display = 'flex';
+        dayDiv.style.flexDirection = 'column';
+        
+        dayDiv.innerHTML = `
+            <div class="day-title ${titleClass}"><span>${i}일</span> ${holidayText}</div>
+            <div id="dispatch-${currentStr}" style="flex: 1; display: flex; flex-direction: column;"></div>
+        `;
         dayDiv.onclick = (e) => { if(e.target.closest('.dispatch-item')) return; openModal(currentStr); };
         calendar.appendChild(dayDiv);
     }
@@ -372,11 +375,11 @@ function drawCalendar(renderData, y, m, lastDate) {
             });
         }
 
-        // 💡 2. 운행일지에서 등록된 휴무를 달력 맨 아래 표시!
+        // 💡 수정됨: margin-top: auto; 를 사용해서 달력 빈 공간 아래로 쫙 밀어버립니다!
         if (offDaysData[dateStr] && offDaysData[dateStr].length > 0) {
             let offNames = [...new Set(offDaysData[dateStr].map(name => stripDriverNumber(name)))].join(', ');
             dispatchDiv.innerHTML += `
-                <div style="margin-top: 5px; color: #d32f2f; font-size: 11px; font-weight: bold; background: #ffebee; padding: 4px; border-radius: 4px; text-align: center; border: 1px dashed #ffcdd2; cursor: default;" onclick="event.stopPropagation()">
+                <div style="margin-top: auto; color: #d32f2f; font-size: 11px; font-weight: bold; background: #ffebee; padding: 4px; border-radius: 4px; text-align: center; border: 1px dashed #ffcdd2; cursor: default;" onclick="event.stopPropagation()">
                     🏝️ 휴무: ${offNames}
                 </div>
             `;
